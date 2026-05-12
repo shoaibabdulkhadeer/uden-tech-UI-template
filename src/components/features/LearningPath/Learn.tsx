@@ -401,6 +401,12 @@ const Learn = () => {
 		dispatch(getTokenDetails());
 	}, []);
 
+	useEffect(() => {
+		if (location.state?.jd) {
+			form.setFieldsValue({ text: location.state.jd });
+		}
+	}, []);
+
 	const onFinish = (values: any) => {
 		setSummaryNote('');
 		// Add logic to generate learning path here

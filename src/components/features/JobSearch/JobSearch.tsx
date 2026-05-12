@@ -29,6 +29,8 @@ import {
 	MdTrendingUp,
 	MdCheckCircle,
 	MdRestartAlt,
+	MdSchool,
+	MdAdd,
 } from 'react-icons/md';
 import { IoClose } from 'react-icons/io5';
 import { SiBookstack } from 'react-icons/si';
@@ -421,7 +423,7 @@ function JobSearch() {
 							setSkillInput('');
 						}}
 					>
-						Add
+						<MdAdd size={14} style={{ verticalAlign: 'middle' }} />
 					</button>
 				</div>
 				{skillsFilter?.length > 0 && (
@@ -444,9 +446,7 @@ function JobSearch() {
 			</div>
 			<div className="job-search-filters-divider" />
 			<LocationFilter key={locationResetKey} />
-			<Button type="link" size="small" className="job-search-filters-reset" onClick={resetFilters}>
-				Reset search & filters
-			</Button>
+			<Button type="link" size="small" className="job-search-filters-reset" onClick={resetFilters}><MdRestartAlt size={13} style={{ verticalAlign: 'middle', marginRight: 3 }} />Reset all</Button>
 		</div>
 	);
 
@@ -530,14 +530,34 @@ function JobSearch() {
 										<MdBusiness size={13} className="profile-inline-icon profile-inline-icon--cyan" aria-hidden />
 										<span>Uden Tech · Learning platform</span>
 									</div>
+									<div className="profile-stats-row">
+										<div className="profile-stat">
+											<MdSend size={12} className="profile-stat-icon profile-stat-icon--indigo" />
+											<span className="profile-stat-num">{appliedIds.size}</span>
+											<span className="profile-stat-label">Applied</span>
+										</div>
+										<div className="profile-stat">
+											<MdBookmark size={12} className="profile-stat-icon profile-stat-icon--violet" />
+											<span className="profile-stat-num">{savedIds.size}</span>
+											<span className="profile-stat-label">Saved</span>
+										</div>
+										<div className="profile-stat">
+											<MdPeople size={12} className="profile-stat-icon profile-stat-icon--cyan" />
+											<span className="profile-stat-num">9</span>
+											<span className="profile-stat-label">Connections</span>
+										</div>
+									</div>
 								</div>
 							</section>
 
 
 							<section className="job-search-card job-search-filters-card" aria-label="Job filters">
 								<div className="job-search-filters-card-head">
-									<MdTune className="job-search-filters-card-icon" aria-hidden />
+									<span className="filters-head-icon"><MdTune size={14} /></span>
 									<h3 className="job-search-filters-card-title">Filters</h3>
+									{(empFilter.length + workFilter.length + (expFilter ? 1 : 0) + (sectorFilter ? 1 : 0) + skillsFilter.length) > 0 && (
+										<span className="filters-active-badge">{empFilter.length + workFilter.length + (expFilter ? 1 : 0) + (sectorFilter ? 1 : 0) + skillsFilter.length}</span>
+									)}
 								</div>
 								<div className="job-search-filters-card-body">{filtersBlock}</div>
 							</section>
@@ -556,16 +576,29 @@ function JobSearch() {
 							<section className="job-search-card job-search-feed-card">
 								<header className="job-search-feed-head">
 									<div className="job-search-feed-head-top">
-										<Radio.Group
-											className="job-search-view-toggle"
-											value={activeView}
-											onChange={(e) => setActiveView(e.target.value as ActiveView)}
-											buttonStyle="solid"
-										>
-											<Radio.Button value="matches">Matched</Radio.Button>
-											<Radio.Button value="saved">Saved</Radio.Button>
-											<Radio.Button value="applied">Applied</Radio.Button>
-										</Radio.Group>
+										<div className="view-tabs">
+											<button type="button"
+												className={`view-tab view-tab--indigo${activeView === 'matches' ? ' view-tab--active' : ''}`}
+												onClick={() => setActiveView('matches')}>
+												<span className="view-tab-icon"><MdAutoAwesome size={13} /></span>
+												<span className="view-tab-label">Matched</span>
+												<span className="view-tab-count">{MOCK_JOBS.filter(j => j.matchScore).length}</span>
+											</button>
+											<button type="button"
+												className={`view-tab view-tab--amber${activeView === 'saved' ? ' view-tab--active' : ''}`}
+												onClick={() => setActiveView('saved')}>
+												<span className="view-tab-icon"><MdBookmark size={13} /></span>
+												<span className="view-tab-label">Saved</span>
+												{savedIds.size > 0 && <span className="view-tab-count">{savedIds.size}</span>}
+											</button>
+											<button type="button"
+												className={`view-tab view-tab--emerald${activeView === 'applied' ? ' view-tab--active' : ''}`}
+												onClick={() => setActiveView('applied')}>
+												<span className="view-tab-icon"><MdCheckCircle size={13} /></span>
+												<span className="view-tab-label">Applied</span>
+												{appliedIds.size > 0 && <span className="view-tab-count">{appliedIds.size}</span>}
+											</button>
+										</div>
 										<Button
 											type="default"
 											className="job-search-filters-mobile-trigger"
@@ -646,17 +679,21 @@ function JobSearch() {
 																showUploadList={false}
 																className="premium-dragger"
 															>
-																<p className="ant-upload-drag-icon">
-																	<div className="ncs-wave-container">
-																		<div className="ncs-wave-ring" />
-																		<div className="ncs-wave-ring" />
-																		<div className="ncs-wave-ring" />
-																		<div className="ncs-wave-ring" />
-																		<InboxOutlined />
+																<div className="dragger-inner">
+																	<div className="dragger-icon-wrap">
+																		<div className="ncs-wave-container">
+																			<div className="ncs-wave-ring" />
+																			<div className="ncs-wave-ring" />
+																			<div className="ncs-wave-ring" />
+																			<div className="ncs-wave-ring" />
+																			<MdFileUpload size={18} className="dragger-upload-icon" />
+																		</div>
 																	</div>
-																</p>
-																<p className="ant-upload-text">Drag resume here or click to browse</p>
-																<p className="ant-upload-hint">Support for PDF, DOCX (Max 5MB)</p>
+																	<div className="dragger-text-wrap">
+																		<span className="dragger-main-text">Drop resume or click to browse</span>
+																		<span className="dragger-hint-text">PDF, DOCX · Max 5 MB</span>
+																	</div>
+																</div>
 															</Upload.Dragger>
 														) : (
 															<div className="ai-analysis-card">
@@ -728,17 +765,23 @@ function JobSearch() {
 													>
 														{showJdInput && (
 															<>
-															<Input.TextArea
-																rows={4}
-																placeholder="Paste the job description here to find matching roles in your profile..."
-																value={pastedJd}
-																onChange={(e) => {
-																	setPastedJd(e.target.value);
-																	if (jdResult) { setJdResult(''); setShowJdInput(true); }
-																}}
-																className="premium-textarea"
-																style={{ width: '100%', marginBottom: 16 }}
-															/>
+															<div className="jd-input-wrapper">
+																<div className="jd-input-label">
+																	<MdContentPaste size={11} className="jd-input-label-icon" />
+																	<span>Paste job description</span>
+																</div>
+																<Input.TextArea
+																	rows={3}
+																	placeholder="Paste job description here to match roles…"
+																	value={pastedJd}
+																	onChange={(e) => {
+																		setPastedJd(e.target.value);
+																		if (jdResult) { setJdResult(''); setShowJdInput(true); }
+																	}}
+																	className="premium-textarea"
+																	style={{ width: '100%' }}
+																/>
+															</div>
 															<Button
 																type="primary"
 																block
@@ -746,7 +789,8 @@ function JobSearch() {
 																onClick={handleMatchJd}
 																className="match-submit-btn"
 															>
-																Find Matches via AI
+																{!matchLoading && <MdAutoAwesome size={12} style={{ marginRight: 5, verticalAlign: 'middle' }} />}
+																Find Matches
 															</Button>
 															</>
 														)}
@@ -756,37 +800,24 @@ function JobSearch() {
 																initial={{ opacity: 0, y: 8 }}
 																animate={{ opacity: 1, y: 0 }}
 																transition={{ duration: 0.4 }}
-																style={{ marginTop: 16 }}
 															>
-																<Alert
-																	message={
-																		<div className="jd-summary-inner">
-																			<div className="jd-summary-heading">
-																				<div className="jd-summary-icon" aria-hidden>
-																					<SiBookstack className="jd-summary-icon-svg" />
-																				</div>
-																				<div className="jd-summary-heading-copy">
-																					<p className="jd-summary-eyebrow">Job Description</p>
-																					<p className="jd-summary-title">
-																						Summarized version
-																						<Tooltip
-																							placement="right"
-																							title="This is the job description you pasted. AI matching will use this to surface relevant roles."
-																						>
-																							<InfoCircleTwoTone className="jd-summary-info-icon" style={{ marginLeft: 8 }} />
-																						</Tooltip>
-																					</p>
-																				</div>
-																			</div>
-																			<div className="jd-summary-body">
-																				<Typewriter words={[jdResult]} typeSpeed={18} cursor={true} cursorColor="#059669" />
-																			</div>
-																		</div>
-																	}
-																	type="success"
-																	className="jd-summary-alert"
-																	showIcon={false}
-																/>
+																<div className="jd-result-card">
+																	<div className="jd-result-header">
+																		<span className="jd-result-dot" />
+																		<span className="jd-result-dot jd-result-dot--2" />
+																		<span className="jd-result-dot jd-result-dot--3" />
+																		<span className="jd-result-header-label">
+																			<SiBookstack size={10} />
+																			JD Summary
+																		</span>
+																		<Tooltip placement="right" title="AI will use this to surface matching roles.">
+																			<InfoCircleTwoTone className="jd-result-info-icon" />
+																		</Tooltip>
+																	</div>
+																	<div className="jd-result-body">
+																		<Typewriter words={[jdResult]} typeSpeed={18} cursor cursorColor="#6366f1" />
+																	</div>
+																</div>
 															</motion.div>
 														)}
 													</motion.div>
@@ -917,7 +948,11 @@ function JobSearch() {
 														background: `linear-gradient(135deg, hsl(${job.logoHue}, 70%, 52%), hsl(${job.logoHue + 40}, 65%, 42%))`
 													}}
 													aria-hidden
-												/>
+												>
+													<div className="logo-mesh-ring" />
+													<div className="logo-mesh-ring logo-mesh-ring--2" />
+													<span className="logo-monogram">{job.company.charAt(0)}</span>
+												</div>
 												<div className="job-search-job-main">
 													<div className="job-search-job-title-row">
 														<span className="job-search-job-title job-search-job-title--inline">{job.title}</span>
@@ -971,19 +1006,34 @@ function JobSearch() {
 															{appliedIds.has(job.id) ? 'Application submitted' : job.hiringStatus}
 														</p>
 													) : null}
-													{job.badges?.length ? (
-														<div className="job-search-job-badges">
-															{job.badges.map((b) => (
-																<span key={b} className="job-search-pill">
-																	{b === 'Promoted' && <MdBolt size={11} className="badge-inline-icon" aria-hidden />}
-																	{b === 'Easy apply' && <MdFlashOn size={11} className="badge-inline-icon" aria-hidden />}
-																	{b === 'Leadership' && <MdLeaderboard size={11} className="badge-inline-icon" aria-hidden />}
-																	{b === 'New posting' && <MdTrendingUp size={11} className="badge-inline-icon" aria-hidden />}
-																	{b}
-																</span>
-															))}
-														</div>
-													) : null}
+													<div className="job-search-job-badges">
+														{job.badges?.length ? job.badges.map((b) => (
+															<span key={b} className="job-search-pill">
+																{b === 'Promoted' && <MdBolt size={11} className="badge-inline-icon" aria-hidden />}
+																{b === 'Easy apply' && <MdFlashOn size={11} className="badge-inline-icon" aria-hidden />}
+																{b === 'Leadership' && <MdLeaderboard size={11} className="badge-inline-icon" aria-hidden />}
+																{b === 'New posting' && <MdTrendingUp size={11} className="badge-inline-icon" aria-hidden />}
+																{b}
+															</span>
+														)) : null}
+														<button
+															type="button"
+															className="job-lp-btn"
+															onClick={(e) => {
+																e.stopPropagation();
+																Modal.confirm({
+																	title: 'Go to Learning Path?',
+																	content: `You'll be taken to the Learning Path page with the job description for "${job.title}" at ${job.company} pre-filled. Ready to generate your path?`,
+																	okText: 'Yes, let\'s go',
+																	cancelText: 'Cancel',
+																	onOk: () => navigate('/learn', { state: { jd: job.detail.description } }),
+																});
+															}}
+														>
+															<MdSchool size={12} />
+															Learning Path
+														</button>
+													</div>
 												</div>
 											</li>
 										)))}
@@ -1071,7 +1121,11 @@ function JobSearch() {
 									background: `linear-gradient(135deg, hsl(${previewJob.logoHue}, 70%, 52%), hsl(${previewJob.logoHue + 40}, 65%, 42%))`
 								}}
 								aria-hidden
-							/>
+							>
+								<div className="logo-mesh-ring" />
+								<div className="logo-mesh-ring logo-mesh-ring--2" />
+								<span className="logo-monogram logo-monogram--lg">{previewJob.company.charAt(0)}</span>
+							</div>
 							<div className="job-search-preview-head-copy">
 								<div className="job-search-preview-title-row">
 									<h2 id="job-search-preview-title" className="job-search-preview-title">
@@ -1153,7 +1207,7 @@ function JobSearch() {
 						</div>
 
 						<footer className="job-search-preview-footer">
-							<Button onClick={closeJobPreview}>Close</Button>
+							<Button onClick={closeJobPreview} className="preview-close-btn"><IoClose size={13} style={{ marginRight: 4, verticalAlign: 'middle' }} />Close</Button>
 							<button
 								type="button"
 								className={`job-search-preview-save ${savedIds.has(previewJob.id) ? 'job-search-preview-save--on' : ''}`}
@@ -1181,9 +1235,9 @@ function JobSearch() {
 								disabled={appliedIds.has(previewJob.id)}
 							>
 								{appliedIds.has(previewJob.id) ? (
-									<><MdCheckCircle size={14} style={{ marginRight: 4, verticalAlign: 'middle' }} />Applied</>
+									<><MdCheckCircle size={12} style={{ marginRight: 4, verticalAlign: 'middle' }} />Applied</>
 								) : (
-									<><MdSend size={14} style={{ marginRight: 4, verticalAlign: 'middle' }} />Apply (API)</>
+									<><MdSend size={12} style={{ marginRight: 4, verticalAlign: 'middle' }} />Apply</>
 								)}
 							</Button>
 						</footer>

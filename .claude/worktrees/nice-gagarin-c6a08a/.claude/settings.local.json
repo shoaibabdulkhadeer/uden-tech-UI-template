@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls -la \"C:\\\\Users\\\\Shoail\\\\Desktop\\\\Projects\\\\UdenUI_Gitlab\\\\udentech_learnpathui\\\\uden-tech-UI-template\\\\src\")"
+    ]
+  }
+}
