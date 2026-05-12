@@ -1,0 +1,791 @@
+/**
+ * Dashboard — Arena HUD aesthetic on a light (white) canvas.
+ * Scoped to .dash-next--arena. Combined with body.dark-theme so the dashboard
+ * stays this bright “island” even when the app shell is dark (beats nextgen dark rules).
+ */
+
+body.dark-theme .dash-next.dash-next--arena,
+.dash-next.dash-next--arena {
+	--arena-cyan: #06b6d4;
+	--arena-cyan-bright: #22d3ee;
+	--arena-violet: #8b5cf6;
+	--arena-magenta: #db2777;
+	--arena-lime: #84cc16;
+	--arena-ink: #0f172a;
+	--arena-ink-dim: #64748b;
+	--arena-surface: rgba(255, 255, 255, 0.92);
+	--arena-line: rgba(6, 182, 212, 0.2);
+	--arena-glow-cyan: rgba(6, 182, 212, 0.35);
+	--arena-glow-violet: rgba(139, 92, 246, 0.28);
+	--dn-ink: var(--arena-ink);
+	--dn-ink-muted: var(--arena-ink-dim);
+	--dn-accent: #6366f1;
+	--dn-accent-2: var(--arena-cyan);
+	/* Strip: HUD green rail — electric lime → neon mint → emerald core */
+	--dn-edge-strip-gradient: linear-gradient(
+		180deg,
+		#f7fee7 0%,
+		#d9f99d 12%,
+		#a3e635 28%,
+		#4ade80 52%,
+		#22c55e 76%,
+		#16a34a 100%
+	);
+	--dn-edge-strip-shadow: 1px 0 10px rgba(163, 230, 53, 0.35), 0 0 14px rgba(34, 197, 94, 0.26);
+	--dn-edge-strip-shadow-hover: 1px 0 16px rgba(163, 230, 53, 0.48), 0 0 18px rgba(22, 163, 74, 0.32);
+	--dn-border: rgba(148, 163, 184, 0.2);
+	--dn-border-muted: rgba(226, 232, 240, 0.95);
+	--dn-shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.06);
+	--dn-shadow-md: 0 8px 24px rgba(15, 23, 42, 0.08);
+	color: var(--arena-ink);
+}
+
+/* —— Shell: white canvas + soft neon mesh + HUD grid —— */
+body.dark-theme .dashboard.dash-next.dash-next-shell.dash-next--arena,
+.dashboard.dash-next.dash-next-shell.dash-next--arena,
+body.dark-theme .learn-page.dash-next.dash-next-shell.dash-next--arena,
+.learn-page.dash-next.dash-next-shell.dash-next--arena,
+body.dark-theme .job-search-page.dash-next.dash-next-shell.dash-next--arena,
+.job-search-page.dash-next.dash-next-shell.dash-next--arena {
+	background:
+		radial-gradient(ellipse 90% 60% at 10% -10%, rgba(99, 102, 241, 0.12), transparent 52%),
+		radial-gradient(ellipse 70% 50% at 100% 0%, rgba(236, 72, 153, 0.06), transparent 48%),
+		linear-gradient(168deg, #ffffff 0%, #f8fafc 42%, #f1f5f9 100%) !important;
+	border: 1px solid rgba(148, 163, 184, 0.28) !important;
+	box-shadow:
+		0 0 0 1px rgba(255, 255, 255, 0.95) inset,
+		0 1px 3px rgba(15, 23, 42, 0.05),
+		0 24px 64px -32px rgba(99, 102, 241, 0.14),
+		0 0 48px -20px rgba(6, 182, 212, 0.12) !important;
+}
+
+body.dark-theme .dashboard.dash-next.dash-next-shell.dash-next--arena::before,
+.dashboard.dash-next.dash-next-shell.dash-next--arena::before {
+	opacity: 0.55;
+	background-image:
+		linear-gradient(rgba(99, 102, 241, 0.07) 1px, transparent 1px),
+		linear-gradient(90deg, rgba(139, 92, 246, 0.06) 1px, transparent 1px);
+	background-size: 32px 32px;
+	mask-image: radial-gradient(ellipse 85% 75% at 50% 40%, #000 25%, transparent 78%);
+}
+
+body.dark-theme .dashboard.dash-next.dash-next-shell.dash-next--arena::after,
+.dashboard.dash-next.dash-next-shell.dash-next--arena::after,
+body.dark-theme .learn-page.dash-next.dash-next-shell.dash-next--arena::after,
+.learn-page.dash-next.dash-next-shell.dash-next--arena::after,
+body.dark-theme .job-search-page.dash-next.dash-next-shell.dash-next--arena::after,
+.job-search-page.dash-next.dash-next-shell.dash-next--arena::after {
+	background:
+		radial-gradient(ellipse 60% 45% at 100% 0%, rgba(6, 182, 212, 0.1), transparent 55%),
+		radial-gradient(ellipse 50% 40% at 0% 100%, rgba(139, 92, 246, 0.08), transparent 50%),
+		radial-gradient(ellipse 80% 50% at 50% 120%, rgba(99, 102, 241, 0.06), transparent 55%);
+}
+
+/* HUD accent bar */
+body.dark-theme .dash-next.dash-next--arena .dash-next-page-head::before,
+.dash-next.dash-next--arena .dash-next-page-head::before {
+	background: linear-gradient(90deg, var(--arena-cyan-bright), var(--arena-violet), var(--arena-magenta));
+	box-shadow: 0 2px 14px rgba(6, 182, 212, 0.35);
+}
+
+/* —— Page title —— */
+body.dark-theme .dash-next.dash-next--arena .dash-next-page-eyebrow,
+.dash-next.dash-next--arena .dash-next-page-eyebrow {
+	color: #0891b2;
+	text-shadow: 0 0 20px rgba(6, 182, 212, 0.25);
+	letter-spacing: 0.22em;
+}
+
+/*
+ * “Dashboard” title: gradient on inner span (background-clip:text on h1 with only a
+ * child span is unreliable; theme h1 { color } also inherits onto text).
+ */
+body.dark-theme .dashboard.phase2-dashboard.dash-next.dash-next-shell.dash-next--arena .dash-next-page-head h1.dash-next-page-title,
+.dashboard.phase2-dashboard.dash-next.dash-next-shell.dash-next--arena .dash-next-page-head h1.dash-next-page-title {
+	background: none !important;
+	-webkit-background-clip: unset !important;
+	background-clip: unset !important;
+	-webkit-text-fill-color: unset !important;
+	color: inherit !important;
+	/* Drop-shadow on h1, not the clipped span — avoids WebKit blanking when animating bg + filter */
+	filter: drop-shadow(0 1px 0 rgba(255, 255, 255, 0.85));
+}
+
+body.dark-theme .dashboard.phase2-dashboard.dash-next.dash-next-shell.dash-next--arena .dash-next-page-head h1.dash-next-page-title .dash-next-page-title-inner,
+.dashboard.phase2-dashboard.dash-next.dash-next-shell.dash-next--arena .dash-next-page-head h1.dash-next-page-title .dash-next-page-title-inner,
+body.dark-theme .learn-page.phase2-dashboard.dash-next.dash-next-shell.dash-next--arena .dash-next-page-head h1.dash-next-page-title .dash-next-page-title-inner,
+.learn-page.phase2-dashboard.dash-next.dash-next-shell.dash-next--arena .dash-next-page-head h1.dash-next-page-title .dash-next-page-title-inner,
+body.dark-theme .job-search-page.phase2-dashboard.dash-next.dash-next-shell.dash-next--arena .dash-next-page-head h1.dash-next-page-title .dash-next-page-title-inner,
+.job-search-page.phase2-dashboard.dash-next.dash-next-shell.dash-next--arena .dash-next-page-head h1.dash-next-page-title .dash-next-page-title-inner {
+	display: inline;
+	/* No !important on position/size — keyframes can’t override !important in some engines */
+	background-image: linear-gradient(115deg, #020617 0%, #0f172a 18%, #1e3a8a 42%, #2563eb 58%, #0369a1 78%, #0c4a6e 100%) !important;
+	background-size: 260% auto;
+	background-repeat: no-repeat;
+	/* Static position — animated background-position repaints every frame */
+	background-position: 42% 50%;
+	-webkit-background-clip: text !important;
+	background-clip: text !important;
+	-webkit-text-fill-color: transparent !important;
+	color: transparent !important;
+}
+
+/* —— Learn (/learn): generator card —— */
+body.dark-theme .dash-next.dash-next--arena .learn-next-main-card,
+.dash-next.dash-next--arena .learn-next-main-card {
+	background: linear-gradient(145deg, #ffffff 0%, #f8fafc 48%, #f1f5f9 100%) !important;
+	border: 1px solid rgba(148, 163, 184, 0.2) !important;
+	box-shadow: var(--dn-shadow-sm), 0 0 48px -18px rgba(99, 102, 241, 0.12), 0 0 36px -14px var(--arena-glow-violet) !important;
+}
+
+body.dark-theme .dash-next.dash-next--arena .learn-next-main-card .learn-next-card-toolbar-crumb,
+.dash-next.dash-next--arena .learn-next-main-card .learn-next-card-toolbar-crumb {
+	color: var(--arena-ink);
+}
+
+body.dark-theme .dash-next.dash-next--arena .learn-next-main-card .learn-next-card-toolbar-icon,
+body.dark-theme .dash-next.dash-next--arena .learn-next-main-card .learn-next-card-toolbar-sep,
+.dash-next.dash-next--arena .learn-next-main-card .learn-next-card-toolbar-icon,
+.dash-next.dash-next--arena .learn-next-main-card .learn-next-card-toolbar-sep {
+	color: var(--arena-ink-dim);
+	opacity: 0.9;
+}
+
+body.dark-theme .dash-next.dash-next--arena .learn-next-overview-chip,
+.dash-next.dash-next--arena .learn-next-overview-chip {
+	background: linear-gradient(180deg, rgba(255, 255, 255, 0.99), rgba(248, 250, 252, 0.94)) !important;
+	border: 1px solid rgba(148, 163, 184, 0.22) !important;
+	box-shadow: var(--dn-shadow-sm) !important;
+}
+
+body.dark-theme .dash-next.dash-next--arena .learn-next-overview-chip:hover,
+.dash-next.dash-next--arena .learn-next-overview-chip:hover {
+	border-color: rgba(6, 182, 212, 0.38) !important;
+	box-shadow: var(--dn-shadow-md), 0 0 24px -10px var(--arena-glow-cyan) !important;
+}
+
+body.dark-theme .dash-next.dash-next--arena .learn-next-path-duration,
+.dash-next.dash-next--arena .learn-next-path-duration {
+	background: rgba(255, 255, 255, 0.9) !important;
+	border: 1px solid rgba(148, 163, 184, 0.2) !important;
+}
+
+body.dark-theme .dash-next.dash-next--arena .learn-next-main-card .lineCard,
+.dash-next.dash-next--arena .learn-next-main-card .lineCard {
+	background: linear-gradient(165deg, #ffffff 0%, #fafbfc 100%) !important;
+	border: 1px solid rgba(148, 163, 184, 0.18) !important;
+}
+
+body.dark-theme .dash-next.dash-next--arena .learn-next-main-card .lineCard:hover,
+.dash-next.dash-next--arena .learn-next-main-card .lineCard:hover {
+	border-color: rgba(6, 182, 212, 0.3) !important;
+	box-shadow: var(--dn-shadow-md), 0 0 28px -10px var(--arena-glow-cyan) !important;
+}
+
+body.dark-theme .dash-next.dash-next--arena .learn-next-path-graph .gx-timeline-item:before,
+.dash-next.dash-next--arena .learn-next-path-graph .gx-timeline-item:before {
+	background: linear-gradient(
+		180deg,
+		rgba(99, 102, 241, 0.12),
+		rgba(6, 182, 212, 0.48),
+		rgba(167, 139, 250, 0.2)
+	) !important;
+	box-shadow: 0 0 20px rgba(6, 182, 212, 0.22), 0 0 16px rgba(99, 102, 241, 0.18) !important;
+}
+
+body.dark-theme .dash-next.dash-next--arena .learn-next-path-graph .gx-timeline-badge:after,
+.dash-next.dash-next--arena .learn-next-path-graph .gx-timeline-badge:after {
+	border-color: rgba(6, 182, 212, 0.45) !important;
+	box-shadow:
+		0 0 0 1px rgba(167, 139, 250, 0.3),
+		0 0 20px rgba(6, 182, 212, 0.28) !important;
+}
+
+body.dark-theme .dash-next.dash-next--arena .learn-next-path-graph .gx-timeline-time,
+.dash-next.dash-next--arena .learn-next-path-graph .gx-timeline-time {
+	border-color: rgba(6, 182, 212, 0.28) !important;
+	box-shadow: 0 0 18px -8px rgba(6, 182, 212, 0.25) !important;
+}
+
+body.dark-theme .learn-next-mode-dropdown.ant-select-dropdown,
+.learn-next-mode-dropdown.ant-select-dropdown {
+	border-color: rgba(6, 182, 212, 0.22) !important;
+	box-shadow:
+		0 24px 48px -16px rgba(15, 23, 42, 0.16),
+		0 0 0 1px rgba(6, 182, 212, 0.08),
+		0 0 44px -12px var(--arena-glow-cyan) !important;
+}
+
+body.dark-theme .learn-next-mode-dropdown .ant-select-item-option-active .learn-next-mode-option,
+body.dark-theme .learn-next-mode-dropdown .ant-select-item-option-selected .learn-next-mode-option,
+.learn-next-mode-dropdown .ant-select-item-option-active .learn-next-mode-option,
+.learn-next-mode-dropdown .ant-select-item-option-selected .learn-next-mode-option {
+	border-color: rgba(6, 182, 212, 0.32) !important;
+	box-shadow:
+		0 10px 28px -12px rgba(6, 182, 212, 0.22),
+		0 0 0 1px rgba(167, 139, 250, 0.1) !important;
+}
+
+body.dark-theme .dash-next.dash-next--arena .learn-next-page-meta-chip,
+.dash-next.dash-next--arena .learn-next-page-meta-chip {
+	border-color: rgba(6, 182, 212, 0.28) !important;
+	box-shadow: var(--dn-shadow-sm), 0 0 28px -12px rgba(6, 182, 212, 0.2) !important;
+}
+
+body.dark-theme .dash-next.dash-next--arena .learn-next-page-meta-chip-icon,
+.dash-next.dash-next--arena .learn-next-page-meta-chip-icon {
+	color: #0891b2 !important;
+	filter: drop-shadow(0 0 8px rgba(6, 182, 212, 0.35));
+}
+
+body.dark-theme .dash-next.dash-next--arena .learn-next-summary-alert.ant-alert-success,
+.dash-next.dash-next--arena .learn-next-summary-alert.ant-alert-success {
+	border-color: rgba(6, 182, 212, 0.22) !important;
+	box-shadow: var(--dn-shadow-sm), 0 0 36px -14px rgba(52, 211, 153, 0.18) !important;
+}
+
+body.dark-theme .dash-next.dash-next--arena .learn-next-hud-switch.ant-switch-checked,
+.dash-next.dash-next--arena .learn-next-hud-switch.ant-switch-checked {
+	background: linear-gradient(120deg, #0891b2, var(--arena-violet)) !important;
+}
+
+/* Decorative bubble: continuous position + backdrop-filter — hide on arena for smoother dashboard */
+body.dark-theme .dash-next.dash-next--arena .dash-next-welcome .moving-bubble,
+.dash-next.dash-next--arena .dash-next-welcome .moving-bubble {
+	display: none !important;
+}
+
+/* —— Welcome hero —— */
+body.dark-theme .dash-next.dash-next--arena .dash-next-welcome,
+.dash-next.dash-next--arena .dash-next-welcome {
+	background: linear-gradient(145deg, #ffffff 0%, #f8fafc 48%, #f1f5f9 100%) !important;
+	border: 1px solid rgba(148, 163, 184, 0.2) !important;
+	box-shadow: var(--dn-shadow-sm), 0 0 36px -14px var(--arena-glow-violet) !important;
+}
+
+body.dark-theme .dash-next.dash-next--arena .dash-next-welcome::before,
+.dash-next.dash-next--arena .dash-next-welcome::before {
+	background:
+		radial-gradient(ellipse 70% 80% at 92% 20%, rgba(99, 102, 241, 0.08), transparent 52%),
+		radial-gradient(ellipse 50% 60% at 78% 95%, rgba(6, 182, 212, 0.06), transparent 50%);
+}
+
+body.dark-theme .dash-next.dash-next--arena .dash-next-welcome::after,
+.dash-next.dash-next--arena .dash-next-welcome::after {
+	width: 5px;
+	background: var(--dn-edge-strip-gradient);
+	border-radius: var(--dn-strip-corner-r) 4px 4px var(--dn-strip-corner-r);
+	box-shadow: 0 0 12px rgba(56, 189, 248, 0.32), 0 0 14px rgba(167, 139, 250, 0.24);
+}
+
+body.dark-theme .dash-next.dash-next--arena .dash-next-welcome.dash-next-welcome--slider::after,
+.dash-next.dash-next--arena .dash-next-welcome.dash-next-welcome--slider::after {
+	display: none !important;
+	content: none !important;
+}
+
+body.dark-theme .dash-next.dash-next--arena .dash-next-welcome-slider-panel,
+.dash-next.dash-next--arena .dash-next-welcome-slider-panel {
+	background: linear-gradient(165deg, rgba(255, 255, 255, 0.98) 0%, rgba(241, 245, 249, 0.96) 100%);
+	border-right-color: rgba(148, 163, 184, 0.35);
+	box-shadow: 8px 0 36px rgba(99, 102, 241, 0.1);
+}
+
+body.dark-theme .dash-next.dash-next--arena .dash-next-welcome-slider-heading,
+.dash-next.dash-next--arena .dash-next-welcome-slider-heading {
+	color: var(--arena-ink);
+}
+
+body.dark-theme .dash-next.dash-next--arena .dash-next-welcome-slider-lead,
+.dash-next.dash-next--arena .dash-next-welcome-slider-lead {
+	color: var(--arena-ink-dim);
+}
+
+body.dark-theme .dash-next.dash-next--arena .dash-next-welcome-slider-list,
+.dash-next.dash-next--arena .dash-next-welcome-slider-list {
+	color: #475569;
+}
+
+body.dark-theme .dash-next.dash-next--arena .dash-next-eyebrow,
+.dash-next.dash-next--arena .dash-next-eyebrow {
+	color: #0891b2;
+}
+
+body.dark-theme .dash-next.dash-next--arena .dash-next-welcome-eyebrow-chip,
+.dash-next.dash-next--arena .dash-next-welcome-eyebrow-chip {
+	background: linear-gradient(165deg, rgba(255, 255, 255, 0.97), rgba(248, 250, 252, 0.92)) !important;
+	border: 1px solid rgba(6, 182, 212, 0.22) !important;
+	box-shadow: var(--dn-shadow-sm), 0 0 32px -12px rgba(6, 182, 212, 0.2) !important;
+}
+
+body.dark-theme .dash-next.dash-next--arena .dash-next-welcome-eyebrow-chip-label,
+.dash-next.dash-next--arena .dash-next-welcome-eyebrow-chip-label {
+	color: var(--arena-ink);
+	letter-spacing: 0.16em;
+}
+
+body.dark-theme .dash-next.dash-next--arena .dash-next-welcome-eyebrow-chip-icon,
+.dash-next.dash-next--arena .dash-next-welcome-eyebrow-chip-icon {
+	color: #0891b2;
+	filter: drop-shadow(0 0 8px rgba(6, 182, 212, 0.35));
+}
+
+body.dark-theme .dash-next.dash-next--arena .dash-next-welcome .dash-next-welcome-hero-title-gradient,
+.dash-next.dash-next--arena .dash-next-welcome .dash-next-welcome-hero-title-gradient {
+	background-image: linear-gradient(115deg, #020617 0%, #0f172a 18%, #1e3a8a 42%, #2563eb 58%, #0369a1 78%, #0c4a6e 100%) !important;
+	background-size: 260% auto;
+	background-position: 38% 50%;
+	-webkit-background-clip: text !important;
+	background-clip: text !important;
+	-webkit-text-fill-color: transparent !important;
+	color: transparent !important;
+}
+
+body.dark-theme .dash-next.dash-next--arena .dash-next-hero-title,
+.dash-next.dash-next--arena .dash-next-hero-title {
+	color: var(--arena-ink) !important;
+}
+
+body.dark-theme .dash-next.dash-next--arena .dash-next-hero-sub,
+.dash-next.dash-next--arena .dash-next-hero-sub {
+	color: var(--arena-ink-dim) !important;
+}
+
+body.dark-theme .dash-next.dash-next--arena .dash-next-cta.ant-btn,
+body.dark-theme .dash-next.dash-next--arena .dash-next-cta,
+.dash-next.dash-next--arena .dash-next-cta.ant-btn,
+.dash-next.dash-next--arena .dash-next-cta {
+	background: linear-gradient(120deg, #0469b9 0%, var(--dn-accent) 55%, #7c3aed 100%) !important;
+	box-shadow: 0 2px 12px rgba(4, 105, 185, 0.2), 0 0 20px rgba(99, 102, 241, 0.15) !important;
+}
+
+/* —— Insight + badge panels —— */
+body.dark-theme .dash-next.dash-next--arena .dash-next-panel,
+.dash-next.dash-next--arena .dash-next-panel {
+	background: var(--arena-surface) !important;
+	border: 1px solid rgba(148, 163, 184, 0.22) !important;
+	/* Opaque surface — skip backdrop-filter (expensive on scroll/paint) */
+	backdrop-filter: none;
+	-webkit-backdrop-filter: none;
+	box-shadow: var(--dn-shadow-sm) !important;
+}
+
+body.dark-theme .dash-next.dash-next--arena .dash-next-panel:hover,
+.dash-next.dash-next--arena .dash-next-panel:hover {
+	border-color: rgba(6, 182, 212, 0.35) !important;
+	box-shadow: var(--dn-shadow-md), 0 0 28px -10px var(--arena-glow-cyan) !important;
+}
+
+body.dark-theme .dash-next.dash-next--arena .dash-next-insights::before,
+.dash-next.dash-next--arena .dash-next-insights::before {
+	background: var(--dn-edge-strip-gradient);
+	border-radius: var(--dn-strip-corner-r) 3px 3px var(--dn-strip-corner-r);
+	box-shadow: 0 0 12px rgba(163, 230, 53, 0.35), 0 0 14px rgba(34, 197, 94, 0.26);
+}
+
+body.dark-theme .dash-next.dash-next--arena .dash-next-insights.dash-next-insights--slider::before,
+.dash-next.dash-next--arena .dash-next-insights.dash-next-insights--slider::before {
+	display: none !important;
+}
+
+body.dark-theme .dash-next.dash-next--arena .dash-next-insights-slider-panel,
+.dash-next.dash-next--arena .dash-next-insights-slider-panel {
+	background: linear-gradient(165deg, rgba(255, 255, 255, 0.98) 0%, rgba(241, 245, 249, 0.96) 100%);
+	border-right-color: rgba(148, 163, 184, 0.35);
+	box-shadow: 8px 0 36px rgba(99, 102, 241, 0.1);
+}
+
+body.dark-theme .dash-next.dash-next--arena .dash-next-insights-slider-heading,
+.dash-next.dash-next--arena .dash-next-insights-slider-heading {
+	color: var(--arena-ink);
+}
+
+body.dark-theme .dash-next.dash-next--arena .dash-next-insights-slider-lead,
+.dash-next.dash-next--arena .dash-next-insights-slider-lead {
+	color: var(--arena-ink-dim);
+}
+
+body.dark-theme .dash-next.dash-next--arena .dash-next-insights-slider-list,
+.dash-next.dash-next--arena .dash-next-insights-slider-list {
+	color: #475569;
+}
+
+body.dark-theme .dash-next.dash-next--arena .dash-next-insights-eyebrow-chip,
+.dash-next.dash-next--arena .dash-next-insights-eyebrow-chip {
+	background: linear-gradient(165deg, rgba(255, 255, 255, 0.97), rgba(248, 250, 252, 0.92)) !important;
+	border: 1px solid rgba(6, 182, 212, 0.22) !important;
+	box-shadow: var(--dn-shadow-sm), 0 0 32px -12px rgba(6, 182, 212, 0.22) !important;
+}
+
+body.dark-theme .dash-next.dash-next--arena .dash-next-insights-eyebrow-chip-label,
+.dash-next.dash-next--arena .dash-next-insights-eyebrow-chip-label {
+	color: var(--arena-ink);
+	letter-spacing: 0.16em;
+}
+
+body.dark-theme .dash-next.dash-next--arena .dash-next-insights-eyebrow-chip-icon,
+.dash-next.dash-next--arena .dash-next-insights-eyebrow-chip-icon {
+	color: #0891b2;
+	filter: drop-shadow(0 0 8px rgba(6, 182, 212, 0.35));
+}
+
+body.dark-theme .dash-next.dash-next--arena .dash-next-insights .dash-next-insights-hero-gradient,
+.dash-next.dash-next--arena .dash-next-insights .dash-next-insights-hero-gradient {
+	background-image: linear-gradient(115deg, #020617 0%, #0f172a 18%, #1e3a8a 42%, #2563eb 55%, #0369a1 78%, #0c4a6e 100%) !important;
+	background-size: 260% auto;
+	background-position: 38% 50%;
+	-webkit-background-clip: text !important;
+	background-clip: text !important;
+	-webkit-text-fill-color: transparent !important;
+	color: transparent !important;
+}
+
+body.dark-theme .dash-next.dash-next--arena .dash-next-insights .rewardsline-item,
+.dash-next.dash-next--arena .dash-next-insights .rewardsline-item {
+	background: rgba(248, 250, 252, 0.9);
+	border: 1px solid rgba(226, 232, 240, 0.95);
+}
+
+body.dark-theme .dash-next.dash-next--arena .dash-next-insights .rewardsline-item:hover,
+.dash-next.dash-next--arena .dash-next-insights .rewardsline-item:hover {
+	background: #ffffff;
+	border-color: rgba(6, 182, 212, 0.25);
+}
+
+body.dark-theme .dash-next.dash-next--arena .dash-next-insights .rewardsline-content .gx-fs-sm,
+.dash-next.dash-next--arena .dash-next-insights .rewardsline-content .gx-fs-sm {
+	color: var(--arena-ink) !important;
+}
+
+body.dark-theme .dash-next.dash-next--arena .dash-next-insights .rewardsline-content .gx-fs-xs,
+.dash-next.dash-next--arena .dash-next-insights .rewardsline-content .gx-fs-xs {
+	color: var(--arena-ink-dim) !important;
+}
+
+body.dark-theme .dash-next.dash-next--arena .dash-next-insights .rewardsline-item > .gx-d-flex > div:first-of-type,
+.dash-next.dash-next--arena .dash-next-insights .rewardsline-item > .gx-d-flex > div:first-of-type {
+	background: linear-gradient(145deg, rgba(6, 182, 212, 0.1), rgba(139, 92, 246, 0.08));
+	border-color: rgba(6, 182, 212, 0.18);
+	box-shadow: 0 2px 10px rgba(99, 102, 241, 0.08);
+}
+
+body.dark-theme .dash-next.dash-next--arena .dash-next-badges::before,
+.dash-next.dash-next--arena .dash-next-badges::before {
+	background: radial-gradient(ellipse 80% 50% at 50% 100%, rgba(139, 92, 246, 0.08), transparent 60%);
+}
+
+body.dark-theme .dash-next.dash-next--arena .dash-next-badges-header::before,
+.dash-next.dash-next--arena .dash-next-badges-header::before {
+	background: linear-gradient(180deg, var(--arena-cyan-bright) 0%, var(--arena-violet) 52%, var(--arena-magenta) 100%);
+	box-shadow:
+		0 0 10px rgba(6, 182, 212, 0.35),
+		0 0 14px rgba(139, 92, 246, 0.2);
+}
+
+body.dark-theme .dash-next.dash-next--arena .dash-next-badges-header,
+.dash-next.dash-next--arena .dash-next-badges-header {
+	border-bottom-color: rgba(148, 163, 184, 0.22);
+}
+
+body.dark-theme .dash-next.dash-next--arena .dash-next-badges-eyebrow,
+.dash-next.dash-next--arena .dash-next-badges-eyebrow {
+	color: #0891b2;
+	letter-spacing: 0.22em;
+	text-shadow: 0 0 24px rgba(6, 182, 212, 0.2);
+}
+
+body.dark-theme .dash-next.dash-next--arena .dash-next-badges-title-main,
+.dash-next.dash-next--arena .dash-next-badges-title-main {
+	background: none;
+	-webkit-background-clip: unset;
+	background-clip: unset;
+	-webkit-text-fill-color: unset;
+	color: var(--arena-ink) !important;
+}
+
+body.dark-theme .dash-next.dash-next--arena .dash-next-badges-title,
+.dash-next.dash-next--arena .dash-next-badges-title {
+	color: var(--arena-ink);
+}
+
+body.dark-theme .dash-next.dash-next--arena .dash-next-badges-sub,
+.dash-next.dash-next--arena .dash-next-badges-sub {
+	color: var(--arena-ink-dim);
+}
+
+body.dark-theme .dash-next.dash-next--arena .dash-next-badge-tier,
+.dash-next.dash-next--arena .dash-next-badge-tier {
+	background: rgba(255, 255, 255, 0.72);
+	border-color: rgba(226, 232, 240, 0.95);
+}
+
+body.dark-theme .dash-next.dash-next--arena .dash-next-badges:hover .dash-next-badge-tier,
+.dash-next.dash-next--arena .dash-next-badges:hover .dash-next-badge-tier {
+	border-color: rgba(139, 92, 246, 0.22);
+	background: rgba(255, 255, 255, 0.92);
+}
+
+body.dark-theme .dash-next.dash-next--arena .dash-next-badge-tier-icon,
+.dash-next.dash-next--arena .dash-next-badge-tier-icon {
+	background: linear-gradient(160deg, #f8fafc, #eef2ff);
+	border-color: rgba(99, 102, 241, 0.14);
+}
+
+body.dark-theme .dash-next.dash-next--arena .dash-next-badge-tier-name,
+.dash-next.dash-next--arena .dash-next-badge-tier-name {
+	color: var(--arena-ink);
+}
+
+body.dark-theme .dash-next.dash-next--arena .dash-next-badge-progress-label,
+.dash-next.dash-next--arena .dash-next-badge-progress-label {
+	color: var(--arena-ink-dim);
+}
+
+body.dark-theme .dash-next.dash-next--arena .dash-next-badge-progress-track,
+.dash-next.dash-next--arena .dash-next-badge-progress-track {
+	background: rgba(241, 245, 249, 0.98);
+}
+
+/* —— Paths toolbar —— */
+body.dark-theme .dash-next.dash-next--arena .dash-next-toolbar,
+.dash-next.dash-next--arena .dash-next-toolbar {
+	background: var(--arena-surface) !important;
+	border: 1px solid rgba(148, 163, 184, 0.22) !important;
+	backdrop-filter: none;
+	-webkit-backdrop-filter: none;
+}
+
+body.dark-theme .dash-next.dash-next--arena .dash-next-toolbar.dash-next-paths-header::before,
+.dash-next.dash-next--arena .dash-next-toolbar.dash-next-paths-header::before {
+	background: linear-gradient(90deg, var(--arena-lime), var(--arena-cyan-bright), var(--arena-violet));
+	box-shadow: 0 2px 12px rgba(34, 197, 94, 0.2), 0 2px 14px rgba(6, 182, 212, 0.18);
+}
+
+body.dark-theme .dash-next.dash-next--arena .dash-next-paths-header-icon,
+.dash-next.dash-next--arena .dash-next-paths-header-icon {
+	background: linear-gradient(145deg, rgba(163, 230, 53, 0.14), rgba(6, 182, 212, 0.1));
+	border-color: rgba(74, 222, 128, 0.2);
+	box-shadow: 0 2px 14px rgba(34, 197, 94, 0.12);
+}
+
+body.dark-theme .dash-next.dash-next--arena .dash-next-paths-header-icon .dash-next-paths-header-svg,
+.dash-next.dash-next--arena .dash-next-paths-header-icon .dash-next-paths-header-svg {
+	color: #15803d;
+}
+
+body.dark-theme .dash-next.dash-next--arena .dash-next-paths-header-eyebrow,
+.dash-next.dash-next--arena .dash-next-paths-header-eyebrow {
+	color: #059669;
+	letter-spacing: 0.18em;
+}
+
+body.dark-theme .dash-next.dash-next--arena .dash-next-paths-header-sub,
+.dash-next.dash-next--arena .dash-next-paths-header-sub {
+	color: var(--arena-ink-dim);
+}
+
+body.dark-theme .dash-next.dash-next--arena .dash-next-paths-header-label,
+.dash-next.dash-next--arena .dash-next-paths-header-label {
+	color: var(--arena-ink);
+}
+
+body.dark-theme .dash-next.dash-next--arena .dash-next-paths-search .ant-input-affix-wrapper,
+body.dark-theme .dash-next.dash-next--arena .dash-next-paths-search.ant-input-affix-wrapper,
+.dash-next.dash-next--arena .dash-next-paths-search .ant-input-affix-wrapper,
+.dash-next.dash-next--arena .dash-next-paths-search.ant-input-affix-wrapper {
+	background: rgba(255, 255, 255, 0.98) !important;
+	border-color: rgba(148, 163, 184, 0.28) !important;
+}
+
+body.dark-theme .dash-next.dash-next--arena .dash-next-paths-search .ant-input,
+.dash-next.dash-next--arena .dash-next-paths-search .ant-input {
+	color: var(--arena-ink) !important;
+}
+
+body.dark-theme .dash-next.dash-next--arena .dash-next-paths-search .ant-input::placeholder,
+.dash-next.dash-next--arena .dash-next-paths-search .ant-input::placeholder {
+	color: var(--arena-ink-dim);
+}
+
+body.dark-theme .dash-next.dash-next--arena .dash-next-paths-search .anticon,
+.dash-next.dash-next--arena .dash-next-paths-search .anticon {
+	color: var(--arena-ink-dim);
+}
+
+body.dark-theme .dash-next.dash-next--arena .dash-next-paths-search .ant-input-clear-icon,
+.dash-next.dash-next--arena .dash-next-paths-search .ant-input-clear-icon {
+	color: var(--arena-ink-dim);
+}
+
+body.dark-theme .dash-next.dash-next--arena .dash-next-toolbar .ant-input-search .ant-input,
+body.dark-theme .dash-next.dash-next--arena .dash-next-toolbar .ant-input,
+.dash-next.dash-next--arena .dash-next-toolbar .ant-input-search .ant-input,
+.dash-next.dash-next--arena .dash-next-toolbar .ant-input {
+	background: rgba(248, 250, 252, 0.98) !important;
+	border-color: rgba(148, 163, 184, 0.25) !important;
+	color: var(--arena-ink) !important;
+}
+
+body.dark-theme .dash-next.dash-next--arena .dash-next-toolbar .ant-input-search .ant-input:focus,
+body.dark-theme .dash-next.dash-next--arena .dash-next-toolbar .ant-input:focus,
+.dash-next.dash-next--arena .dash-next-toolbar .ant-input-search .ant-input:focus,
+.dash-next.dash-next--arena .dash-next-toolbar .ant-input:focus {
+	border-color: var(--arena-cyan) !important;
+	box-shadow: 0 0 0 2px rgba(6, 182, 212, 0.15) !important;
+}
+
+body.dark-theme .dash-next.dash-next--arena .dash-next-toolbar .phase2-section-title,
+.dash-next.dash-next--arena .dash-next-toolbar .phase2-section-title {
+	color: var(--arena-ink) !important;
+}
+
+/* —— Learning path cards —— */
+body.dark-theme .dash-next.dash-next--arena .learning-path-card,
+.dash-next.dash-next--arena .learning-path-card {
+	background: #ffffff !important;
+	border: 1px solid rgba(226, 232, 240, 0.98) !important;
+	box-shadow: var(--dn-shadow-sm) !important;
+}
+
+body.dark-theme .dash-next.dash-next--arena .learning-path-card:hover,
+.dash-next.dash-next--arena .learning-path-card:hover {
+	border-color: rgba(6, 182, 212, 0.4) !important;
+	box-shadow: var(--dn-shadow-md), 0 0 32px -8px var(--arena-glow-cyan) !important;
+	transform: translateY(-2px);
+}
+
+body.dark-theme .dash-next.dash-next--arena .path-content > p,
+body.dark-theme .dash-next.dash-next--arena .dash-next-path-desc,
+.dash-next.dash-next--arena .path-content > p,
+.dash-next.dash-next--arena .dash-next-path-desc {
+	color: #475569 !important;
+}
+
+body.dark-theme .dash-next.dash-next--arena .path-content .instructor,
+.dash-next.dash-next--arena .path-content .instructor {
+	color: var(--arena-ink-dim) !important;
+}
+
+body.dark-theme .dash-next.dash-next--arena .path-icon,
+.dash-next.dash-next--arena .path-icon {
+	background: linear-gradient(145deg, rgba(6, 182, 212, 0.06), rgba(139, 92, 246, 0.05));
+	border-color: rgba(99, 102, 241, 0.12);
+}
+
+body.dark-theme .dash-next.dash-next--arena .dash-next-path-thumb,
+.dash-next.dash-next--arena .dash-next-path-thumb {
+	background:
+		linear-gradient(145deg, rgba(255, 255, 255, 0.98), rgba(241, 245, 249, 0.75)),
+		linear-gradient(160deg, rgba(99, 102, 241, 0.12), rgba(6, 182, 212, 0.08)) !important;
+	border-color: rgba(99, 102, 241, 0.12) !important;
+}
+
+body.dark-theme .dash-next.dash-next--arena .dash-next-path-thumb::after,
+.dash-next.dash-next--arena .dash-next-path-thumb::after {
+	opacity: 0.35;
+	background: linear-gradient(135deg, rgba(6, 182, 212, 0.45), rgba(139, 92, 246, 0.3), transparent 65%);
+}
+
+body.dark-theme .dash-next.dash-next--arena .dash-next-path-chip--muted,
+.dash-next.dash-next--arena .dash-next-path-chip--muted {
+	color: var(--arena-ink-dim) !important;
+	background: rgba(241, 245, 249, 0.98) !important;
+	border-color: rgba(148, 163, 184, 0.28) !important;
+}
+
+body.dark-theme .dash-next.dash-next--arena .dash-next-path-chip--time,
+.dash-next.dash-next--arena .dash-next-path-chip--time {
+	color: #0369a1 !important;
+	background: linear-gradient(135deg, rgba(14, 165, 233, 0.1), rgba(6, 182, 212, 0.08)) !important;
+	border-color: rgba(14, 165, 233, 0.22) !important;
+}
+
+body.dark-theme .dash-next.dash-next--arena .dash-next-path-card--grid .dash-next-path-title,
+.dash-next.dash-next--arena .dash-next-path-card--grid .dash-next-path-title {
+	-webkit-text-fill-color: unset !important;
+	background: none !important;
+}
+
+body.dark-theme .dash-next.dash-next--arena .dash-next .ant-progress-inner,
+.dash-next.dash-next--arena .dash-next .ant-progress-inner {
+	background: rgba(241, 245, 249, 0.98) !important;
+}
+
+/* Featured path — plain white card; gradient top bar lives on “My Learning Paths” toolbar */
+body.dark-theme .dash-next.dash-next--arena .dash-next-featured.dash-next-path-card,
+body.dark-theme .dash-next.dash-next--arena .dash-next-featured,
+.dash-next.dash-next--arena .dash-next-featured.dash-next-path-card,
+.dash-next.dash-next--arena .dash-next-featured {
+	background: #ffffff !important;
+	border: 1px solid rgba(226, 232, 240, 0.98) !important;
+	box-shadow: var(--dn-shadow-sm) !important;
+}
+
+body.dark-theme .dash-next.dash-next--arena .dash-next-featured::before,
+.dash-next.dash-next--arena .dash-next-featured::before {
+	content: none !important;
+	display: none !important;
+}
+
+body.dark-theme .dash-next.dash-next--arena .dash-next-featured .dash-next-path-title.gx-text-indigo,
+.dash-next.dash-next--arena .dash-next-featured .dash-next-path-title.gx-text-indigo {
+	background: linear-gradient(118deg, #312e81 0%, #4f46e5 40%, #0891b2 70%, #7c3aed 100%);
+	-webkit-background-clip: text;
+	background-clip: text;
+	-webkit-text-fill-color: transparent;
+}
+
+body.dark-theme .dash-next.dash-next--arena .dash-next-skeleton-card,
+.dash-next.dash-next--arena .dash-next-skeleton-card {
+	background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%) !important;
+}
+
+body.dark-theme .dash-next.dash-next--arena .dash-next-empty,
+.dash-next.dash-next--arena .dash-next-empty {
+	border-color: rgba(6, 182, 212, 0.22) !important;
+	background:
+		radial-gradient(ellipse 60% 50% at 50% 30%, rgba(139, 92, 246, 0.06), transparent 70%),
+		linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 250, 252, 0.95)) !important;
+}
+
+body.dark-theme .dash-next.dash-next--arena .dash-next-empty .ant-empty-description,
+.dash-next.dash-next--arena .dash-next-empty .ant-empty-description {
+	color: var(--arena-ink-dim) !important;
+}
+
+body.dark-theme .dash-next.dash-next--arena .dash-next-path-actions,
+.dash-next.dash-next--arena .dash-next-path-actions {
+	border-top-color: rgba(226, 232, 240, 0.98) !important;
+}
+
+/* —— Hover lift —— */
+body.dark-theme .phase2-dashboard.dash-next--arena .phase2-card-interactive:hover,
+.phase2-dashboard.dash-next--arena .phase2-card-interactive:hover {
+	transform: translateY(-2px);
+	box-shadow: 0 12px 32px rgba(15, 23, 42, 0.1), 0 0 36px -8px var(--arena-glow-cyan) !important;
+	border-color: rgba(6, 182, 212, 0.35) !important;
+}
+
+body.dark-theme .phase2-dashboard.dash-next--arena .learning-path-card:hover,
+.phase2-dashboard.dash-next--arena .learning-path-card:hover {
+	transform: translateY(-2px) !important;
+	box-shadow: var(--dn-shadow-md), 0 0 36px -8px var(--arena-glow-cyan) !important;
+}
+
+body.dark-theme .dash-next.dash-next--arena.phase2-dashboard .learning-path-card.dash-next-path-card:hover,
+.dash-next.dash-next--arena.phase2-dashboard .learning-path-card.dash-next-path-card:hover {
+	transform: translateY(-2px) !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	body.dark-theme .dash-next.dash-next--arena .learning-path-card:hover,
+	body.dark-theme .phase2-dashboard.dash-next--arena .phase2-card-interactive:hover,
+	body.dark-theme .phase2-dashboard.dash-next--arena .learning-path-card:hover,
+	.dash-next.dash-next--arena .learning-path-card:hover,
+	.phase2-dashboard.dash-next--arena .phase2-card-interactive:hover,
+	.phase2-dashboard.dash-next--arena .learning-path-card:hover {
+		transform: none !important;
+	}
+
+}
+

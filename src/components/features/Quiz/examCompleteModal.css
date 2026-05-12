@@ -1,0 +1,101 @@
+.exam-complete-modal .ant-modal-content {
+  padding: 1px;
+  border-radius: 12px;
+  text-align: center;
+}
+
+.back-button-new {
+  background-color: #F29933 !important;
+  color: white!important;
+  margin-left: 5px !important;
+}
+
+.exam-complete-message {
+  font-size: 16px;
+  color: #595959;
+}
+
+.quiz-summary {
+  gap: 2px;
+}
+
+.quiz-summary-item {
+  font-size: 14px;
+  font-weight: 500;
+  margin: 4px 0;
+}
+
+.quiz-icon {
+  margin-right: 8px;
+  font-size: 13px;
+}
+
+.correct-icon {
+  color: #389e0d;
+}
+
+.wrong-icon {
+  color: #cf1322;
+}
+
+.unanswered-icon {
+  color: #fa8c16;
+}
+
+.skill-rating-container {
+  background: #ffffff;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+  max-width: 600px;
+  margin: 0 auto;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.skill-row {
+  padding: 5px 0;
+}
+
+.skill-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.skill-info-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.skill-name,
+.skill-rating {
+  margin: 0;
+}
+
+.skill-progress .ant-progress-outer {
+  width: 250px;
+  height: 8px;
+}
+
+.skill-name {
+  font-weight: 400;
+  font-size: 14px;
+  color: #333;
+  margin: 0;
+}
+
+.skill-rate {
+  margin-left: 12px;
+}
+
+.skill-note {
+  font-size: 12px;
+  color: #d46b08;
+
+}
+
+.skill-progress .ant-progress-outer {
+  width: 150px;
+  height: 8px;
+}

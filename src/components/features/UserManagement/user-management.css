@@ -1,0 +1,432 @@
+
+.user-mgmt-page {
+	min-height: 100vh;
+	padding: 24px;
+}
+
+.user-mgmt-page-inner {
+	max-width: 1200px;
+	margin: 0 auto;
+	position: relative;
+	z-index: 2;
+}
+
+/* User Stats Cards */
+.user-stats-row {
+	margin-bottom: 24px;
+}
+
+/* Nexus Premium Card - GenZ Aesthetic (Compact Version) */
+.nexus-premium-card {
+	background: rgba(255, 255, 255, 0.7);
+	backdrop-filter: blur(20px);
+	border: 1px solid rgba(226, 232, 240, 0.4);
+	border-radius: 14px;
+	padding: 12px 14px;
+	position: relative;
+	overflow: hidden;
+	transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+	box-shadow: 0 2px 10px rgba(15, 23, 42, 0.03);
+}
+
+.nexus-premium-card:hover {
+	transform: translateY(-4px) scale(1.01);
+	box-shadow: 0 12px 24px rgba(15, 23, 42, 0.06);
+	background: rgba(255, 255, 255, 0.9);
+	border-color: rgba(99, 102, 241, 0.3);
+}
+
+/* Left Glow Accent Stripes */
+.card-glow-accent {
+	position: absolute;
+	left: 0;
+	top: 25%;
+	bottom: 25%;
+	width: 3px;
+	border-radius: 0 2px 2px 0;
+	z-index: 3;
+}
+
+.card-live .card-glow-accent { background: #22c55e; box-shadow: 2px 0 10px rgba(34, 197, 94, 0.5); }
+.card-reach .card-glow-accent { background: #3b82f6; box-shadow: 2px 0 10px rgba(59, 130, 246, 0.5); }
+.card-system .card-glow-accent { background: #f59e0b; box-shadow: 2px 0 10px rgba(245, 158, 11, 0.5); }
+.card-security .card-glow-accent { background: #ef4444; box-shadow: 2px 0 10px rgba(239, 68, 68, 0.5); }
+
+/* Sparkline Visualization */
+.sparkline-container {
+	display: flex;
+	align-items: flex-end;
+	gap: 3px;
+	height: 20px;
+	margin-top: 10px;
+	padding-bottom: 2px;
+}
+
+.spark-bar {
+	flex: 1;
+	background: rgba(99, 102, 241, 0.2);
+	border-radius: 2px;
+	transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.card-live .spark-bar { background: rgba(34, 197, 94, 0.2); }
+.card-reach .spark-bar { background: rgba(59, 130, 246, 0.2); }
+.card-system .spark-bar { background: rgba(245, 158, 11, 0.2); }
+.card-security .spark-bar { background: rgba(239, 68, 68, 0.2); }
+
+.nexus-premium-card:hover .spark-bar {
+	filter: brightness(1.2);
+}
+
+.shimmer-card .shimmer-effect {
+	position: absolute;
+	top: -50%;
+	left: -50%;
+	width: 200%;
+	height: 200%;
+	background: linear-gradient(
+		45deg,
+		transparent 0%,
+		rgba(255, 255, 255, 0) 40%,
+		rgba(255, 255, 255, 0.3) 50%,
+		rgba(255, 255, 255, 0) 60%,
+		transparent 100%
+	);
+	transform: rotate(25deg);
+	animation: lightSweep 4s infinite linear;
+	pointer-events: none;
+	z-index: 1;
+}
+
+@keyframes lightSweep {
+	0% { transform: translateX(-100%) rotate(25deg); }
+	100% { transform: translateX(100%) rotate(25deg); }
+}
+
+.card-header-row {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin-bottom: 12px;
+	position: relative;
+	z-index: 2;
+}
+
+.dot-wrapper {
+	display: flex;
+	align-items: center;
+}
+
+.pulse-dot {
+	width: 6px;
+	height: 6px;
+	border-radius: 50%;
+	background: #94a3b8;
+	position: relative;
+}
+
+.pulse-dot::after {
+	content: '';
+	position: absolute;
+	inset: -2px;
+	border-radius: 50%;
+	border: 1px solid currentColor;
+	animation: pulse-ring 2s infinite;
+	opacity: 0;
+}
+
+@keyframes pulse-ring {
+	0% { transform: scale(1); opacity: 1; }
+	100% { transform: scale(2.5); opacity: 0; }
+}
+
+.card-live .pulse-dot { background: #22c55e; color: #22c55e; }
+.card-reach .pulse-dot { background: #3b82f6; color: #3b82f6; }
+.card-system .pulse-dot { background: #f59e0b; color: #f59e0b; }
+
+.glass-pill {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	padding: 4px 10px;
+	background: rgba(255, 255, 255, 0.6);
+	border: 1px solid rgba(226, 232, 240, 0.8);
+	border-radius: 50px;
+	backdrop-filter: blur(4px);
+}
+
+.pill-icon {
+	font-size: 12px;
+	color: #6366f1;
+}
+
+.pill-text {
+	font-size: 9px;
+	font-weight: 800;
+	letter-spacing: 0.04em;
+	color: #475569;
+	text-transform: uppercase;
+}
+
+.card-content {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	position: relative;
+	z-index: 2;
+}
+
+.stat-main {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.stat-number {
+	font-size: 26px;
+	font-weight: 900;
+	font-family: 'Outfit', sans-serif;
+	color: #0f172a;
+	letter-spacing: -0.02em;
+	line-height: 1;
+}
+
+.stat-trend-box {
+	padding: 1px 6px;
+	background: rgba(34, 197, 94, 0.1);
+	border-radius: 4px;
+	display: inline-flex;
+}
+
+.stat-trend {
+	color: #16a34a;
+	font-size: 9px;
+	font-weight: 900;
+}
+
+.stat-desc {
+	font-size: 11px;
+	font-weight: 800;
+	color: #334155;
+}
+
+.stat-meta {
+	font-size: 10px;
+	color: #94a3b8;
+	font-weight: 600;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+/* Main Content Area */
+.user-main-content {
+	margin-top: 24px;
+}
+
+.admin-main-card.stalker-card {
+	padding: 0 !important;
+	border-radius: 20px !important;
+	overflow: hidden;
+	background: rgba(255, 255, 255, 0.85) !important;
+}
+
+.admin-table-toolbar {
+	padding: 20px 24px;
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+	background: rgba(255, 255, 255, 0.4);
+}
+
+.toolbar-left {
+	display: flex;
+	align-items: center;
+	gap: 20px;
+}
+
+.toolbar-title {
+	margin: 0;
+	font-size: 18px;
+	font-weight: 700;
+	color: #1e293b;
+}
+
+.admin-search {
+	width: 300px;
+	border-radius: 12px !important;
+	background: rgba(255, 255, 255, 0.8) !important;
+	border: 1px solid rgba(148, 163, 184, 0.2) !important;
+}
+
+/* Table Styling */
+.user-table .ant-table {
+	background: transparent !important;
+}
+
+.user-table .ant-table-thead > tr > th {
+	background: rgba(248, 250, 252, 0.5) !important;
+	color: #64748b;
+	font-weight: 700;
+	text-transform: uppercase;
+	font-size: 11px;
+	letter-spacing: 0.05em;
+	padding: 12px 20px !important;
+}
+
+.user-table .ant-table-tbody > tr > td {
+	padding: 10px 20px !important;
+	border-bottom: 1px solid rgba(148, 163, 184, 0.08) !important;
+}
+
+.user-table .ant-table-row:hover > td {
+	background: rgba(99, 102, 241, 0.02) !important;
+}
+
+/* Cell Components */
+.user-identity-cell {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+}
+
+.user-avatar {
+	border: 2px solid #fff;
+	box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+}
+
+.user-info {
+	display: flex;
+	flex-direction: column;
+}
+
+.user-name {
+	font-weight: 700;
+	color: #1e293b;
+	font-size: 14px;
+}
+
+.user-email {
+	font-size: 12px;
+	color: #94a3b8;
+}
+
+.role-tag {
+	border-radius: 6px;
+	font-weight: 800;
+	font-size: 10px;
+	padding: 2px 10px;
+	border: none;
+}
+
+.risk-tag-nexus {
+	border-radius: 6px;
+	font-weight: 800;
+	font-size: 10px;
+	padding: 2px 8px;
+	border: none;
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	letter-spacing: 0.02em;
+}
+
+.genz-pill.outline {
+	background: transparent;
+	border: 1px solid rgba(148, 163, 184, 0.3);
+	color: #64748b;
+}
+
+.stat-trend-box.neutral {
+	background: rgba(148, 163, 184, 0.1);
+}
+
+.stat-trend-box.neutral .stat-trend {
+	color: #64748b;
+}
+
+.pulse-text {
+	font-size: 13px;
+	color: #64748b;
+	font-family: 'JetBrains Mono', monospace;
+}
+
+/* Command Select */
+.role-select {
+	min-width: 110px;
+}
+
+.role-select .ant-select-selector {
+	border-radius: 8px !important;
+	border-color: rgba(148, 163, 184, 0.2) !important;
+	background: #fff !important;
+}
+
+.nexus-action-btn {
+	color: #94a3b8;
+	font-size: 18px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+/* Footer */
+.user-mgmt-footer {
+	margin-top: 32px;
+	display: flex;
+	justify-content: center;
+}
+
+.admin-back-btn {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 10px 24px !important;
+	height: auto !important;
+	border-radius: 99px !important;
+	background: rgba(255, 255, 255, 0.6) !important;
+	backdrop-filter: blur(8px) !important;
+	border: 1px solid rgba(148, 163, 184, 0.1) !important;
+	color: #64748b !important;
+	font-weight: 600 !important;
+	transition: all 0.3s ease !important;
+}
+
+.admin-back-btn:hover {
+	background: #fff !important;
+	transform: translateY(-2px);
+	box-shadow: 0 10px 20px -10px rgba(0, 0, 0, 0.1);
+	color: #6366f1 !important;
+}
+
+/* Dark Theme Overrides */
+body.dark-theme .user-stat-card {
+	background: rgba(30, 41, 59, 0.7);
+	border-color: rgba(255, 255, 255, 0.05);
+}
+
+body.dark-theme .card-value {
+	color: #f1f5f9;
+}
+
+body.dark-theme .admin-main-card.stalker-card {
+	background: rgba(15, 23, 42, 0.8) !important;
+}
+
+body.dark-theme .admin-table-toolbar {
+	background: rgba(15, 23, 42, 0.2);
+}
+
+body.dark-theme .toolbar-title {
+	color: #f1f5f9;
+}
+
+body.dark-theme .user-name {
+	color: #f1f5f9;
+}
+
+body.dark-theme .user-table .ant-table-thead > tr > th {
+	background: rgba(15, 23, 42, 0.3) !important;
+	color: #94a3b8;
+}

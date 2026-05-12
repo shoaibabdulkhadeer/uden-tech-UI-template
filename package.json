@@ -1,0 +1,84 @@
+{
+  "name": "uden-tech-ui",
+  "version": "0.1.0",
+  "private": true,
+  "dependencies": {
+    "@ant-design/icons": "^4.3.0",
+    "@babel/compat-data": "^7.12.7",
+    "@react-three/drei": "^9.122.0",
+    "@react-three/fiber": "^8.18.0",
+    "@reduxjs/toolkit": "^2.2.1",
+    "@testing-library/jest-dom": "^5.17.0",
+    "@testing-library/react": "^13.4.0",
+    "@testing-library/user-event": "^13.5.0",
+    "@types/jest": "^27.5.2",
+    "@types/node": "^16.18.82",
+    "@types/react": "^18.2.57",
+    "@types/react-dom": "^18.2.19",
+    "ajv": "^8.17.1",
+    "antd": "^4.15.1",
+    "axios": "^0.28.0",
+    "connected-react-router": "^6.8.0",
+    "dotenv": "^16.4.5",
+    "framer-motion": "^11.17.0",
+    "history": "^4.7.2",
+    "leva": "^0.10.0",
+    "lodash": "^4.17.21",
+    "microsoft-cognitiveservices-speech-sdk": "^1.42.0",
+    "moment": "^2.29.1",
+    "react": "^18.2.0",
+    "react-custom-scrollbars": "^4.2.1",
+    "react-dom": "^18.2.0",
+    "react-icons": "^5.0.1",
+    "react-intl": "^5.10.16",
+    "react-jwt": "^1.2.0",
+    "react-placeholder": "^4.0.3",
+    "react-redux": "^7.2.2",
+    "react-router-dom": "^6.13.0",
+    "react-router-redux": "^4.0.8",
+    "react-scripts": "^5.0.1",
+    "react-simple-typewriter": "^5.0.1",
+    "redux": "^4.0.5",
+    "three": "^0.173.0",
+    "typescript": "^4.9.5",
+    "web-vitals": "^2.1.4"
+  },
+  "scripts": {
+    "start": "react-scripts start",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject",
+    "build": "set NODE_OPTIONS=--max-old-space-size=8192 && react-scripts build",
+    "hero:avif": "node scripts/hero-to-avif.cjs"
+  },
+  "eslintConfig": {
+    "extends": [
+      "react-app",
+      "react-app/jest"
+    ]
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  },
+  "devDependencies": {
+    "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
+    "@types/lodash": "^4.14.202",
+    "@types/nprogress": "^0.2.3",
+    "@types/react-custom-scrollbars": "^4.0.13",
+    "@types/socket.io-client": "^3.0.0",
+    "eslint-plugin-prettier": "^5.1.3",
+    "prettier": "^3.2.5"
+  },
+  "resolutions": {
+    "nth-check": "2.0.1",
+    "postcss": "^8.2.10"
+  }
+}

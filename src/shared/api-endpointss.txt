@@ -1,0 +1,11 @@
+import { environment } from '../environments/environment';
+
+export const API_ENDPOINTS = {
+	//#region AUTH
+	PARSE_TOKEN: `${environment.APP_API_AUTH_URL}auth/parse-token`,
+	APP_TOKEN: `${environment.APP_API_AUTH_URL}auth/app-token`,
+	LOGOUT: `${environment.APP_API_AUTH_URL}auth/logout`,
+	SETDEFAULT_ROLE: `${environment.APP_API_AUTH_URL}auth/set-default-role`,
+	MENUS_DATA: `${environment.APP_API_AUTH_URL}auth/get-user-menu`,
+	//#endregion AUTH	
+};

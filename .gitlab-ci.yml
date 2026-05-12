@@ -1,0 +1,42 @@
+stages:
+  - build
+  - deploy
+
+variables:
+  DIST_FOLDER: build/
+
+build_app:
+  stage: build
+  image: node:18
+  script:
+    - echo " Installing dependencies..."
+    - npm install --force
+    - echo "⚙️ Building the app with environment variables..."
+    - CI=false APP_API_URL="$APP_API_URL" SERVER_ENVIRONMENT="$SERVER_ENVIRONMENT" REDIRECT_URL="$REDIRECT_URL" npm run build
+  artifacts:
+    paths:
+      - $DIST_FOLDER
+
+deploy_to_azure:
+  stage: deploy
+  image: mcr.microsoft.com/azure-cli
+  script:
+    - echo "🔐 Logging into Azure...."
+    - az login --identity || echo "Skipping login if using key-based auth"
+
+    - echo "🧹 Cleaning old files from Azure Blob Storage..."
+    - |
+      az storage blob delete-batch \
+        --account-name "$AZURE_STORAGE_ACCOUNT" \
+        --source '$web' \
+        --auth-mode key \
+        --account-key "$AZURE_STORAGE_KEY"
+
+    - echo "🚀 Uploading new files to Azure Blob Storage..."
+    - |
+      az storage blob upload-batch \
+        --destination '$web' \
+        --source $DIST_FOLDER \
+        --account-name "$AZURE_STORAGE_ACCOUNT" \
+        --auth-mode key \
+        --account-key "$AZURE_STORAGE_KEY"

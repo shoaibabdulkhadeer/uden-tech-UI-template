@@ -1,0 +1,264 @@
+.wave-wrapper {
+	width: 100%;
+	max-width: 100%;
+	height: auto;
+	min-height: 52px;
+	transform: none;
+	display: block;
+	overflow: visible;
+	pointer-events: none;
+}
+
+.wave {
+	display: block;
+	width: 100%;
+	height: auto;
+	min-height: 48px;
+	max-height: 96px;
+	transform: none;
+	vertical-align: bottom;
+}
+
+.moving-bubble {
+	position: absolute;
+	width: 140px;
+	height: 140px;
+	border-radius: 50%;
+	background: transparent !important;
+	backdrop-filter: blur(2.5px) brightness(1.08) contrast(1.05) !important;
+	-webkit-backdrop-filter: blur(2.5px) brightness(1.08) contrast(1.05) !important;
+	border: 1px solid rgba(255, 255, 255, 0.6) !important;
+	animation: moveBubble 25s alternate infinite ease-in-out !important;
+	pointer-events: none;
+	overflow: visible;
+	z-index: 10 !important;
+	box-shadow: 
+		0 12px 40px rgba(0, 0, 0, 0.08),
+		inset 0 0 0 1px rgba(255, 255, 255, 0.2),
+		inset 0 10px 20px rgba(255, 255, 255, 0.3),
+		inset 0 -10px 20px rgba(0, 0, 0, 0.02);
+}
+
+
+@keyframes moveBubble {
+	0% {
+		top: 10%;
+		left: 10%;
+		transform: scale(1);
+	}
+	25% {
+		top: 20%;
+		left: 70%;
+		transform: scale(0.8);
+	}
+	50% {
+		top: 60%;
+		left: 30%;
+		transform: scale(1.2);
+	}
+	75% {
+		top: 30%;
+		left: 60%;
+		transform: scale(0.9);
+	}
+	100% {
+		top: 10%;
+		left: 20%;
+		transform: scale(1.1);
+	}
+}
+
+.moving-bubble::before {
+	content: '';
+	position: absolute;
+	inset: -2px;
+	border-radius: 50%;
+	background: linear-gradient(135deg, rgba(255, 255, 255, 0.8) 0%, transparent 40%, rgba(255, 255, 255, 0.4) 100%);
+	-webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+	mask-composite: exclude;
+	pointer-events: none;
+	opacity: 0.7;
+}
+
+.moving-bubble::after {
+	content: '';
+	position: absolute;
+	top: 15%;
+	left: 20%;
+	width: 25%;
+	height: 15%;
+	background: radial-gradient(circle, rgba(255,255,255,0.8) 0%, transparent 100%);
+	filter: blur(1px);
+	border-radius: 50%;
+	transform: rotate(-35deg);
+}
+
+
+
+  
+.moving-bubble1 {
+	position: absolute;
+	width: 80px;
+	height: 80px;
+	border-radius: 50%;
+	background: transparent !important;
+	backdrop-filter: blur(2px) !important;
+	-webkit-backdrop-filter: blur(2px) !important;
+	border: 0.5px solid rgba(255, 255, 255, 0.3) !important;
+	animation: moveBubble 30s alternate infinite !important;
+	pointer-events: none;
+	overflow: hidden;
+	z-index: 10 !important;
+}
+
+
+@keyframes moveBubble1 {
+	0% {
+		top: 10%;
+		left: 10%;
+		transform: scale(1);
+	}
+	25% {
+		top: 20%;
+		left: 70%;
+		transform: scale(0.8);
+	}
+	50% {
+		top: 60%;
+		left: 30%;
+		transform: scale(1.2);
+	}
+	75% {
+		top: 30%;
+		left: 60%;
+		transform: scale(0.9);
+	}
+	100% {
+		top: 10%;
+		left: 20%;
+		transform: scale(1.1);
+	}
+}
+
+.moving-bubble1::before {
+	content: '';
+	position: absolute;
+	width: 100%;
+	height: 100%;
+	border-radius: 50%;
+	background: radial-gradient(
+	  circle at 30% 30%, 
+	  rgba(137, 226, 238, 0.17),
+	  rgba(0, 0, 255, 0) 70%
+	) !important;
+	transform: rotate(-45deg);
+	animation: shineEffect 4s infinite linear; 
+  }
+  
+  .moving-bubble1::after {
+	content: '';
+	position: absolute;
+	top: -20%;
+	left: -20%;
+	width: 150%;
+	height: 150%;
+	background: linear-gradient(
+	  25deg, 
+	  rgba(255, 255, 255, 0.186), 
+	  rgba(255, 255, 255, 0) 60%
+	);
+	transform: rotate(45deg);
+	animation: shineMove 5s infinite linear; 
+	border-radius: 50%;
+	pointer-events: none;
+	background-color: rgba(162, 226, 255, 0.11);
+	
+  }
+  
+  /* Animation for shine movement */
+  @keyframes shineMove {
+	0% {
+	  transform: translateX(-100%) translateY(-100%) rotate(45deg);
+	}
+	100% {
+	  transform: translateX(100%) translateY(100%) rotate(45deg);
+	}
+  }
+  
+  /* Subtle pulsing shine effect */
+  @keyframes shineEffect {
+	0%, 100% {
+	  opacity: 0.8;
+	}
+	50% {
+	  opacity: 1;
+	}
+  }
+
+.stars, .stars2, .stars3 {
+	position: absolute;
+	width: 100%;
+	height: 100%;
+	top: 0;
+	left: 0;
+	pointer-events: none;
+  }
+  
+  .stars::before,
+  .stars::after {
+	content: "";
+	position: absolute;
+	width: 100%;
+	height: 100%;
+	background: radial-gradient(2px 2px at 10% 20%, white, transparent),
+				radial-gradient(2px 2px at 30% 40%, white, transparent),
+				radial-gradient(2px 2px at 50% 60%, white, transparent),
+				radial-gradient(2px 2px at 70% 80%, white, transparent),
+				radial-gradient(2px 2px at 90% 10%, white, transparent);
+	animation: move-stars 3s linear infinite;
+	opacity: 1; 
+  }
+  
+  .stars2::before,
+  .stars2::after {
+	content: "";
+	position: absolute;
+	width: 100%;
+	height: 100%;
+	background: radial-gradient(2px 2px at 15% 30%, white, transparent),
+				radial-gradient(2px 2px at 35% 50%, white, transparent),
+				radial-gradient(2px 2px at 55% 70%, white, transparent),
+				radial-gradient(2px 2px at 75% 90%, white, transparent),
+				radial-gradient(2px 2px at 95% 20%, white, transparent);
+	animation: move-stars 4s linear infinite;
+	opacity: 1; /* Full visibility */
+  }
+  
+  .stars3::before,
+  .stars3::after {
+	content: "";
+	position: absolute;
+	width: 100%;
+	height: 100%;
+	background: radial-gradient(2px 2px at 5% 25%, white, transparent),
+				radial-gradient(2px 2px at 25% 45%, white, transparent),
+				radial-gradient(2px 2px at 45% 65%, white, transparent),
+				radial-gradient(2px 2px at 65% 85%, white, transparent),
+				radial-gradient(2px 2px at 85% 5%, white, transparent);
+	animation: move-stars 5s linear infinite;
+	opacity: 1; /* Full visibility */
+  }
+  
+  /* Star movement animation (Faster now) */
+  @keyframes move-stars {
+	0% {
+	  transform: translateY(0) translateX(0);
+	}
+	50% {
+	  transform: translateY(-50px) translateX(20px);
+	}
+	100% {
+	  transform: translateY(-100px) translateX(-20px);
+	}
+  }
+  

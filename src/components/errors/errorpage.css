@@ -1,0 +1,67 @@
+.errormain {
+    min-height: 100vh !important;
+   display: flex !important;
+   justify-content: center !important;
+   align-items: center !important;
+   /* background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 320'%3E%3Cpath fill='%23FE7900' fill-opacity='1' d='M0,0L40,0C80,0,160,0,240,26.7C320,53,400,107,480,149.3C560,192,640,224,720,202.7C800,181,880,107,960,85.3C1040,64,1120,96,1200,122.7C1280,149,1360,171,1400,181.3L1440,192L1440,320L1400,320C1360,320,1280,320,1200,320C1120,320,1040,320,960,320C880,320,800,320,720,320C640,320,560,320,480,320C400,320,320,320,240,320C160,320,80,320,40,320L0,320Z'%3E%3C/path%3E%3C/svg%3E"); */
+   height: 100vh; 
+    background-size: cover;
+    background-position: center;  
+}
+
+.errorCard{
+    box-shadow: rgba(0, 0, 0, 0.16) 0px 3px 6px, rgba(0, 0, 0, 0.23) 0px 3px 6px;
+    min-height: 400px;
+    width: 70%;
+    background-color: white;
+    display: flex;
+    align-items: center;
+    justify-content: space-evenly;
+}
+
+.errorPageheading{
+    font-size: 3.5em;
+    color: #473D7E;
+    font-weight: 700;
+}
+
+.errorimg{
+    animation: heartbeat 4s infinite; /* Apply the heartbeat animation infinitely */
+
+}
+
+@keyframes heartbeat {
+    0% {
+      transform: scale(1);
+    }
+    50% {
+      transform: scale(1.07);
+    }
+    100% {
+      transform: scale(1);
+    }
+  }
+  
+  .rightdiv {
+    background-color: #f5f5f5;
+    min-height: 100% ;
+  }
+
+
+
+@media only screen and (max-width: 1000px) { 
+
+   .errorimg{
+     display: none;
+ }
+  
+ .errorPageheading {
+  font-size: 2em;
+ }
+
+ .errorCard{
+  padding-right: 5px;
+ }
+
+
+}

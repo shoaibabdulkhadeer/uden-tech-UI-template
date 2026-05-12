@@ -1,0 +1,292 @@
+.gx-sidebar-content::-webkit-scrollbar {
+    width: 3px !important; 
+  }
+  
+  .gx-sidebar-content::-webkit-scrollbar-track {
+    background: transparent !important; 
+  }
+  
+  .gx-sidebar-content::-webkit-scrollbar-thumb {
+    background: #888; 
+    border-radius: 10px;
+  }
+
+/* Snappier rail width — long transitions + animated canvas was stuttering */
+.gx-app-sidebar.ant-layout-sider {
+	transition: width 0.12s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
+}
+
+/* —— Learning sidebar: node mesh backdrop + footer strip —— */
+.gx-sidebar-learn-shell {
+	position: relative;
+	display: flex;
+	flex-direction: column;
+	min-height: 100%;
+	height: 100%;
+	overflow: hidden;
+}
+
+/* Same plexus canvas as Dashboard / Learn — see DashboardShellNetwork + dashboard-nextgen.css */
+.gx-sidebar-learn-nodes {
+	position: absolute;
+	inset: 0;
+	z-index: 0;
+	pointer-events: none;
+	overflow: hidden;
+}
+
+.gx-sidebar-learn-nodes .gx-sidebar-shell-network {
+	opacity: 0.58;
+	border-radius: 0;
+}
+
+.gx-sidebar-learn-shell--dark .gx-sidebar-learn-nodes .gx-sidebar-shell-network {
+	opacity: 0.72;
+}
+
+.gx-sidebar-learn-shell--light .gx-sidebar-learn-nodes::after {
+	content: '';
+	position: absolute;
+	inset: 0;
+	background: radial-gradient(ellipse 90% 55% at 20% 30%, rgba(34, 211, 238, 0.06), transparent 55%);
+	pointer-events: none;
+}
+
+.gx-sidebar-learn-shell--dark .gx-sidebar-learn-nodes::after {
+	background: radial-gradient(ellipse 90% 50% at 15% 25%, rgba(99, 102, 241, 0.12), transparent 58%);
+}
+
+/* Menu + logo above decoration */
+.gx-sidebar-learn-front {
+	position: relative;
+	z-index: 1;
+	display: flex;
+	flex-direction: column;
+	flex: 1;
+	min-height: 0;
+}
+
+/* Logo row: template uses absolute .gx-linebar + asymmetric padding; custom sidebar padding causes overlap */
+.gx-sidebar-learn-shell .gx-layout-sider-header {
+	display: flex !important;
+	flex-direction: row;
+	flex-wrap: nowrap;
+	align-items: center;
+	justify-content: flex-start;
+	gap: 10px;
+	padding: 12px 14px !important;
+	height: auto;
+	min-height: 64px;
+	box-sizing: border-box;
+}
+
+.gx-sidebar-learn-shell .gx-layout-sider-header .gx-linebar {
+	position: relative !important;
+	left: auto !important;
+	top: auto !important;
+	flex-shrink: 0;
+	margin: 0;
+	z-index: 2;
+}
+
+.gx-sidebar-learn-shell .gx-layout-sider-header .gx-site-logo {
+	display: flex !important;
+	align-items: center;
+	flex: 1;
+	min-width: 0;
+	overflow: hidden;
+}
+
+.gx-sidebar-learn-shell .gx-layout-sider-header .gx-site-logo img {
+	max-width: 100%;
+	height: auto;
+}
+
+.ant-layout-sider-collapsed .gx-sidebar-learn-shell .gx-layout-sider-header {
+	justify-content: center;
+	padding-left: 12px !important;
+	padding-right: 12px !important;
+}
+
+.ant-layout-sider-collapsed .gx-sidebar-learn-shell .gx-layout-sider-header .gx-site-logo {
+	display: none !important;
+}
+
+.gx-sidebar-learn-scroll {
+	flex: 1;
+	min-height: 0;
+	overflow-x: hidden;
+	overflow-y: auto;
+}
+
+/* Learning hub footer */
+.gx-sidebar-learn-foot {
+	flex-shrink: 0;
+	padding: 10px 12px 14px;
+	border-top: 1px solid rgba(148, 163, 184, 0.22);
+	margin-top: auto;
+	background: linear-gradient(180deg, transparent, rgba(99, 102, 241, 0.04));
+}
+
+.gx-sidebar-learn-shell--dark .gx-sidebar-learn-foot {
+	border-top-color: rgba(71, 85, 105, 0.5);
+	background: linear-gradient(180deg, transparent, rgba(99, 102, 241, 0.08));
+}
+
+.gx-sidebar-learn-foot-link {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	padding: 10px 10px;
+	border-radius: 10px;
+	text-decoration: none !important;
+	color: inherit;
+	transition: background 0.18s ease, box-shadow 0.18s ease;
+}
+
+.gx-sidebar-learn-foot-link:hover {
+	background: rgba(99, 102, 241, 0.08);
+	box-shadow: 0 0 0 1px rgba(99, 102, 241, 0.12);
+}
+
+.gx-sidebar-learn-shell--dark .gx-sidebar-learn-foot-link:hover {
+	background: rgba(99, 102, 241, 0.12);
+	box-shadow: 0 0 0 1px rgba(129, 140, 248, 0.2);
+}
+
+.gx-sidebar-learn-foot-icon {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 36px;
+	height: 36px;
+	border-radius: 10px;
+	flex-shrink: 0;
+	background: linear-gradient(135deg, rgba(99, 102, 241, 0.18), rgba(34, 211, 238, 0.12));
+	color: #4f46e5;
+	font-size: 18px;
+}
+
+.gx-sidebar-learn-shell--dark .gx-sidebar-learn-foot-icon {
+	background: linear-gradient(135deg, rgba(99, 102, 241, 0.35), rgba(34, 211, 238, 0.15));
+	color: #c4b5fd;
+}
+
+.gx-sidebar-learn-foot-text {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	min-width: 0;
+}
+
+.gx-sidebar-learn-foot-title {
+	font-size: 13px;
+	font-weight: 700;
+	letter-spacing: -0.02em;
+	color: #1e293b;
+}
+
+.gx-sidebar-learn-shell--dark .gx-sidebar-learn-foot-title {
+	color: #f1f5f9;
+}
+
+.gx-sidebar-learn-foot-sub {
+	font-size: 11px;
+	line-height: 1.35;
+	color: #64748b;
+}
+
+.gx-sidebar-learn-shell--dark .gx-sidebar-learn-foot-sub {
+	color: #94a3b8;
+}
+
+/* Log out — matches foot row rhythm, distinct “leave” affordance */
+.gx-sidebar-learn-logout {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	width: 100%;
+	margin: 10px 0 0;
+	padding: 10px 10px;
+	border: 1px solid rgba(220, 38, 38, 0.22);
+	border-radius: 10px;
+	background: rgba(220, 38, 38, 0.05);
+	color: #b91c1c;
+	font: inherit;
+	cursor: pointer;
+	text-align: left;
+	transition: background 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+}
+
+.gx-sidebar-learn-shell--dark .gx-sidebar-learn-logout {
+	border-color: rgba(248, 113, 113, 0.28);
+	background: rgba(220, 38, 38, 0.1);
+	color: #fca5a5;
+}
+
+.gx-sidebar-learn-logout:hover {
+	background: rgba(220, 38, 38, 0.1);
+	box-shadow: 0 0 0 1px rgba(220, 38, 38, 0.12);
+	border-color: rgba(220, 38, 38, 0.35);
+}
+
+.gx-sidebar-learn-shell--dark .gx-sidebar-learn-logout:hover {
+	background: rgba(220, 38, 38, 0.16);
+	box-shadow: 0 0 0 1px rgba(248, 113, 113, 0.22);
+	border-color: rgba(248, 113, 113, 0.4);
+}
+
+.gx-sidebar-learn-logout-icon {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 36px;
+	height: 36px;
+	border-radius: 10px;
+	flex-shrink: 0;
+	background: linear-gradient(135deg, rgba(220, 38, 38, 0.14), rgba(248, 113, 113, 0.08));
+	color: #dc2626;
+}
+
+.gx-sidebar-learn-shell--dark .gx-sidebar-learn-logout-icon {
+	background: linear-gradient(135deg, rgba(220, 38, 38, 0.35), rgba(248, 113, 113, 0.12));
+	color: #fecaca;
+}
+
+.gx-sidebar-learn-logout-text {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	min-width: 0;
+}
+
+.gx-sidebar-learn-logout-title {
+	font-size: 13px;
+	font-weight: 700;
+	letter-spacing: -0.02em;
+}
+
+.gx-sidebar-learn-logout-sub {
+	font-size: 11px;
+	line-height: 1.35;
+	opacity: 0.88;
+}
+
+.ant-layout-sider-collapsed .gx-sidebar-learn-foot {
+	display: none !important;
+}
+
+.ant-layout-sider-collapsed .gx-sidebar-learn-nodes .gx-sidebar-shell-network {
+	opacity: 0.22;
+}
+
+.ant-layout-sider-collapsed .gx-sidebar-learn-shell--dark .gx-sidebar-learn-nodes .gx-sidebar-shell-network {
+	opacity: 0.28;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.gx-sidebar-learn-foot-link,
+	.gx-sidebar-learn-logout {
+		transition: none;
+	}
+}
