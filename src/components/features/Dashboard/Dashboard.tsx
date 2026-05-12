@@ -66,7 +66,7 @@ const DASHBOARD_DUMMY_PATHS = [
 			'Identity, IAM hardening, network segmentation, and incident response playbooks tailored for SaaS environments.',
 		duration: '4 weeks',
 		progress: 28,
-		assessmentCount: 0,
+		assessmentCount: 0,	
 		consumedTokens: 3
 	},
 	{

@@ -1,6 +1,6 @@
 export type WorkMode = 'remote' | 'hybrid' | 'onsite';
 
-export type EmploymentKind = 'fulltime' | 'contract' | 'parttime';
+export type EmploymentKind = 'fulltime' | 'contract' | 'parttime' | 'internship';
 
 export type JobDetail = {
 	employmentType: string;
@@ -32,7 +32,8 @@ export type JobItem = {
 export const EMPLOYMENT_OPTIONS: { label: string; value: EmploymentKind }[] = [
 	{ label: 'Full-time', value: 'fulltime' },
 	{ label: 'Contract', value: 'contract' },
-	{ label: 'Part-time', value: 'parttime' }
+	{ label: 'Part-time', value: 'parttime' },
+	{ label: 'Internship', value: 'internship' },
 ];
 
 export const WORK_MODE_OPTIONS: { label: string; value: WorkMode }[] = [

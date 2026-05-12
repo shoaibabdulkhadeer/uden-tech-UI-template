@@ -1,5 +1,5 @@
-import { Alert, Avatar, Button, Checkbox, Drawer, Empty, Input, message, Modal, Popover, Radio, Segmented, Skeleton, Tabs, Tooltip, Upload } from 'antd';
-import { CheckCircleFilled, InboxOutlined } from '@ant-design/icons';
+﻿import { Alert, Avatar, Button, Checkbox, Drawer, Empty, Input, message, Modal, Popover, Radio, Segmented, Select, Skeleton, Tabs, Tooltip, Upload } from 'antd';
+import { CheckCircleFilled, InboxOutlined, InfoCircleTwoTone } from '@ant-design/icons';
 import { easeInOut, motion } from 'framer-motion';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { decodeToken } from 'react-jwt';
@@ -14,12 +14,29 @@ import {
 	MdFileUpload,
 	MdContentPaste,
 	MdDelete,
-	MdDescription
+	MdDescription,
+	MdBusiness,
+	MdBarChart,
+	MdLaptop,
+	MdStar,
+	MdCode,
+	MdLocationOn,
+	MdPeople,
+	MdSend,
+	MdBolt,
+	MdFlashOn,
+	MdLeaderboard,
+	MdTrendingUp,
+	MdCheckCircle,
+	MdRestartAlt,
 } from 'react-icons/md';
 import { IoClose } from 'react-icons/io5';
+import { SiBookstack } from 'react-icons/si';
+import { Typewriter } from 'react-simple-typewriter';
 import { useLocation, useNavigate } from 'react-router-dom';
 import DashboardPageHeadArt from '../Dashboard/DashboardPageHeadArt';
 import DashboardShellNetwork from '../Dashboard/DashboardShellNetwork';
+import { LocationFilter } from './LocationFilter';
 import {
 	EMPLOYMENT_OPTIONS,
 	filterJobsByEmployment,
@@ -70,6 +87,11 @@ function JobSearch() {
 	const [searchQuery, setSearchQuery] = useState('');
 	const [empFilter, setEmpFilter] = useState<EmploymentKind[]>([]);
 	const [workFilter, setWorkFilter] = useState<WorkMode[]>([]);
+	const [expFilter, setExpFilter] = useState<string | undefined>(undefined);
+	const [sectorFilter, setSectorFilter] = useState<string | undefined>(undefined);
+	const [skillsFilter, setSkillsFilter] = useState<string[]>([]);
+	const [skillInput, setSkillInput] = useState('');
+	const [locationResetKey, setLocationResetKey] = useState(0);
 	const [savedIds, setSavedIds] = useState<Set<string>>(loadSavedIds);
 	const [appliedIds, setAppliedIds] = useState<Set<string>>(loadAppliedIds);
 	const [dismissedIds, setDismissedIds] = useState<Set<string>>(() => new Set());
@@ -78,6 +100,8 @@ function JobSearch() {
 	const [uiPreview, setUiPreview] = useState<UiPreview>('normal');
 	const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
 	const [pastedJd, setPastedJd] = useState('');
+	const [jdResult, setJdResult] = useState('');
+	const [showJdInput, setShowJdInput] = useState(true);
 	const [matchLoading, setMatchLoading] = useState(false);
 	const [matchEngineTab, setMatchEngineTab] = useState('resume');
 	const [uploadedFile, setUploadedFile] = useState<any>(null);
@@ -122,7 +146,7 @@ function JobSearch() {
 			let currentStep = 0;
 			const interval = setInterval(() => {
 				if (currentStep < steps.length) {
-					setAiSteps((prev) => [...prev, steps[currentStep]]);
+					setAiSteps((prev:any) => [...prev, steps[currentStep]]);
 					currentStep++;
 				} else {
 					clearInterval(interval);
@@ -142,10 +166,12 @@ function JobSearch() {
 			message.warning('Please paste a job description first');
 			return;
 		}
+		setJdResult('');
 		setMatchLoading(true);
-		// Trigger backend flow here
 		setTimeout(() => {
 			setMatchLoading(false);
+			setJdResult(pastedJd.trim());
+			setShowJdInput(false);
 			message.success('AI Matching complete! Your feed has been updated.');
 		}, 1500);
 	};
@@ -232,6 +258,11 @@ function JobSearch() {
 		setSearchQuery('');
 		setEmpFilter([]);
 		setWorkFilter([]);
+		setExpFilter(undefined);
+		setSectorFilter(undefined);
+		setSkillsFilter([]);
+		setSkillInput('');
+		setLocationResetKey((k) => k + 1);
 		setDismissedIds(new Set());
 		setUiPreview('normal');
 	}, []);
@@ -285,20 +316,134 @@ function JobSearch() {
 
 	const filtersBlock = (
 		<div className="job-search-filters-block">
-			<p className="job-search-filters-label">Employment</p>
+			<p className="job-search-filters-label">
+				<span className="filter-label-icon filter-label-icon--indigo"><MdWorkOutline size={12} /></span>
+				Employment
+			</p>
 			<Checkbox.Group
 				className="job-search-checkbox-group"
 				options={EMPLOYMENT_OPTIONS}
 				value={empFilter}
 				onChange={(v) => setEmpFilter(v as EmploymentKind[])}
 			/>
-			<p className="job-search-filters-label">Work location</p>
+			<p className="job-search-filters-label">
+				<span className="filter-label-icon filter-label-icon--cyan"><MdLaptop size={12} /></span>
+				Work Mode
+			</p>
 			<Checkbox.Group
 				className="job-search-checkbox-group"
 				options={WORK_MODE_OPTIONS}
 				value={workFilter}
 				onChange={(v) => setWorkFilter(v as WorkMode[])}
 			/>
+			<p className="job-search-filters-label">
+				<span className="filter-label-icon filter-label-icon--amber"><MdBarChart size={12} /></span>
+				Experience level
+			</p>
+			<Select
+				size="small"
+				placeholder="Any experience level"
+				value={expFilter}
+				onChange={(v) => setExpFilter(v)}
+				allowClear
+				onClear={() => setExpFilter(undefined)}
+				style={{ width: '100%' }}
+				className="job-search-exp-select"
+				options={[
+					{ value: 'internship',   label: 'Internship' },
+					{ value: 'entry',        label: 'Entry level (0–2 yrs)' },
+					{ value: 'mid',          label: 'Mid level (2–5 yrs)' },
+					{ value: 'senior',       label: 'Senior (5–10 yrs)' },
+					{ value: 'lead',         label: 'Lead / Principal (10+ yrs)' },
+					{ value: 'executive',    label: 'Executive / Director' },
+				]}
+			/>
+			<p className="job-search-filters-label">
+				<span className="filter-label-icon filter-label-icon--emerald"><MdBusiness size={12} /></span>
+				Sector
+			</p>
+			<Select
+				size="small"
+				placeholder="Any"
+				value={sectorFilter}
+				onChange={(v) => setSectorFilter(v)}
+				allowClear
+				onClear={() => setSectorFilter(undefined)}
+				style={{ width: '100%' }}
+				className="job-search-exp-select"
+				options={[
+					{ value: 'private',      label: 'Private' },
+					{ value: 'psu',          label: 'Public Sector / PSU' },
+					{ value: 'government',   label: 'Government / Govt Bodies' },
+					{ value: 'freelance',    label: 'Freelance / Contract' },
+					{ value: 'startup',      label: 'Startup' },
+					{ value: 'ngo',          label: 'NGO / Non-profit' },
+					{ value: 'mnc',          label: 'MNC' },
+				]}
+			/>
+			<div className="job-search-filters-divider" />
+			<div className="skill-filter">
+				<div className="skill-filter-head">
+					<span className="filter-label-icon filter-label-icon--violet gx-mr-1"><MdCode size={12} /></span>
+					<span>Skills</span>
+					{skillsFilter.length > 0 && (
+						<button type="button" className="loc-filter-clear" onClick={() => { setSkillsFilter([]); setSkillInput(''); }}>
+							Clear all
+						</button>
+					)}
+				</div>
+				<div className="skill-filter-input-row">
+					<Input
+						size="small"
+						placeholder="e.g. React, Python…"
+						value={skillInput}
+						onChange={(e) => setSkillInput(e.target.value)}
+						onKeyDown={(e) => {
+							if ((e.key === 'Enter' || e.key === ',') && skillInput.trim()) {
+								e.preventDefault();
+								const val = skillInput.trim().replace(/,$/, '');
+								if (val && !skillsFilter.includes(val)) {
+									setSkillsFilter((prev) => [...prev, val]);
+								}
+								setSkillInput('');
+							}
+						}}
+						className="skill-filter-input"
+					/>
+					<button
+						type="button"
+						className="skill-add-btn"
+						onClick={() => {
+							const val = skillInput.trim().replace(/,$/, '');
+							if (val && !skillsFilter.includes(val)) {
+								setSkillsFilter((prev) => [...prev, val]);
+							}
+							setSkillInput('');
+						}}
+					>
+						Add
+					</button>
+				</div>
+				{skillsFilter?.length > 0 && (
+					<div className="skill-badges-wrap">
+						{skillsFilter.map((skill, idx) => (
+							<span key={skill} className={`skill-badge skill-badge--${idx % 8}`}>
+								{skill}
+								<button
+									type="button"
+									className="skill-badge-remove"
+									onClick={() => setSkillsFilter((prev) => prev.filter((s) => s !== skill))}
+									aria-label={`Remove ${skill}`}
+								>
+									×
+								</button>
+							</span>
+						))}
+					</div>
+				)}
+			</div>
+			<div className="job-search-filters-divider" />
+			<LocationFilter key={locationResetKey} />
 			<Button type="link" size="small" className="job-search-filters-reset" onClick={resetFilters}>
 				Reset search & filters
 			</Button>
@@ -328,8 +473,26 @@ function JobSearch() {
 							</div>
 							<h1 className="dash-next-page-title">Career Acceleration</h1>
 							<p className="dash-next-page-lead">
-								Roles matched to your path and verified for your skill set.
+								Your AI-powered career hub — discover roles aligned with your learning path, analyse your resume or paste a job description to surface the best-fit opportunities, and manage your entire job search from one place.
 							</p>
+							<div className="career-accel-feature-row">
+								<span className="career-accel-feature-chip career-accel-feature-chip--indigo">
+									<span className="career-accel-chip-icon"><MdAutoAwesome size={12} /></span>
+									AI-matched roles
+								</span>
+								<span className="career-accel-feature-chip career-accel-feature-chip--cyan">
+									<span className="career-accel-chip-icon"><MdDescription size={12} /></span>
+									Resume &amp; JD analysis
+								</span>
+								<span className="career-accel-feature-chip career-accel-feature-chip--amber">
+									<span className="career-accel-chip-icon"><MdBookmarkBorder size={12} /></span>
+									Job tracker
+								</span>
+								<span className="career-accel-feature-chip career-accel-feature-chip--emerald">
+									<span className="career-accel-chip-icon"><MdWorkOutline size={12} /></span>
+									Skill-verified listings
+								</span>
+							</div>
 						</div>
 					</div>
 				</header>
@@ -359,33 +522,17 @@ function JobSearch() {
 									<p className="job-search-profile-headline">
 										Building skills with Uden Tech learning paths — React, system design, and product craft.
 									</p>
-									<p className="job-search-profile-location">Bengaluru, Karnataka</p>
+									<p className="job-search-profile-location">
+										<MdLocationOn size={13} className="profile-inline-icon profile-inline-icon--indigo" aria-hidden />
+										Bengaluru, Karnataka
+									</p>
 									<div className="job-search-profile-company">
-										<span className="job-search-profile-company-dot" aria-hidden />
+										<MdBusiness size={13} className="profile-inline-icon profile-inline-icon--cyan" aria-hidden />
 										<span>Uden Tech · Learning platform</span>
 									</div>
 								</div>
 							</section>
 
-							<nav className="job-search-card job-search-nav-card" aria-label="Job workspace shortcuts">
-								<button type="button" className="job-search-nav-row">
-									<MdListAlt className="job-search-nav-icon" size={22} aria-hidden />
-									<span>Preferences</span>
-									<span className="job-search-nav-soon">Soon</span>
-								</button>
-								<button type="button" className="job-search-nav-row" onClick={() => setActiveView('saved')}>
-									<MdBookmarkBorder className="job-search-nav-icon" size={22} aria-hidden />
-									<span>Job tracker</span>
-									{savedIds.size > 0 ? <span className="job-search-nav-badge">{savedIds.size}</span> : null}
-								</button>
-								<button type="button" className="job-search-nav-row">
-									<span className="job-search-nav-icon-gradient" aria-hidden>
-										<MdInsights size={20} />
-									</span>
-									<span>My career insights</span>
-									<span className="job-search-nav-soon">Soon</span>
-								</button>
-							</nav>
 
 							<section className="job-search-card job-search-filters-card" aria-label="Job filters">
 								<div className="job-search-filters-card-head">
@@ -457,6 +604,29 @@ function JobSearch() {
 													<MdInsights className="match-nav-icon" />
 													<span>Paste JD</span>
 												</button>
+												{matchEngineTab === 'jd' && jdResult && (
+													<button
+														type="button"
+														className="match-engine-nav-toggle"
+														onClick={() => setShowJdInput((v) => !v)}
+														aria-pressed={showJdInput}
+													>
+														<span className="jd-toggle-label">Input</span>
+														<span className={`jd-toggle-track${showJdInput ? ' on' : ''}`}>
+															<span className="jd-toggle-knob" />
+														</span>
+													</button>
+												)}
+												{matchEngineTab === 'jd' && (pastedJd || jdResult) && (
+													<button
+														type="button"
+														className="jd-reset-btn jd-reset-btn--nav"
+														onClick={() => { setPastedJd(''); setJdResult(''); setShowJdInput(true); }}
+													>
+														<MdRestartAlt size={11} />
+														Reset
+													</button>
+												)}
 											</div>
 
 											<div className="match-engine-content">
@@ -556,23 +726,69 @@ function JobSearch() {
 														animate={{ opacity: 1, y: 0 }}
 														className="match-jd-zone"
 													>
-														<Input.TextArea
-															rows={4}
-															placeholder="Paste the job description here to find matching roles in your profile..."
-															value={pastedJd}
-															onChange={(e) => setPastedJd(e.target.value)}
-															className="premium-textarea"
-															style={{ width: '100%', marginBottom: 16 }}
-														/>
-														<Button
-															type="primary"
-															block
-															loading={matchLoading}
-															onClick={handleMatchJd}
-															className="match-submit-btn"
-														>
-															Find Matches via AI
-														</Button>
+														{showJdInput && (
+															<>
+															<Input.TextArea
+																rows={4}
+																placeholder="Paste the job description here to find matching roles in your profile..."
+																value={pastedJd}
+																onChange={(e) => {
+																	setPastedJd(e.target.value);
+																	if (jdResult) { setJdResult(''); setShowJdInput(true); }
+																}}
+																className="premium-textarea"
+																style={{ width: '100%', marginBottom: 16 }}
+															/>
+															<Button
+																type="primary"
+																block
+																loading={matchLoading}
+																onClick={handleMatchJd}
+																className="match-submit-btn"
+															>
+																Find Matches via AI
+															</Button>
+															</>
+														)}
+
+														{jdResult && (
+															<motion.div
+																initial={{ opacity: 0, y: 8 }}
+																animate={{ opacity: 1, y: 0 }}
+																transition={{ duration: 0.4 }}
+																style={{ marginTop: 16 }}
+															>
+																<Alert
+																	message={
+																		<div className="jd-summary-inner">
+																			<div className="jd-summary-heading">
+																				<div className="jd-summary-icon" aria-hidden>
+																					<SiBookstack className="jd-summary-icon-svg" />
+																				</div>
+																				<div className="jd-summary-heading-copy">
+																					<p className="jd-summary-eyebrow">Job Description</p>
+																					<p className="jd-summary-title">
+																						Summarized version
+																						<Tooltip
+																							placement="right"
+																							title="This is the job description you pasted. AI matching will use this to surface relevant roles."
+																						>
+																							<InfoCircleTwoTone className="jd-summary-info-icon" style={{ marginLeft: 8 }} />
+																						</Tooltip>
+																					</p>
+																				</div>
+																			</div>
+																			<div className="jd-summary-body">
+																				<Typewriter words={[jdResult]} typeSpeed={18} cursor={true} cursorColor="#059669" />
+																			</div>
+																		</div>
+																	}
+																	type="success"
+																	className="jd-summary-alert"
+																	showIcon={false}
+																/>
+															</motion.div>
+														)}
 													</motion.div>
 												)}
 											</div>
@@ -594,7 +810,14 @@ function JobSearch() {
 										</Popover>
 									</div>
 									<div className="job-search-feed-head-copy">
-										<h2 className="job-search-feed-title">{feedTitle}</h2>
+										<h2 className="job-search-feed-title">
+											<span className={`filter-label-icon filter-label-icon--${activeView === 'matches' ? 'indigo' : activeView === 'saved' ? 'amber' : 'emerald'}`} style={{ width: 22, height: 22, borderRadius: 6, flexShrink: 0 }}>
+												{activeView === 'matches' && <MdAutoAwesome size={13} />}
+												{activeView === 'saved' && <MdBookmark size={13} />}
+												{activeView === 'applied' && <MdSend size={13} />}
+											</span>
+											{feedTitle}
+					</h2>
 										<p className="job-search-feed-sub">{feedSub}</p>
 									</div>
 								</header>
@@ -712,7 +935,7 @@ function JobSearch() {
 														) : null}
 													</div>
 													<p className="job-search-job-meta-line">
-														{job.company} <span className="job-search-job-dot">·</span> {job.location}
+														<MdBusiness size={12} className="job-meta-icon" aria-hidden />{job.company} <span className="job-search-job-dot">·</span> <MdLocationOn size={12} className="job-meta-icon" aria-hidden />{job.location}
 														<span className="job-search-job-dot"> · </span>
 														<span className="job-search-job-kind">
 															{EMPLOYMENT_OPTIONS.find((o) => o.value === job.employmentKind)?.label}
@@ -726,6 +949,7 @@ function JobSearch() {
 														<div className="job-search-match-reasons">
 															{job.matchReasons.map((r) => (
 																<span key={r} className="job-search-match-reason">
+																	<MdAutoAwesome size={11} className="match-reason-icon" aria-hidden />
 																	{r}
 																</span>
 															))}
@@ -738,7 +962,7 @@ function JobSearch() {
 																<span />
 																<span />
 															</span>
-															<span>{job.connections} connections work here</span>
+															<MdPeople size={13} className="job-meta-icon" aria-hidden /><span>{job.connections} connections work here</span>
 														</div>
 													) : null}
 													{job.hiringStatus || appliedIds.has(job.id) ? (
@@ -751,6 +975,10 @@ function JobSearch() {
 														<div className="job-search-job-badges">
 															{job.badges.map((b) => (
 																<span key={b} className="job-search-pill">
+																	{b === 'Promoted' && <MdBolt size={11} className="badge-inline-icon" aria-hidden />}
+																	{b === 'Easy apply' && <MdFlashOn size={11} className="badge-inline-icon" aria-hidden />}
+																	{b === 'Leadership' && <MdLeaderboard size={11} className="badge-inline-icon" aria-hidden />}
+																	{b === 'New posting' && <MdTrendingUp size={11} className="badge-inline-icon" aria-hidden />}
 																	{b}
 																</span>
 															))}
@@ -770,7 +998,7 @@ function JobSearch() {
 
 								<div className="job-search-feed-footer">
 									<span className="job-search-result-count">
-										{showSkeleton || showError ? '—' : `${listToRender.length} role${listToRender.length === 1 ? '' : 's'}`}
+										{showSkeleton || showError ? '—' : (<><MdListAlt size={13} style={{ marginRight: 3, verticalAlign: 'middle', color: '#6366f1' }} aria-hidden />{listToRender.length} role{listToRender.length === 1 ? '' : 's'}</>) }
 									</span>
 									<Button type="link" className="job-search-show-all" disabled>
 										Load more (API)
@@ -888,6 +1116,9 @@ function JobSearch() {
 									<div className="job-search-preview-badges">
 										{previewJob.badges.map((b) => (
 											<span key={b} className="job-search-pill">
+												{b === 'Promoted' && <MdBolt size={11} className="badge-inline-icon" aria-hidden />}
+												{b === 'Easy apply' && <MdFlashOn size={11} className="badge-inline-icon" aria-hidden />}
+												{b === 'Leadership' && <MdLeaderboard size={11} className="badge-inline-icon" aria-hidden />}
 												{b}
 											</span>
 										))}
@@ -898,11 +1129,11 @@ function JobSearch() {
 
 						<div className="job-search-preview-body">
 							<section className="job-search-preview-section">
-								<h3 className="job-search-preview-section-title">About the role</h3>
+								<h3 className="job-search-preview-section-title preview-section-title--flex"><span className="filter-label-icon filter-label-icon--indigo" style={{ width: 18, height: 18 }}><MdDescription size={11} /></span>About the role</h3>
 								<p className="job-search-preview-text">{previewJob.detail.description}</p>
 							</section>
 							<section className="job-search-preview-section">
-								<h3 className="job-search-preview-section-title">What you&apos;ll do</h3>
+								<h3 className="job-search-preview-section-title preview-section-title--flex"><span className="filter-label-icon filter-label-icon--cyan" style={{ width: 18, height: 18 }}><MdListAlt size={11} /></span>What you&apos;ll do</h3>
 								<ul className="job-search-preview-list">
 									{previewJob.detail.responsibilities.map((line) => (
 										<li key={line}>{line}</li>
@@ -910,7 +1141,7 @@ function JobSearch() {
 								</ul>
 							</section>
 							<section className="job-search-preview-section">
-								<h3 className="job-search-preview-section-title">Skills</h3>
+								<h3 className="job-search-preview-section-title preview-section-title--flex"><span className="filter-label-icon filter-label-icon--violet" style={{ width: 18, height: 18 }}><MdCode size={11} /></span>Skills</h3>
 								<div className="job-search-preview-skills">
 									{previewJob.detail.skills.map((s) => (
 										<span key={s} className="job-search-preview-skill">
@@ -949,7 +1180,11 @@ function JobSearch() {
 								}}
 								disabled={appliedIds.has(previewJob.id)}
 							>
-								{appliedIds.has(previewJob.id) ? 'Applied' : 'Apply (API)'}
+								{appliedIds.has(previewJob.id) ? (
+									<><MdCheckCircle size={14} style={{ marginRight: 4, verticalAlign: 'middle' }} />Applied</>
+								) : (
+									<><MdSend size={14} style={{ marginRight: 4, verticalAlign: 'middle' }} />Apply (API)</>
+								)}
 							</Button>
 						</footer>
 					</div>
