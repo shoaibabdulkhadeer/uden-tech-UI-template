@@ -570,6 +570,7 @@
 	white-space: nowrap;
 	font-family: inherit;
 	line-height: 1;
+	position: relative;
 }
 
 .view-tab:hover:not(.view-tab--active) {
@@ -628,6 +629,34 @@
 	background: linear-gradient(135deg, #10b981 0%, #059669 100%);
 	color: #fff;
 	box-shadow: 0 3px 12px rgba(16, 185, 129, 0.38), inset 0 1px 0 rgba(255,255,255,0.15);
+}
+
+/* Shimmer sweep on active tabs */
+.view-tab--active {
+	overflow: hidden;
+}
+
+.view-tab--active::after {
+	content: '';
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 55%;
+	height: 100%;
+	background: linear-gradient(
+		90deg,
+		transparent 0%,
+		rgba(255,255,255,0.28) 50%,
+		transparent 100%
+	);
+	transform: translateX(-160%);
+	animation: view-tab-shimmer 2.6s ease-in-out infinite;
+	pointer-events: none;
+}
+
+@keyframes view-tab-shimmer {
+	from { transform: translateX(-160%); }
+	to   { transform: translateX(300%); }
 }
 
 .job-search-toolbar {
