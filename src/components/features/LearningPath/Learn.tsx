@@ -7,6 +7,7 @@ import {
 	Checkbox,
 	Collapse,
 	Form,
+	InputNumber,
 	message,
 	Modal,
 	notification,
@@ -81,6 +82,7 @@ const Learn = () => {
 		[learnPath, setLearnPath] = useState<any>([]),
 		[summaryNote, setSummaryNote] = useState<any>(),
 		[selectedMode, setSelectedMode] = useState<any>('WEEK'),
+		[totalHours, setTotalHours] = useState<number | null>(null),
 		[LPID, setLPID] = useState<any>(),
 		{ attemptedQuizRes, attemptedQuizloading } = useSelector((state: any) => state?.attemptedQuiz),
 		{ viewEachQuizRes, viewEachQuizloading } = useSelector((state: any) => state?.viewEachQuiz),
@@ -747,6 +749,24 @@ const Learn = () => {
 						</div>
 					</Select.Option>
 					</Select>
+									{selectedMode === 'HOUR' && (
+										<div className={`lp-total-hours-wrap${totalHours !== null && (totalHours < 1 || totalHours > 500) ? ' lp-total-hours-wrap--error' : ''}`}>
+											<PiTimerFill size={13} className="lp-total-hours-icon" />
+											<InputNumber
+												className="lp-total-hours-input"
+												min={1}
+												max={500}
+												precision={0}
+												placeholder="e.g. 40"
+												value={totalHours}
+												onChange={(v) => setTotalHours(v as number | null)}
+												size="small"
+											/>
+											<span className="lp-total-hours-label">
+												{totalHours !== null && totalHours > 500 ? 'Max 500 hrs' : totalHours !== null && totalHours < 1 ? 'Min 1 hr' : '/ 500 hrs'}
+											</span>
+										</div>
+									)}
 								</div>
 
 								<span className="learn-toolbar-group-sep" aria-hidden />
