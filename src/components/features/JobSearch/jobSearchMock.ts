@@ -2,6 +2,12 @@ export type WorkMode = 'remote' | 'hybrid' | 'onsite';
 
 export type EmploymentKind = 'fulltime' | 'contract' | 'parttime' | 'internship';
 
+export type InterviewRound = {
+	round: number;
+	name: string;
+	subtitle?: string;
+};
+
 export type JobDetail = {
 	employmentType: string;
 	posted: string;
@@ -9,6 +15,10 @@ export type JobDetail = {
 	description: string;
 	responsibilities: string[];
 	skills: string[];
+	skillsMatched?: string[];
+	skillGaps?: string[];
+	eligibility?: string[];
+	interviewRounds?: InterviewRound[];
 };
 
 export type JobItem = {
@@ -18,7 +28,6 @@ export type JobItem = {
 	location: string;
 	logoHue: number;
 	verified?: boolean;
-	connections?: number;
 	badges?: string[];
 	hiringStatus?: string;
 	employmentKind: EmploymentKind;
@@ -50,7 +59,6 @@ export const MOCK_JOBS: JobItem[] = [
 		location: 'Bengaluru',
 		logoHue: 200,
 		verified: true,
-		connections: 9,
 		badges: ['Promoted'],
 		employmentKind: 'fulltime',
 		workMode: 'onsite',
@@ -67,7 +75,17 @@ export const MOCK_JOBS: JobItem[] = [
 				'Collaborate on design systems, component libraries, and web performance budgets.',
 				'Mentor peers through code review and lightweight technical design docs.'
 			],
-			skills: ['React', 'TypeScript', 'Web performance', 'Accessibility', 'GraphQL']
+			skills: ['React', 'TypeScript', 'Web performance', 'Accessibility', 'GraphQL'],
+			skillsMatched: ['React', 'TypeScript', 'Accessibility'],
+			skillGaps: ['Web performance', 'GraphQL'],
+			eligibility: ['3+ years React experience', 'TypeScript proficiency', 'Accessible UI experience'],
+			interviewRounds: [
+				{ round: 1, name: 'HR Screening',    subtitle: 'Culture fit & role overview call' },
+				{ round: 2, name: 'Aptitude Test',   subtitle: 'Logic, problem-solving & verbal reasoning' },
+				{ round: 3, name: 'Technical',       subtitle: 'Live coding & system design questions' },
+				{ round: 4, name: 'Skill Assessment',subtitle: 'Take-home project or pair programming task' },
+				{ round: 5, name: 'Final / CTO',     subtitle: 'Leadership discussion & offer negotiation' },
+			]
 		}
 	},
 	{
@@ -92,7 +110,17 @@ export const MOCK_JOBS: JobItem[] = [
 				'Improve state management, API integration patterns, and error handling.',
 				'Participate in roadmap input and lightweight UX iteration with design.'
 			],
-			skills: ['React', 'Redux', 'REST APIs', 'UI polish', 'Design systems']
+			skills: ['React', 'Redux', 'REST APIs', 'UI polish', 'Design systems'],
+			skillsMatched: ['React', 'Redux', 'UI polish', 'Design systems'],
+			skillGaps: ['REST APIs'],
+			eligibility: ['React expertise', 'State management knowledge', 'UI/UX sensibility'],
+			interviewRounds: [
+				{ round: 1, name: 'HR Screening',    subtitle: 'Culture fit & expectations alignment' },
+				{ round: 2, name: 'Technical',       subtitle: 'React deep-dive & architecture discussion' },
+				{ round: 3, name: 'Design Review',   subtitle: 'UI critique, component API & UX sensibility' },
+				{ round: 4, name: 'Skill Assessment',subtitle: 'Build a feature in our staging environment' },
+				{ round: 5, name: 'Final / CTO',     subtitle: 'Vision alignment & compensation discussion' },
+			]
 		}
 	},
 	{
@@ -102,7 +130,6 @@ export const MOCK_JOBS: JobItem[] = [
 		location: 'Dublin',
 		logoHue: 280,
 		verified: true,
-		connections: 3,
 		employmentKind: 'fulltime',
 		workMode: 'hybrid',
 		matchScore: 86,

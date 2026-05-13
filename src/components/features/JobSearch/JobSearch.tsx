@@ -21,7 +21,6 @@ import {
 	MdStar,
 	MdCode,
 	MdLocationOn,
-	MdPeople,
 	MdSend,
 	MdBolt,
 	MdFlashOn,
@@ -31,6 +30,21 @@ import {
 	MdRestartAlt,
 	MdSchool,
 	MdAdd,
+	MdVerified,
+	MdAccessTime,
+	MdAttachMoney,
+	MdPsychology,
+	MdBuildCircle,
+	MdEmojiEvents,
+	MdRecordVoiceOver,
+	MdQuiz,
+	MdFactCheck,
+	MdRocketLaunch,
+	MdMenuBook,
+	MdOutlineAssignment,
+	MdWorkspacePremium,
+	MdThumbUp,
+	MdWarning,
 } from 'react-icons/md';
 import { IoClose } from 'react-icons/io5';
 import { SiBookstack } from 'react-icons/si';
@@ -541,11 +555,6 @@ function JobSearch() {
 											<span className="profile-stat-num">{savedIds.size}</span>
 											<span className="profile-stat-label">Saved</span>
 										</div>
-										<div className="profile-stat">
-											<MdPeople size={12} className="profile-stat-icon profile-stat-icon--cyan" />
-											<span className="profile-stat-num">9</span>
-											<span className="profile-stat-label">Connections</span>
-										</div>
 									</div>
 								</div>
 							</section>
@@ -990,17 +999,7 @@ function JobSearch() {
 															))}
 														</div>
 													) : null}
-													{job.connections != null ? (
-														<div className="job-search-job-social">
-															<span className="job-search-job-avatars" aria-hidden>
-																<span />
-																<span />
-																<span />
-															</span>
-															<MdPeople size={13} className="job-meta-icon" aria-hidden /><span>{job.connections} connections work here</span>
-														</div>
-													) : null}
-													{job.hiringStatus || appliedIds.has(job.id) ? (
+														{job.hiringStatus || appliedIds.has(job.id) ? (
 														<p className="job-search-job-status">
 															<span className="job-search-job-status-dot" aria-hidden />
 															{appliedIds.has(job.id) ? 'Application submitted' : job.hiringStatus}
@@ -1106,7 +1105,8 @@ function JobSearch() {
 				footer={null}
 				visible={!!previewJob}
 				onCancel={closeJobPreview}
-				width={560}
+				width="96vw"
+				style={{ top: 2, paddingBottom: 0 }}
 				centered
 				destroyOnClose
 				className="job-search-job-preview-modal"
@@ -1114,132 +1114,231 @@ function JobSearch() {
 			>
 				{previewJob ? (
 					<div className="job-search-preview">
+
+						{/* ── Scrollable area: header + body ── */}
+						<div className="jd-scroll-area">
+
+						{/* ── Hero header ── */}
 						<header className="job-search-preview-head">
-							<div
-								className="job-search-preview-logo"
-								style={{
-									background: `linear-gradient(135deg, hsl(${previewJob.logoHue}, 70%, 52%), hsl(${previewJob.logoHue + 40}, 65%, 42%))`
-								}}
-								aria-hidden
-							>
-								<div className="logo-mesh-ring" />
-								<div className="logo-mesh-ring logo-mesh-ring--2" />
-								<span className="logo-monogram logo-monogram--lg">{previewJob.company.charAt(0)}</span>
+							{/* Top row: logo + identity */}
+							<div className="jd-head-top">
+								<div
+									className="job-search-preview-logo"
+									style={{ background: `linear-gradient(135deg, hsl(${previewJob.logoHue}, 70%, 52%), hsl(${previewJob.logoHue + 40}, 65%, 42%))` }}
+									aria-hidden
+								>
+									<div className="logo-mesh-ring" />
+									<div className="logo-mesh-ring logo-mesh-ring--2" />
+									<span className="logo-monogram logo-monogram--lg">{previewJob.company.charAt(0)}</span>
+								</div>
+								<div className="job-search-preview-head-copy">
+									<div className="job-search-preview-title-row">
+										<h2 className="job-search-preview-title">{previewJob.title}</h2>
+										{previewJob.verified ? (
+											<Tooltip title="Verified employer">
+												<MdVerified size={20} className="jd-verified-icon" aria-label="Verified" />
+											</Tooltip>
+										) : null}
+										{previewJob.matchScore != null ? (
+											<span className="jd-match-badge"><MdInsights size={12} style={{marginRight:3,verticalAlign:'middle'}}/>{previewJob.matchScore}% match</span>
+										) : null}
+									</div>
+									<p className="job-search-preview-company">
+										<MdBusiness size={13} style={{marginRight:4,verticalAlign:'middle',opacity:0.7}}/>
+										{previewJob.company}
+										<span className="job-search-job-dot"> · </span>
+										<MdLocationOn size={13} style={{marginRight:2,verticalAlign:'middle',opacity:0.7}}/>
+										{previewJob.location}
+									</p>
+									<div className="job-search-preview-meta-line">
+										<span className="job-search-preview-chip"><MdWorkOutline size={10} style={{marginRight:3,verticalAlign:'middle'}}/>{previewJob.detail.employmentType}</span>
+										<span className="job-search-preview-chip job-search-preview-chip--muted"><MdAccessTime size={10} style={{marginRight:3,verticalAlign:'middle'}}/>{previewJob.detail.posted}</span>
+										{previewJob.detail.salary ? (
+											<span className="job-search-preview-chip job-search-preview-chip--accent"><MdAttachMoney size={10} style={{marginRight:1,verticalAlign:'middle'}}/>{previewJob.detail.salary}</span>
+										) : null}
+										{previewJob.hiringStatus ? (
+											<span className="job-search-preview-chip jd-chip--hiring"><MdTrendingUp size={10} style={{marginRight:3,verticalAlign:'middle'}}/>{previewJob.hiringStatus}</span>
+										) : null}
+									</div>
+									{previewJob.matchScore != null ? (
+										<div className="jd-score-bar-wrap">
+											<div className="jd-score-bar-track">
+												<div className="jd-score-bar-fill" style={{width:`${previewJob.matchScore}%`}} />
+											</div>
+											<span className="jd-score-bar-label">{previewJob.matchScore}% profile match</span>
+										</div>
+									) : null}
+								</div>
 							</div>
-							<div className="job-search-preview-head-copy">
-								<div className="job-search-preview-title-row">
-									<h2 id="job-search-preview-title" className="job-search-preview-title">
-										{previewJob.title}
-									</h2>
-									{previewJob.verified ? (
-										<Tooltip title="Verified employer">
-											<span className="job-search-job-shield" aria-label="Verified">
-												✓
-											</span>
-										</Tooltip>
-									) : null}
+
+							{/* Bottom row: About + What you'll do inside header */}
+							<div className="jd-head-desc">
+								<div className="jd-head-desc-col">
+									<p className="jd-head-desc-label"><MdDescription size={12}/> About the role</p>
+									<p className="jd-head-desc-text">{previewJob.detail.description}</p>
 								</div>
-								<p className="job-search-preview-company">
-									{previewJob.company}
-									<span className="job-search-job-dot"> · </span>
-									{previewJob.location}
-								</p>
-								<div className="job-search-preview-meta-line">
-									<span className="job-search-preview-chip">{previewJob.detail.employmentType}</span>
-									<span className="job-search-preview-chip job-search-preview-chip--muted">{previewJob.detail.posted}</span>
-									{previewJob.detail.salary ? (
-										<span className="job-search-preview-chip job-search-preview-chip--accent">{previewJob.detail.salary}</span>
-									) : null}
+								<div className="jd-head-desc-col">
+									<p className="jd-head-desc-label"><MdOutlineAssignment size={12}/> What you&apos;ll do</p>
+									<ul className="jd-head-resp-list">
+										{previewJob.detail.responsibilities.map((r) => (
+											<li key={r}>{r}</li>
+										))}
+									</ul>
 								</div>
-								{previewJob.matchScore != null ? (
-									<div className="job-search-preview-match">
-										<span className="job-search-preview-match-score">{previewJob.matchScore}% match</span>
-										<span className="job-search-preview-match-note">Mock ranking until matching API ships</span>
-									</div>
-								) : null}
-								{previewJob.matchReasons?.length ? (
-									<div className="job-search-preview-badges job-search-preview-match-badges">
-										{previewJob.matchReasons.map((r) => (
-											<span key={r} className="job-search-pill job-search-pill--match">
-												{r}
-											</span>
-										))}
-									</div>
-								) : null}
-								{previewJob.badges?.length ? (
-									<div className="job-search-preview-badges">
-										{previewJob.badges.map((b) => (
-											<span key={b} className="job-search-pill">
-												{b === 'Promoted' && <MdBolt size={11} className="badge-inline-icon" aria-hidden />}
-												{b === 'Easy apply' && <MdFlashOn size={11} className="badge-inline-icon" aria-hidden />}
-												{b === 'Leadership' && <MdLeaderboard size={11} className="badge-inline-icon" aria-hidden />}
-												{b}
-											</span>
-										))}
-									</div>
-								) : null}
 							</div>
 						</header>
 
-						<div className="job-search-preview-body">
-							<section className="job-search-preview-section">
-								<h3 className="job-search-preview-section-title preview-section-title--flex"><span className="filter-label-icon filter-label-icon--indigo" style={{ width: 18, height: 18 }}><MdDescription size={11} /></span>About the role</h3>
-								<p className="job-search-preview-text">{previewJob.detail.description}</p>
-							</section>
-							<section className="job-search-preview-section">
-								<h3 className="job-search-preview-section-title preview-section-title--flex"><span className="filter-label-icon filter-label-icon--cyan" style={{ width: 18, height: 18 }}><MdListAlt size={11} /></span>What you&apos;ll do</h3>
-								<ul className="job-search-preview-list">
-									{previewJob.detail.responsibilities.map((line) => (
-										<li key={line}>{line}</li>
-									))}
-								</ul>
-							</section>
-							<section className="job-search-preview-section">
-								<h3 className="job-search-preview-section-title preview-section-title--flex"><span className="filter-label-icon filter-label-icon--violet" style={{ width: 18, height: 18 }}><MdCode size={11} /></span>Skills</h3>
-								<div className="job-search-preview-skills">
+						{/* ── Scrollable body — Skills + Fit + Rounds ── */}
+						<div className="jd-body">
+
+							{/* Skills */}
+							<div className="jd-skills-section">
+								<h4 className="jd-section-label">
+									<span className="jd-section-icon jd-section-icon--violet"><MdCode size={12}/></span>
+									Skills required
+								</h4>
+								<div className="jd-skills-row">
 									{previewJob.detail.skills.map((s) => (
-										<span key={s} className="job-search-preview-skill">
-											{s}
-										</span>
+										<span key={s} className="job-search-preview-skill">{s}</span>
 									))}
 								</div>
-							</section>
-						</div>
+							</div>
 
-						<footer className="job-search-preview-footer">
-							<Button onClick={closeJobPreview} className="preview-close-btn"><IoClose size={13} style={{ marginRight: 4, verticalAlign: 'middle' }} />Close</Button>
-							<button
-								type="button"
-								className={`job-search-preview-save ${savedIds.has(previewJob.id) ? 'job-search-preview-save--on' : ''}`}
-								aria-pressed={savedIds.has(previewJob.id)}
-								onClick={() => toggleSave(previewJob.id)}
-							>
-								<span className="job-search-preview-save-inner">
-									{savedIds.has(previewJob.id) ? (
-										<MdBookmark className="job-search-preview-save-ico" size={18} />
-									) : (
-										<MdBookmarkBorder className="job-search-preview-save-ico" size={18} />
-									)}
-									<span className="job-search-preview-save-text">
-										{savedIds.has(previewJob.id) ? 'Saved to tracker' : 'Save job'}
-									</span>
-								</span>
+							{/* Two-panel: Your fit + Interview rounds */}
+							<div className="jd-panels">
+
+								{/* Left: Your fit */}
+								<div className="jd-panel jd-panel--fit">
+									<h3 className="jd-panel-title">
+										<MdWorkspacePremium size={16} className="jd-panel-title-icon jd-panel-title-icon--gold"/>
+										Your fit
+									</h3>
+
+									{previewJob.matchScore != null ? (
+										<div className="jd-fit-score-row">
+											<div className="jd-fit-score-ring" style={{'--score': previewJob.matchScore} as React.CSSProperties}>
+												<span className="jd-fit-score-num">{previewJob.matchScore}%</span>
+											</div>
+											<div className="jd-fit-score-copy">
+												<p className="jd-fit-score-title">Profile match score</p>
+												<p className="jd-fit-score-sub">Based on your skills &amp; learning path</p>
+											</div>
+										</div>
+									) : null}
+
+									{previewJob.detail.skillsMatched?.length ? (
+										<div className="jd-fit-group">
+											<p className="jd-fit-label jd-fit-label--match">
+												<MdThumbUp size={12}/> Skills matched
+											</p>
+											<div className="jd-fit-pills">
+												{previewJob.detail.skillsMatched.map((s) => (
+													<span key={s} className="jd-fit-pill jd-fit-pill--match"><MdCheckCircle size={11}/>{s}</span>
+												))}
+											</div>
+										</div>
+									) : null}
+
+									{previewJob.detail.skillGaps?.length ? (
+										<div className="jd-fit-group">
+											<p className="jd-fit-label jd-fit-label--gap">
+												<MdWarning size={12}/> Gaps to bridge
+											</p>
+											<div className="jd-fit-pills">
+												{previewJob.detail.skillGaps.map((s) => (
+													<span key={s} className="jd-fit-pill jd-fit-pill--gap"><MdSchool size={11}/>{s}</span>
+												))}
+											</div>
+										</div>
+									) : null}
+
+									{previewJob.matchReasons?.length ? (
+										<div className="jd-fit-group">
+											<p className="jd-fit-label"><MdAutoAwesome size={12}/> AI explanation</p>
+											<ul className="jd-fit-reasons">
+												{previewJob.matchReasons.map((r) => (
+													<li key={r}>{r}</li>
+												))}
+											</ul>
+										</div>
+									) : null}
+
+									{previewJob.detail.eligibility?.length ? (
+										<div className="jd-fit-group">
+											<p className="jd-fit-label"><MdFactCheck size={12}/> Eligibility checklist</p>
+											<ul className="jd-fit-checklist">
+												{previewJob.detail.eligibility.map((e) => (
+													<li key={e}><span className="jd-check"><MdCheckCircle size={10}/></span>{e}</li>
+												))}
+											</ul>
+										</div>
+									) : null}
+								</div>
+
+								{/* Right: Interview rounds */}
+								<div className="jd-panel jd-panel--rounds">
+									<h3 className="jd-panel-title">
+										<MdEmojiEvents size={16} className="jd-panel-title-icon jd-panel-title-icon--indigo"/>
+										Interview rounds
+									</h3>
+									<div className="jd-rounds-list">
+										{(previewJob.detail.interviewRounds ?? [
+											{ round: 1, name: 'HR Screening',    subtitle: 'Culture fit & role overview call' },
+											{ round: 2, name: 'Aptitude Test',   subtitle: 'Logic, problem-solving & verbal reasoning' },
+											{ round: 3, name: 'Technical',       subtitle: 'Live coding & system design questions' },
+											{ round: 4, name: 'Skill Assessment',subtitle: 'Take-home project or pair programming task' },
+											{ round: 5, name: 'Final / CTO',     subtitle: 'Leadership discussion & offer negotiation' },
+										]).map((rd) => {
+											const roundIcons: Record<string, React.ReactNode> = {
+												'HR Screening':    <MdRecordVoiceOver size={14}/>,
+												'Aptitude Test':   <MdQuiz size={14}/>,
+												'Technical':       <MdCode size={14}/>,
+												'Skill Assessment':<MdPsychology size={14}/>,
+												'Final / CTO':     <MdEmojiEvents size={14}/>,
+												'Design Review':   <MdStar size={14}/>,
+											};
+											return (
+												<div key={rd.round} className="jd-round-item">
+													<span className="jd-round-icon">{roundIcons[rd.name] ?? <MdListAlt size={14}/>}</span>
+													<span className="jd-round-num">Rd {rd.round}</span>
+													<span className="jd-round-copy">
+														<span className="jd-round-name">{rd.name}</span>
+														{rd.subtitle && <span className="jd-round-sub">{rd.subtitle}</span>}
+													</span>
+													<span className="jd-round-arrow">→</span>
+												</div>
+											);
+										})}
+									</div>
+									<p className="jd-rounds-hint"><MdMenuBook size={12} style={{marginRight:4,verticalAlign:'middle'}}/>Tap any round to prepare</p>
+								</div>
+							</div>
+
+						</div>{/* end jd-body */}
+
+						</div>{/* end jd-scroll-area */}
+
+						{/* ── 4-action footer ── */}
+						<footer className="jd-footer">
+							<button type="button" className="jd-action-btn jd-action-btn--apply" onClick={() => { setAppliedIds((prev) => new Set(prev).add(previewJob.id)); message.success('Application submitted!'); }} disabled={appliedIds.has(previewJob.id)}>
+								<span className="jd-action-icon jd-action-icon--apply">{appliedIds.has(previewJob.id) ? <MdCheckCircle size={16}/> : <MdRocketLaunch size={16}/>}</span>
+								<span className="jd-action-text"><span className="jd-action-label">{appliedIds.has(previewJob.id) ? 'Applied ✓' : 'Apply now'}</span><span className="jd-action-sub">→ tracker</span></span>
 							</button>
-							<Button
-								type="primary"
-								className="job-search-preview-apply"
-								onClick={() => {
-									setAppliedIds((prev) => new Set(prev).add(previewJob.id));
-									message.success('Application submitted successfully!');
-								}}
-								disabled={appliedIds.has(previewJob.id)}
-							>
-								{appliedIds.has(previewJob.id) ? (
-									<><MdCheckCircle size={12} style={{ marginRight: 4, verticalAlign: 'middle' }} />Applied</>
-								) : (
-									<><MdSend size={12} style={{ marginRight: 4, verticalAlign: 'middle' }} />Apply</>
-								)}
-							</Button>
+
+							<button type="button" className={`jd-action-btn jd-action-btn--save ${savedIds.has(previewJob.id) ? 'jd-action-btn--saved' : ''}`} onClick={() => toggleSave(previewJob.id)}>
+								<span className="jd-action-icon jd-action-icon--save">{savedIds.has(previewJob.id) ? <MdBookmark size={16}/> : <MdBookmarkBorder size={16}/>}</span>
+								<span className="jd-action-text"><span className="jd-action-label">{savedIds.has(previewJob.id) ? 'Saved' : 'Save for later'}</span><span className="jd-action-sub">→ saved list</span></span>
+							</button>
+
+							<button type="button" className="jd-action-btn jd-action-btn--skills" onClick={() => message.info('Opening learning path…')}>
+								<span className="jd-action-icon jd-action-icon--skills"><MdSchool size={16}/></span>
+								<span className="jd-action-text"><span className="jd-action-label">Build skills</span><span className="jd-action-sub">→ full learning path</span></span>
+							</button>
+
+							<button type="button" className="jd-action-btn jd-action-btn--prepare" onClick={() => message.info('Opening round prep…')}>
+								<span className="jd-action-icon jd-action-icon--prepare"><MdPsychology size={16}/></span>
+								<span className="jd-action-text"><span className="jd-action-label">Prepare round</span><span className="jd-action-sub">→ round learning path</span></span>
+							</button>
 						</footer>
 					</div>
 				) : null}
