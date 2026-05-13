@@ -1,4 +1,4 @@
-import { CheckCircleOutlined, DownOutlined, InfoCircleTwoTone, LoadingOutlined } from '@ant-design/icons';
+﻿import { CheckCircleOutlined, DownOutlined, InfoCircleTwoTone, LoadingOutlined } from '@ant-design/icons';
 import {
 	Alert,
 	Avatar,
@@ -684,6 +684,13 @@ const Learn = () => {
 														</span>
 														<span className="learn-next-mode-trigger-text">Skill path</span>
 													</>
+												) : selectedMode === 'HOUR' ? (
+													<>
+														<span className="learn-next-mode-trigger-glyph learn-next-mode-trigger-glyph--hour">
+															<PiTimerFill size={15} aria-hidden />
+														</span>
+														<span className="learn-next-mode-trigger-text">Hour path</span>
+													</>
 												) : (
 													<>
 														<span className="learn-next-mode-trigger-glyph learn-next-mode-trigger-glyph--week">
@@ -725,7 +732,21 @@ const Learn = () => {
 											</span>
 										</div>
 									</Select.Option>
-								</Select>
+								<Select.Option value="HOUR" key="HOUR">
+						<div className="learn-next-mode-option">
+							<span className="learn-next-mode-option-glow learn-next-mode-option-glow--hour" aria-hidden />
+							<span className="learn-next-mode-option-icon-wrap learn-next-mode-option-icon-wrap--hour">
+								<PiTimerFill size={18} aria-hidden />
+							</span>
+							<span className="learn-next-mode-option-copy">
+								<span className="learn-next-mode-option-title">Hour based</span>
+								<span className="learn-next-mode-option-desc">
+									Break down the path by hours — fine-grained control over your daily study blocks.
+								</span>
+							</span>
+						</div>
+					</Select.Option>
+					</Select>
 								</div>
 
 								<span className="learn-toolbar-group-sep" aria-hidden />
@@ -1017,7 +1038,7 @@ const Learn = () => {
 											key={index}
 										>
 											<div className="gx-timeline-time gx-font-weight-semi-bold" style={{ padding: '5px !important' }}>
-												{selectedMode === 'SKILL' ? `Skill - ${index + 1}` : `${item?.weeks}`}
+												{selectedMode === 'SKILL' ? `Skill - ${index + 1}` : selectedMode === 'HOUR' ? `~${Math.max(1, Math.round((item?.weeks || 1) * 8))}h` : `${item?.weeks}`}
 											</div>
 											{/* <div className="gx-timeline-time gx-font-weight-semi-bold" style={{ padding: '5px !important' }}>
 												{item?.weeks}
@@ -1042,9 +1063,19 @@ const Learn = () => {
 																	</div>
 																	<p className={`gx-ml-4 ${textStyle} gx-fs-md`}>{item?.title}</p>
 																</div>
-																<Tag color="purple" className="gx-m-0 gx-mb-1 gx-mx-4 gx-px-3 gx-fs-xs">
-																	{item?.skill}
-																</Tag>
+																<div className="gx-d-flex gx-align-items-center gx-mx-4 gx-mb-1" style={{ gap: 6 }}>
+																	<Tag color="purple" className="gx-m-0 gx-px-3 gx-fs-xs">
+																		{item?.skill}
+																	</Tag>
+																	<span className="lp-hours-chip">
+																		<PiTimerFill size={11} />
+																		{item?.hours
+																			? `${item.hours} hrs`
+																			: selectedMode === 'WEEK' || selectedMode === 'HOUR'
+																			? `~${Math.max(1, Math.round((item?.weeks || 1) * 8))} hrs`
+																			: '~6 hrs'}
+																	</span>
+																</div>
 																<p className="gx-fs-sm gx-mb-0 gx-mx-4">
 																	{item?.brief_summary?.length > 150 ? `${item?.brief_summary.slice(0, 150)}...` : item?.brief_summary}
 																</p>
@@ -1438,21 +1469,7 @@ const Learn = () => {
 			<Modal
 				closeIcon={<GiSplitCross title="close" size={18} className="gx-m-0 gx-p-0 gx-fs-sm gx-text-danger" />}
 				title={
-					<div className="gx-d-flex gx-align-items-center card-titles">
-						{/* <BsSubstack size={16} className='gx-mr-2 gx-link'/> */}
-						<img
-							src="/assets/images/pipeline.gif"
-							className="gx-mr-1"
-							alt="success-img"
-							style={{
-								width: 35,
-								height: 35
-							}}
-						/>
-						Sub Topic - {modalContent?.weeks}
-						{/* <p className='gx-p-0 gx-m-0 gx-fs-xs'>Sub Topic </p>
-					<p className='gx-p-0 gx-m-0 gx-fs-xs'></p> */}
-					</div>
+					<div className="lp-modal-title-bar"><span className="lp-modal-title-badge"><img src="/assets/images/pipeline.gif" alt="" style={{ width: 22, height: 22 }} /></span><span className="lp-modal-title-text"><span className="lp-modal-title-main">{modalContent?.title}</span></span></div>
 				}
 				centered
 				open={open}
@@ -1465,6 +1482,7 @@ const Learn = () => {
 				footer={null}
 				maskClosable={false}
 				keyboard={false}
+				className="lp-subtopic-modal"
 				style={{ top: '10px', overflow: 'hidden' }}
 				modalRender={(modalNode) => (
 					<motion.div
@@ -1478,225 +1496,202 @@ const Learn = () => {
 					</motion.div>
 				)}
 			>
-				<div className="job-card">
-					<motion.div initial={{ x: 300, opacity: 0.5 }} animate={{ x: 0, opacity: 1 }} transition={{ duration: 1.3, ease: easeInOut }}>
-						<div className="job-header">
-							<div
-								className="card-icon1 orders-icon"
-								style={{
-									padding: '5px'
-								}}
-							>
-								<SiConfluence size={35} />
+				<div className="lp-modal-body">
+
+				{/* ── Hero header ── */}
+				<div className="lp-modal-hero">
+					<div className="lp-modal-hero-bg" aria-hidden />
+					<div className="lp-modal-hero-content">
+						<div className="lp-modal-hero-icon">
+							<SiConfluence size={28} />
+						</div>
+						<div className="lp-modal-hero-info">
+							<h2 className="lp-modal-hero-title">{modalContent?.title}</h2>
+							<p className="lp-modal-hero-skill">{modalContent?.skill}</p>
+							<div className="lp-modal-hero-pills">
+								<span className="lp-modal-pill lp-modal-pill--purple">
+									<PiTimerFill size={12} />
+									{selectedMode === 'SKILL' ? 'Skill' : selectedMode === 'HOUR' ? 'Hour based' : `${modalContent?.weeks}`}
+								</span>
+								<span className="lp-modal-pill lp-modal-pill--orange">
+									<PiTimerFill size={12} />
+									Total: {learnPath?.duration}
+								</span>
+								<span className="lp-modal-pill lp-modal-pill--emerald">
+									<PiTimerFill size={12} />
+									{modalContent?.hours
+										? `${modalContent.hours} hrs`
+										: selectedMode === 'WEEK' || selectedMode === 'HOUR'
+										? `~${Math.max(1, Math.round((parseInt(modalContent?.weeks) || 1) * 8))} hrs`
+										: '~6 hrs'}
+								</span>
 							</div>
-							<div className="job-info">
-								<h2 className="job-title gx-mb-1" style={{ color: 'rgb(3 95 168)' }}>
-									{modalContent?.title}
-								</h2>
-								<p className="company-location" style={{ color: 'rgb(45 137 0)' }}>
-									Skills - {modalContent?.skill}
-								</p>
-								<div className="tags">
-									<Tag color="purple" className="gx-m-0 gx-fs-sm gx-d-flex gx-align-items-center">
-										<PiTimerFill size={14} className="gx-mr-1" />
-										Topic Duration :{modalContent?.weeks}
-									</Tag>
-									<Tag color="volcano" className="gx-m-0 gx-fs-sm gx-d-flex gx-align-items-center">
-										<PiTimerFill size={14} className="gx-mr-1" />
-										Total Estimated Duration :{learnPath?.duration}
-									</Tag>
-								</div>
+						</div>
+						<Button className="lp-modal-back-btn" size="small" onClick={() => setOpen(false)}>
+							<FaArrowLeft size={11} />
+							Back
+						</Button>
+					</div>
+				</div>
+
+				<div className="lp-modal-sections">
+
+					{/* About this role */}
+					<motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.4, delay: 0.05 }}>
+						<div className="lp-modal-section">
+							<div className="lp-modal-section-header">
+								<span className="lp-modal-section-icon lp-modal-section-icon--indigo"><FaTags size={13} /></span>
+								<span className="lp-modal-section-title">About this role</span>
 							</div>
-							<Button size="small" className="gx-d-flex gx-align-items-center" type="primary" onClick={() => setOpen(false)}>
-								<FaArrowLeft className="gx-mr-1" />
-								Go Back
-							</Button>
+							<p className="lp-modal-section-text">{learnPath?.roleSummary}</p>
 						</div>
 					</motion.div>
 
-					<motion.div initial={{ x: 500, opacity: 0.5 }} animate={{ x: 0, opacity: 1 }} transition={{ duration: 1.3, ease: easeInOut }}>
-						<section className="job-section">
-							<div>
-								<h3 className="gx-d-flex gx-align-items-center">
-									<FaTags className="gx-link gx-mr-1" /> About this role
-								</h3>
-								<p>{learnPath?.roleSummary}</p>
+					{/* Brief Summary */}
+					<motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.4, delay: 0.1 }}>
+						<div className="lp-modal-section">
+							<div className="lp-modal-section-header">
+								<span className="lp-modal-section-icon lp-modal-section-icon--blue"><SiChartdotjs size={13} /></span>
+								<span className="lp-modal-section-title">Brief Summary</span>
 							</div>
-						</section>
+							<p className="lp-modal-section-text">{modalContent?.brief_summary}</p>
+						</div>
 					</motion.div>
 
-					<motion.div initial={{ x: 700, opacity: 0.5 }} animate={{ x: 0, opacity: 1 }} transition={{ duration: 1.3, ease: easeInOut }}>
-						<section className="job-section">
-							<h3 className="gx-d-flex gx-align-items-center">
-								<SiChartdotjs className="gx-link gx-mr-1" /> Brief Summary
-							</h3>
-							<p>{modalContent?.brief_summary}</p>
-						</section>
+					{/* Preparation Topics */}
+					<motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.4, delay: 0.15 }}>
+						<div className="lp-modal-section">
+							<div className="lp-modal-section-header">
+								<span className="lp-modal-section-icon lp-modal-section-icon--violet"><SiBookstack size={13} /></span>
+								<span className="lp-modal-section-title">Preparation Topics</span>
+							</div>
+							<div className="lp-modal-chips">
+								{modalContent?.topics?.map((topic: any, i: number) => (
+									<span key={i} className="lp-modal-chip">{topic}</span>
+								))}
+							</div>
+						</div>
 					</motion.div>
 
-					<motion.div initial={{ x: 800, opacity: 0.5 }} animate={{ x: 0, opacity: 1 }} transition={{ duration: 1.3, ease: easeInOut }}>
-						<section className="job-section">
-							<h3 className="gx-d-flex gx-align-items-center">
-								<SiBookstack className="gx-link gx-mr-1" />
-								Preparation Topics{' '}
-							</h3>
-							<ul>
-								{modalContent?.topics?.map((topic: any) => {
-									return <li>{topic}</li>;
-								})}
-							</ul>
-						</section>
-					</motion.div>
-
+					{/* Tools & Technologies */}
 					{modalContent?.toolsAndTechnologies?.length > 0 && (
-						<section className="job-section">
-							<h3 className="gx-d-flex gx-align-items-center gx-m-0 gx-mb-1">
-								<BsWrenchAdjustableCircleFill className="gx-link gx-mr-1" />
-								Tool and Technologies{' '}
-							</h3>
-							<p className="gx-p-0 gx-m-0 gx-fs-xs gx-ml-4 gx-mb-2">
-								The tools and technologies listed for this job description reflect current industry trends and can significantly boost your chances of
-								success in interviews.
-							</p>
-							<ul>{modalContent?.toolsAndTechnologies?.map((tool: any, index: any) => <li key={index}>{tool}</li>)}</ul>
-						</section>
+						<motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.4, delay: 0.2 }}>
+							<div className="lp-modal-section">
+								<div className="lp-modal-section-header">
+									<span className="lp-modal-section-icon lp-modal-section-icon--teal"><BsWrenchAdjustableCircleFill size={13} /></span>
+									<span className="lp-modal-section-title">Tools & Technologies</span>
+								</div>
+								<p className="lp-modal-section-hint">Current industry trends — boosts interview success.</p>
+								<div className="lp-modal-chips lp-modal-chips--tool">
+									{modalContent?.toolsAndTechnologies?.map((tool: any, i: number) => (
+										<span key={i} className="lp-modal-chip lp-modal-chip--tool">{tool}</span>
+									))}
+								</div>
+							</div>
+						</motion.div>
 					)}
 
+					{/* Previously Asked Questions */}
 					{modalContent?.previous_question_and_answers?.length > 0 && (
-						<Collapse defaultActiveKey={['1']} onChange={onChange} className="gx-mt-2">
-							<Panel
-								header={
-									<div className="">
-										<div className="gx-d-flex gx-align-items-center">
-											<img
-												src="/assets/images/ticket.gif"
-												alt="active"
-												style={{ width: 22, borderRadius: '8px' }}
-												className="gx-p-0 gx-m-0 gx-mr-1 "
-											/>
-
-											<p className="gx-p-0 gx-m-0 gx-fs-md gx-link" style={{ fontWeight: 600 }}>
-												{' '}
-												Previously Asked Questions{' '}
+						<motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.4, delay: 0.25 }}>
+							<div className="lp-modal-section">
+								<div className="lp-modal-section-header">
+									<span className="lp-modal-section-icon lp-modal-section-icon--amber">
+										<img src="/assets/images/ticket.gif" alt="" style={{ width: 14, borderRadius: 4 }} />
+									</span>
+									<span className="lp-modal-section-title">Previously Asked Questions</span>
+								</div>
+								<p className="lp-modal-section-hint">Explore interview questions from various companies to sharpen your prep.</p>
+								<div className="lp-modal-qna">
+									{modalContent?.previous_question_and_answers?.map((topic: any, i: number) => (
+										<div key={i} className="lp-modal-qna-item">
+											<p className="lp-modal-qna-q">
+												<img src="/assets/images/Qna.png" alt="" style={{ width: 13, borderRadius: 4 }} />
+												{topic?.question}
+											</p>
+											<p className="lp-modal-qna-a">
+												<FaArrowCircleRight size={12} color="#10b981" />
+												{topic?.answer}
 											</p>
 										</div>
-										<p className="gx-p-0 gx-m-0 gx-fs-xs gx-ml-4">
-											{' '}
-											Explore interview questions previously asked by various companies to boost your preparation and improve your chances of success.
-										</p>
-									</div>
-								}
-								key="1"
-							>
-								<section className="">
-									{/* <h3 className="gx-d-flex gx-align-items-center">
-								<SiBookstack className="gx-link gx-mr-1" />
-								Preparation Topics
-							</h3> */}
-									{/* <ul> */}
-									{modalContent?.previous_question_and_answers?.map((topic: any) => {
-										return (
-											<div className="gx-my-2">
-												<p className="gx-m-0 gx-p-0 gx-d-flex gx-align-items-center" style={{ fontWeight: 500 }}>
-													<img
-														src="/assets/images/Qna.png"
-														alt="active"
-														style={{ width: 13, borderRadius: '8px' }}
-														className="gx-p-0 gx-m-0 gx-mr-1 "
-													/>
-													{topic?.question}
-												</p>
-												<p className="gx-m-0 gx-p-0 gx-d-flex gx-align-items-center gx-fs-sm gx-pt-1">
-													<FaArrowCircleRight size={13} className="gx-mr-1" color="green" />
-													{topic?.answer}
-												</p>
-											</div>
-										);
-									})}
-
-									{/* </ul> */}
-								</section>
-							</Panel>
-						</Collapse>
+									))}
+								</div>
+							</div>
+						</motion.div>
 					)}
 
-					<section className="job-section">
-						<h3 className="gx-d-flex gx-align-items-center">
-							<SiChartdotjs className="gx-link gx-mr-1" style={{ color: 'rgb(3 95 168)' }} /> Resources
-						</h3>
-						<p>
-							{modalContent?.resources?.map((resource: any) => {
-								const link = resource?.link;
-								const feedback: any = feedbacks[link] || '';
-
-								return (
-									<ul key={link} className="gx-m-0 gx-p-0 gx-ml-3 gx-my-1">
-										<li>
-											{resource?.name} *
-											<Tag color="purple" className="gx-ml-1">
-												{resource?.type}
-											</Tag>
-										</li>
-										<div className="gx-d-flex gx-justify-content-between">
-											<a href={link} target="_blank" rel="noopener noreferrer" className="gx-link gx-m-0 gx-m-0">
-												{link}
+					{/* Resources */}
+					<motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.4, delay: 0.3 }}>
+						<div className="lp-modal-section">
+							<div className="lp-modal-section-header">
+								<span className="lp-modal-section-icon lp-modal-section-icon--blue"><SiChartdotjs size={13} /></span>
+								<span className="lp-modal-section-title">Resources</span>
+							</div>
+							<div className="lp-modal-resources">
+								{modalContent?.resources?.map((resource: any) => {
+									const link = resource?.link;
+									const feedback: any = feedbacks[link] || '';
+									const domain = (() => { try { return new URL(link).hostname.replace('www.', ''); } catch { return link; } })();
+									return (
+										<div key={link} className="lp-modal-resource-card">
+											<a href={link} target="_blank" rel="noopener noreferrer" className="lp-modal-resource-thumb-wrap">
+												<div className="lp-modal-resource-preview">
+													<img
+														src={`https://www.google.com/s2/favicons?domain=${domain}&sz=64`}
+														alt=""
+														className="lp-modal-resource-favicon"
+														onError={(e: any) => { e.currentTarget.style.display = 'none'; }}
+													/>
+													<span className="lp-modal-resource-domain">{domain}</span>
+												</div>
+												<span className="lp-modal-resource-thumb-overlay">
+													<FaRegEye size={14} />
+													Visit
+												</span>
 											</a>
-
-											<Popover
-												open={openPopover === link}
-												onOpenChange={() => {}}
-												zIndex={10000}
-												content={
-													<div className="gx-d-flex" style={{ flexDirection: 'column', alignItems: 'end' }}>
-														<p className="gx-m-0 gx-fs-sm">Let us know what's wrong with the link</p>
-														<TextArea
-															rows={3}
-															placeholder="Describe the issue..."
-															value={feedback}
-															onChange={(e) => handleChange(link, e?.target?.value)}
-															className="gx-mt-2"
-														/>
-														<div className="gx-d-flex gx-mt-2">
-															<Button size="small" className="gx-mr-1" onClick={handleCancel}>
-																Cancel
-															</Button>
-															<Button
-																size="small"
-																type="primary"
-																loading={feedbackLoader}
-																onClick={() => handleSubmit(link)}
-																disabled={!feedback?.trim()}
-															>
-																Submit
-															</Button>
+											<div className="lp-modal-resource-top">
+												<span className="lp-modal-resource-name">{resource?.name}</span>
+												<Tag color="purple" className="gx-m-0">{resource?.type}</Tag>
+											</div>
+											<div className="lp-modal-resource-bottom">
+												<a href={link} target="_blank" rel="noopener noreferrer" className="lp-modal-resource-link">{link}</a>
+												<Popover
+													open={openPopover === link}
+													onOpenChange={() => {}}
+													zIndex={10000}
+													content={
+														<div className="gx-d-flex" style={{ flexDirection: 'column', alignItems: 'end' }}>
+															<p className="gx-m-0 gx-fs-sm">Let us know what's wrong with the link</p>
+															<TextArea rows={3} placeholder="Describe the issue..." value={feedback} onChange={(e) => handleChange(link, e?.target?.value)} className="gx-mt-2" />
+															<div className="gx-d-flex gx-mt-2">
+																<Button size="small" className="gx-mr-1" onClick={handleCancel}>Cancel</Button>
+																<Button size="small" type="primary" loading={feedbackLoader} onClick={() => handleSubmit(link)} disabled={!feedback?.trim()}>Submit</Button>
+															</div>
 														</div>
-													</div>
-												}
-												title={
-													<p className="gx-m-0 gx-fs-sm gx-d-flex gx-align-items-center gx-justify-content-between">
-														<div className="gx-d-flex gx-align-items-center">
-															<TbMoodSadFilled className="gx-mr-1" size={15} /> Found a broken link?
-														</div>
-														<GiSplitCross onClick={handleCancel} title="close" size={15} className="gx-m-0 gx-link gx-p-0 gx-fs-sm gx-text-danger" />
-													</p>
-												}
-											>
-												<Button
-													size="small"
-													type="ghost"
-													onClick={() => togglePopover(link)}
-													className="gx-d-flex gx-mr-3 gx-m-0 gx-p-0 gx-px-2 gx-align-items-center"
+													}
+													title={
+														<p className="gx-m-0 gx-fs-sm gx-d-flex gx-align-items-center gx-justify-content-between">
+															<div className="gx-d-flex gx-align-items-center">
+																<TbMoodSadFilled className="gx-mr-1" size={15} /> Found a broken link?
+															</div>
+															<GiSplitCross onClick={handleCancel} title="close" size={15} className="gx-m-0 gx-link gx-p-0 gx-fs-sm gx-text-danger" />
+														</p>
+													}
 												>
-													<FaHeartBroken size={13} className="gx-mr-1" /> Report an Issue
-												</Button>
-											</Popover>
+													<Button size="small" type="ghost" onClick={() => togglePopover(link)} className="lp-modal-report-btn">
+														<FaHeartBroken size={11} /> Report
+													</Button>
+												</Popover>
+											</div>
 										</div>
-									</ul>
-								);
-							})}
-						</p>
-					</section>
+									);
+								})}
+							</div>
+						</div>
+					</motion.div>
+
 				</div>
+			</div>
 			</Modal>
 
 			<Modal
@@ -1718,138 +1713,162 @@ const Learn = () => {
 				// mask={false}
 				maskClosable={false}
 				keyboard={false}
+				className="lp-ack-modal-wrapper"
 				style={{ top: 2, width: '100%', margin: '10px' }}
 			>
-				{/* {summaryNote && ( */}
-				<div>
-					<div className="email-confirmation-container">
-						<div className="email-box">
-							<img
-								src="/assets/images/startup.gif"
-								alt="Mail Icon"
-								className="email-icon"
-								style={{
-									width: 50,
-									height: 50
-								}}
-							/>
-							<h3>About Company - {summaryNote?.company}</h3>
-							<p className="gx-mt-1 gx-p-0">{summaryNote?.about_company}`</p>
-							<h3>Summarized Version</h3>
-							<p className="gx-mt-1 gx-p-0">{summaryNote?.summary}</p>
+							<div className="lp-ack-modal">
 
+					{/* ── Hero ── */}
+					<div className="lp-ack-hero">
+						<div className="lp-ack-hero-bg" aria-hidden />
+						<div className="lp-ack-hero-content">
+							<div className="lp-ack-hero-icon">
+								<img src="/assets/images/startup.gif" alt="" style={{ width: 38, height: 38 }} />
+							</div>
 							<div>
-								{summaryNote?.previous_questions?.length > 0 && <span className="highlight">Previously asked Questions </span>}
-
-								<div className="gx-mt-2">
-									{summaryNote?.previous_questions?.map((question: any, index: any) => (
-										<li className="gx-d-flex gx-align-items-center">
-											<VscActivateBreakpoints size={14} className="gx-mr-1" /> {question}{' '}
-										</li>
-									))}
-								</div>
+								<p className="lp-ack-hero-eyebrow">Review Acknowledgement</p>
+								<h2 className="lp-ack-hero-title">{summaryNote?.company}</h2>
 							</div>
-
-							<h3 className="gx-mt-3">Learning Path Confirmation</h3>
-							<p className="gx-mt-2 gx-p-0">
-								Please confirm that you <span className="highlight">possess the mandatory skills listed below </span>, as this will help us assess
-								your current proficiency. Your confirmation will enable us to generate a personalized learning path tailored to your needs.
-							</p>
-
-							<div className="gx-d-flex" style={{ flexDirection: 'column' }}>
-								<span className="highlight">Mandatory Skills Required</span>
-
-								<div className="gx-mt-2">
-									{summaryNote?.required_skills?.map((skill: any, index: any) => (
-										<Tag color={tagColors[index % tagColors?.length]} key={index}>
-											{skill}
-										</Tag>
-									))}
-								</div>
-							</div>
-							<div className="gx-d-flex gx-mt-1" style={{ flexDirection: 'column' }}>
-								<span className="highlight">Optional Skills </span>
-
-								<div className="gx-mt-2">
-									{summaryNote?.optional_skills?.map((skill: any, index: any) => (
-										<Tag color={tagColors[index % tagColors?.length]} key={index}>
-											{skill}
-										</Tag>
-									))}
-								</div>
-							</div>
-
-							<div className="gx-d-flex gx-mt-1" style={{ flexDirection: 'column' }}>
-								{summaryNote?.certifications?.length > 0 && <span className="highlight">Certifications</span>}
-
-								<div className="gx-mt-2">
-									{summaryNote?.certifications?.map((skill: any, index: any) => (
-										<Tag color={certificationsColors[index % certificationsColors?.length]} key={index}>
-											{skill}
-										</Tag>
-									))}
-								</div>
-							</div>
-							{reviewAcknowledge ? (
-								<Checkbox className="gx-mt-2 gx-fs-md" checked>
-									I acknowledge that I have read and understood the above instructions.
-								</Checkbox>
-							) : (
-								<Checkbox checked={isAcknowledged} className="gx-mt-2 gx-fs-md" onChange={onChange}>
-									I acknowledge that I have read and understood the above instructions.
-								</Checkbox>
-							)}
-
-							{/* <p className="gx-fs-xs gx-ml-4">
-  If you do not have the required skills, please <span className="resend-link">cancel the learning path</span>.
-</p> */}
 						</div>
 					</div>
 
-					{!reviewAcknowledge && (
-						<div className="gx-mt-4 gx-d-flex" style={{ justifyContent: 'end' }}>
-							<Button
-								size="small"
-								style={{ alignSelf: 'end' }}
-								onClick={() => {
-									setSummaryNote({});
-									setGenerateModal(false);
-									setIsAcknowledged(false);
-									setShowNote(true);
-									form.setFieldValue('text', '');
-									dispatch(DeleteLearningPath({ jdId: JDID }));
-								}}
-							>
-								Cancel
-							</Button>
-							<Button
-								type="primary"
-								size="small"
-								disabled={!isAcknowledged}
-								loading={learnLoader}
-								onClick={() => {
-									dispatch(
-										addLearningPath({
+					<div className="lp-ack-body">
+
+						{/* About Company */}
+						<div className="lp-ack-section">
+							<div className="lp-ack-section-header">
+								<span className="lp-ack-section-icon lp-ack-section-icon--blue"><SiChartdotjs size={13} /></span>
+								<span className="lp-ack-section-title">About Company</span>
+							</div>
+							<p className="lp-ack-section-text">{summaryNote?.about_company}</p>
+						</div>
+
+						{/* Summarized Version */}
+						<div className="lp-ack-section">
+							<div className="lp-ack-section-header">
+								<span className="lp-ack-section-icon lp-ack-section-icon--indigo"><PiEngineBold size={13} /></span>
+								<span className="lp-ack-section-title">Summarized Role</span>
+							</div>
+							<p className="lp-ack-section-text">{summaryNote?.summary}</p>
+						</div>
+
+						{/* Previously Asked Questions */}
+						{summaryNote?.previous_questions?.length > 0 && (
+							<div className="lp-ack-section">
+								<div className="lp-ack-section-header">
+									<span className="lp-ack-section-icon lp-ack-section-icon--amber">
+										<img src="/assets/images/ticket.gif" alt="" style={{ width: 14, borderRadius: 4 }} />
+									</span>
+									<span className="lp-ack-section-title">Previously Asked Questions</span>
+								</div>
+								<ul className="lp-ack-questions">
+									{summaryNote?.previous_questions?.map((question: any, index: any) => (
+										<li key={index} className="lp-ack-question-item">
+											<VscActivateBreakpoints size={12} className="lp-ack-question-dot" />
+											{question}
+										</li>
+									))}
+								</ul>
+							</div>
+						)}
+
+						{/* Skills */}
+						<div className="lp-ack-section lp-ack-section--skills">
+							<div className="lp-ack-section-header">
+								<span className="lp-ack-section-icon lp-ack-section-icon--violet"><VscActivateBreakpoints size={13} /></span>
+								<span className="lp-ack-section-title">Learning Path Confirmation</span>
+							</div>
+							<p className="lp-ack-section-text">Please confirm you <strong>possess the mandatory skills</strong> listed below — this helps us tailor the path to your current proficiency.</p>
+
+							<div className="lp-ack-skills-grid">
+								{summaryNote?.required_skills?.length > 0 && (
+									<div className="lp-ack-skill-group">
+										<span className="lp-ack-skill-label lp-ack-skill-label--required">Mandatory Skills</span>
+										<div className="lp-ack-skill-chips">
+											{summaryNote?.required_skills?.map((skill: any, index: any) => (
+												<span key={index} className="lp-ack-chip lp-ack-chip--required">{skill}</span>
+											))}
+										</div>
+									</div>
+								)}
+								{summaryNote?.optional_skills?.length > 0 && (
+									<div className="lp-ack-skill-group">
+										<span className="lp-ack-skill-label lp-ack-skill-label--optional">Optional Skills</span>
+										<div className="lp-ack-skill-chips">
+											{summaryNote?.optional_skills?.map((skill: any, index: any) => (
+												<span key={index} className="lp-ack-chip lp-ack-chip--optional">{skill}</span>
+											))}
+										</div>
+									</div>
+								)}
+								{summaryNote?.certifications?.length > 0 && (
+									<div className="lp-ack-skill-group">
+										<span className="lp-ack-skill-label lp-ack-skill-label--cert"><PiCertificateFill size={11} /> Certifications</span>
+										<div className="lp-ack-skill-chips">
+											{summaryNote?.certifications?.map((skill: any, index: any) => (
+												<span key={index} className="lp-ack-chip lp-ack-chip--cert">{skill}</span>
+											))}
+										</div>
+									</div>
+								)}
+							</div>
+						</div>
+
+						{/* Acknowledgement */}
+						<div className="lp-ack-checkbox-wrap">
+							{reviewAcknowledge ? (
+								<Checkbox className="lp-ack-checkbox" checked>
+									I acknowledge that I have read and understood the above instructions.
+								</Checkbox>
+							) : (
+								<Checkbox checked={isAcknowledged} className="lp-ack-checkbox" onChange={onChange}>
+									I acknowledge that I have read and understood the above instructions.
+								</Checkbox>
+							)}
+						</div>
+
+						{/* Actions */}
+						{!reviewAcknowledge && (
+							<div className="lp-ack-actions">
+								<Button
+									size="small"
+									className="lp-ack-cancel-btn"
+									onClick={() => {
+										setSummaryNote({});
+										setGenerateModal(false);
+										setIsAcknowledged(false);
+										setShowNote(true);
+										form.setFieldValue('text', '');
+										dispatch(DeleteLearningPath({ jdId: JDID }));
+									}}
+								>
+									Cancel
+								</Button>
+								<Button
+									type="primary"
+									className="lp-ack-generate-btn"
+									disabled={!isAcknowledged}
+									loading={learnLoader}
+									onClick={() => {
+										dispatch(addLearningPath({
 											text: summaryNote?.summary,
 											company: summaryNote?.company,
-											requiredSkills:
-												Array.isArray(summaryNote?.required_skills) && summaryNote?.required_skills.length > 0 ? summaryNote?.required_skills : null,
-											optionalSkills:
-												Array.isArray(summaryNote?.optional_skills) && summaryNote?.optional_skills.length > 0 ? summaryNote?.optional_skills : null,
+											requiredSkills: Array.isArray(summaryNote?.required_skills) && summaryNote?.required_skills.length > 0 ? summaryNote?.required_skills : null,
+											optionalSkills: Array.isArray(summaryNote?.optional_skills) && summaryNote?.optional_skills.length > 0 ? summaryNote?.optional_skills : null,
 											jdId: JDID
-										})
-									);
-									setGenerateModal(false);
-									setPagesummary(summaryNote?.summary);
-								}}
-								style={{ alignSelf: 'end' }}
-							>
-								Generate Learning Path
-							</Button>
-						</div>
-					)}
+										}));
+										setGenerateModal(false);
+										setPagesummary(summaryNote?.summary);
+									}}
+								>
+									<MdAutoAwesome size={13} />
+									Generate Learning Path
+								</Button>
+							</div>
+						)}
+
+					</div>
 				</div>
-				{/* )} */}
 			</Modal>
 		</>
 	);

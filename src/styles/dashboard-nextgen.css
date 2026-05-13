@@ -549,6 +549,10 @@ body.dark-theme .learn-page.dash-next .learn-next-main-card {
 	background: linear-gradient(135deg, #0d9488 0%, #06b6d4 50%, #6366f1 115%);
 }
 
+.learn-page .learn-next-mode-trigger-glyph--hour {
+	background: linear-gradient(135deg, #059669 0%, #10b981 50%, #34d399 115%);
+}
+
 .learn-page .learn-next-mode-trigger-text {
 	font-family: var(--phase2-font-display, 'Outfit', system-ui, sans-serif);
 	font-size: 12px;
@@ -645,6 +649,10 @@ body.dark-theme .learn-page.dash-next .learn-next-main-card {
 	background: radial-gradient(ellipse 90% 120% at 0% 50%, rgba(6, 182, 212, 0.18), transparent 55%);
 }
 
+.learn-next-mode-option-glow--hour {
+	background: radial-gradient(ellipse 90% 120% at 0% 50%, rgba(16, 185, 129, 0.18), transparent 55%);
+}
+
 .learn-next-mode-dropdown .ant-select-item-option-active .learn-next-mode-option .learn-next-mode-option-glow,
 .learn-next-mode-dropdown .ant-select-item-option-selected .learn-next-mode-option .learn-next-mode-option-glow {
 	opacity: 1;
@@ -683,6 +691,10 @@ body.dark-theme .learn-page.dash-next .learn-next-main-card {
 
 .learn-next-mode-option-icon-wrap--week {
 	background: linear-gradient(145deg, #0f766e, #0891b2 50%, #6366f1);
+}
+
+.learn-next-mode-option-icon-wrap--hour {
+	background: linear-gradient(145deg, #059669, #10b981 50%, #34d399);
 }
 
 .learn-next-mode-option-copy {

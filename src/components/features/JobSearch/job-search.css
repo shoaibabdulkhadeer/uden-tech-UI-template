@@ -550,6 +550,7 @@
 	border: 1px solid rgba(148, 163, 184, 0.16);
 	border-radius: 12px;
 	padding: 4px;
+	margin-bottom: 5px;
 }
 
 .view-tab {
