@@ -71,6 +71,15 @@ import '../../../styles/dashboard-arena.css';
 const SAVED_STORAGE_KEY = 'jobSearch.savedIds';
 const APPLIED_STORAGE_KEY = 'jobSearch.appliedIds';
 
+const ROUND_ICONS: Record<string, React.ReactNode> = {
+	'HR Screening':    <MdRecordVoiceOver size={14}/>,
+	'Aptitude Test':   <MdQuiz size={14}/>,
+	'Technical':       <MdCode size={14}/>,
+	'Skill Assessment':<MdPsychology size={14}/>,
+	'Final / CTO':     <MdEmojiEvents size={14}/>,
+	'Design Review':   <MdStar size={14}/>,
+};
+
 function loadSavedIds(): Set<string> {
 	try {
 		const raw = sessionStorage.getItem(SAVED_STORAGE_KEY);
@@ -1288,18 +1297,9 @@ function JobSearch() {
 											{ round: 3, name: 'Technical',       subtitle: 'Live coding & system design questions' },
 											{ round: 4, name: 'Skill Assessment',subtitle: 'Take-home project or pair programming task' },
 											{ round: 5, name: 'Final / CTO',     subtitle: 'Leadership discussion & offer negotiation' },
-										]).map((rd) => {
-											const roundIcons: Record<string, React.ReactNode> = {
-												'HR Screening':    <MdRecordVoiceOver size={14}/>,
-												'Aptitude Test':   <MdQuiz size={14}/>,
-												'Technical':       <MdCode size={14}/>,
-												'Skill Assessment':<MdPsychology size={14}/>,
-												'Final / CTO':     <MdEmojiEvents size={14}/>,
-												'Design Review':   <MdStar size={14}/>,
-											};
-											return (
+										]).map((rd) => (
 												<div key={rd.round} className="jd-round-item">
-													<span className="jd-round-icon">{roundIcons[rd.name] ?? <MdListAlt size={14}/>}</span>
+													<span className="jd-round-icon">{ROUND_ICONS[rd.name] ?? <MdListAlt size={14}/>}</span>
 													<span className="jd-round-num">Rd {rd.round}</span>
 													<span className="jd-round-copy">
 														<span className="jd-round-name">{rd.name}</span>
@@ -1307,8 +1307,7 @@ function JobSearch() {
 													</span>
 													<span className="jd-round-arrow">→</span>
 												</div>
-											);
-										})}
+											))}
 									</div>
 									<p className="jd-rounds-hint"><MdMenuBook size={12} style={{marginRight:4,verticalAlign:'middle'}}/>Tap any round to prepare</p>
 								</div>

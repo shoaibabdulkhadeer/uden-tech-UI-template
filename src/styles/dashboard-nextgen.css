@@ -989,21 +989,29 @@ body.dark-theme .learn-page .learn-next-input-well {
 }
 
 .learn-page .learn-next-main-card .lineCard {
-	transform: none !important;
 	border-radius: var(--dn-radius-sm) !important;
 	border: 1px solid var(--dn-border) !important;
 	background: rgba(255, 255, 255, 0.98) !important;
 	box-shadow: var(--dn-shadow-sm) !important;
+	position: relative;
 	transition:
-		transform 0.25s ease,
-		box-shadow 0.25s ease,
-		border-color 0.2s ease !important;
+		transform 0.35s cubic-bezier(0.23,1,0.32,1),
+		box-shadow 0.35s ease,
+		border-color 0.25s ease !important;
 }
 
 .learn-page .learn-next-main-card .lineCard:hover {
-	transform: translateY(-2px) !important;
-	box-shadow: var(--dn-shadow-md), 0 0 32px -12px rgba(99, 102, 241, 0.15) !important;
-	border-color: rgba(99, 102, 241, 0.18) !important;
+	will-change: transform;
+}
+
+.learn-page .learn-next-main-card .lineCard:hover {
+	transform: perspective(900px) rotateX(-3deg) rotateY(5deg) translateZ(6px) !important;
+	box-shadow:
+		0 16px 40px rgba(99,102,241,0.18),
+		0 6px 16px rgba(15,23,42,0.08),
+		-4px 4px 12px rgba(99,102,241,0.1) !important;
+	border-color: rgba(99, 102, 241, 0.25) !important;
+	z-index: 10;
 }
 
 .learn-page .learn-next-main-card .iconcard {
@@ -1025,7 +1033,7 @@ body.dark-theme .learn-page .learn-next-input-well {
 }
 
 .learn-page .learn-next-path-graph .cardWrapper {
-	perspective: none !important;
+	overflow: visible !important;
 }
 
 .learn-page .learn-next-path-graph .gx-timeline-item:before {

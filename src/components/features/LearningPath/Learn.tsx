@@ -21,7 +21,7 @@ import {
 } from 'antd';
 import TextArea from 'antd/lib/input/TextArea';
 import { easeInOut, motion } from 'framer-motion';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { BsWrenchAdjustableCircleFill } from 'react-icons/bs';
 import { FaArrowCircleRight, FaArrowLeft, FaHeartBroken, FaLocationArrow, FaLongArrowAltRight, FaRegEye } from 'react-icons/fa';
 import { FaCircleMinus, FaTags } from 'react-icons/fa6';
@@ -59,12 +59,10 @@ import { getJobDescriptionApi, getJobDescriptionReset } from '../../../redux/fea
 import { RootState } from '@react-three/fiber';
 import { environment } from '../../../environments/environment';
 
+const twoColors: ProgressProps['strokeColor'] = { '0%': '#108ee9', '100%': '#87d068' };
+
 const Learn = () => {
 	const Navigate = useNavigate(),
-		twoColors: ProgressProps['strokeColor'] = {
-			'0%': '#108ee9',
-			'100%': '#87d068'
-		},
 		{ pathdata, status: learnLoader } = useSelector((state: any) => state?.learningPathReducer),
 		{ summaryData, status: summaryLoader } = useSelector((state: any) => state?.summarizeReducer),
 		{ continuepathdata, status: continuepathLoader } = useSelector((state: any) => state?.continueLearningPathReducer),
@@ -101,6 +99,8 @@ const Learn = () => {
 		[mainQuizTitle, setMainQuizTitle] = useState<any>(false),
 		[reviewAcknowledge, setReviewAcknowledge] = useState(false),
 		[pagesummary, setPagesummary] = useState('');
+
+	const charCountRef = useRef<HTMLSpanElement>(null);
 
 	const { tokenDetails, status: tokendetailsLoader } = useSelector((state: any) => state?.tokenReducer);
 	const { feedbackData, status: feedbackLoader } = useSelector((state: any) => state?.feedbackLinksReducer);
@@ -606,18 +606,38 @@ const Learn = () => {
 						<div className="dash-next-page-head-row">
 							<DashboardPageHeadArt className="dash-next-page-head-art" />
 							<div className="dash-next-page-head-copy">
-								<p className="dash-next-page-eyebrow">Learning workspace</p>
+								<div className="gx-mb-2" style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+									<div className="genz-pill vibrant">
+										<MdAutoAwesome className="genz-icon" />
+										AI Path Engine
+									</div>
+									<div className="genz-pill glow">
+										<div className="dot" />
+										Live Generation
+									</div>
+								</div>
 								<h1 className="dash-next-page-title">
-									<span className="dash-next-page-title-inner">Generate Learning Path</span>
+									<span className="dash-next-page-title-inner">Learning Path</span>
 								</h1>
 								<p className="dash-next-page-lead">
-									Add your job description or goals, pick skill- or week-based mode, then generate your path.
+									Paste a job description or describe your goals — AI builds a personalised, milestone-driven learning path tailored to your skill gaps.
 								</p>
-								<div className="learn-next-page-meta">
-									<span className="learn-next-page-live-dot" aria-hidden />
-									<span className="learn-next-page-meta-chip">
-										<MdAutoAwesome className="learn-next-page-meta-chip-icon" aria-hidden />
-										<span className="learn-next-page-meta-chip-label">AI-assisted workflow</span>
+								<div className="career-accel-feature-row">
+									<span className="career-accel-feature-chip career-accel-feature-chip--indigo">
+										<span className="career-accel-chip-icon"><MdAutoAwesome size={12} /></span>
+										AI-generated path
+									</span>
+									<span className="career-accel-feature-chip career-accel-feature-chip--cyan">
+										<span className="career-accel-chip-icon"><VscActivateBreakpoints size={12} /></span>
+										Skill &amp; week modes
+									</span>
+									<span className="career-accel-feature-chip career-accel-feature-chip--amber">
+										<span className="career-accel-chip-icon"><MdQuiz size={12} /></span>
+										Built-in quizzes
+									</span>
+									<span className="career-accel-feature-chip career-accel-feature-chip--emerald">
+										<span className="career-accel-chip-icon"><PiCertificateFill size={12} /></span>
+										Certifications
 									</span>
 								</div>
 							</div>
@@ -625,11 +645,9 @@ const Learn = () => {
 					</header>
 					<motion.div initial={{ y: 300, opacity: 0.5 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.9, ease: easeInOut }}>
 						<div className="boxshadowcard1 gx-pb-3 phase2-learn-shell learn-next-main-card" style={{ borderRadius: '10px' }}>
-						<div
-							className="learn-next-card-toolbar gx-d-flex gx-align-items-center gx-justify-content-between gx-px-3 gx-pt-2 gx-pb-1"
-							style={{ flexWrap: 'wrap', gap: '8px 12px' }}
-						>
-							<div className="learn-next-overview-track gx-d-flex gx-align-items-center gx-flex-wrap">
+						<div className="learn-next-card-toolbar learn-toolbar-bar">
+							<div className="learn-toolbar-left">
+								<div className="learn-toolbar-nav">
 								<Tooltip title="Open dashboard overview">
 									<button
 										type="button"
@@ -708,21 +726,29 @@ const Learn = () => {
 										</div>
 									</Select.Option>
 								</Select>
+								</div>
+
+								<span className="learn-toolbar-group-sep" aria-hidden />
+
+								<div className="learn-toolbar-actions">
+									<button type="button" className="learn-toolbar-util-btn" onClick={() => Navigate('/dashboard')}>
+										<IoReturnDownBackOutline size={13} />
+										<span>Dashboard</span>
+									</button>
+									<button type="button" className="learn-toolbar-util-btn" onClick={() => { form.setFieldValue('text', ''); if (charCountRef.current) { charCountRef.current.textContent = '0 / 100'; charCountRef.current.className = 'learn-compose-char-count'; } }}>
+										<GrPowerReset size={12} />
+										<span>Reset</span>
+									</button>
+									<button type="button" className="learn-toolbar-util-btn learn-toolbar-util-btn--danger" onClick={() => setShowNote((v: any) => !v)}>
+										<FaCircleMinus size={12} />
+										<span>{showNote ? 'Minimize' : 'Show input'}</span>
+									</button>
+								</div>
 							</div>
 
-							<div className="gx-d-flex gx-align-items-center">
+							<div className="learn-toolbar-right gx-d-flex gx-align-items-center">
 								{/* {continuepathdata?.statusCode === 200 ? null : */}
 
-								{!fromContinue && (
-									<Switch
-										checkedChildren="Hide Input"
-										unCheckedChildren="Show Input"
-										size="small"
-										checked={showNote}
-										onChange={(checked) => setShowNote(checked)}
-										className="gx-mr-2"
-									/>
-								)}
 								<Tooltip title="View the acknowledgment you accepted before generating the learning path">
 									{LPID && (
 										<Button
@@ -807,101 +833,81 @@ const Learn = () => {
 
 						<div className="learn-next-card-divider" aria-hidden />
 						<div className={`note-container gx-px-2 ${showNote ? 'open' : ''}`}>
-							<div className="learn-next-input-well gx-py-2 gx-px-1">
-								<Form form={form} layout="vertical" onFinish={onFinish} className="gx-mx-2 gx-fs-xs" style={{ width: '100%' }}>
-									<div
-										style={{ width: '100%' }}
-										className="gx-d-flex gx-align-items-center gx-mr-3 gx-m-0 gx-justify-content-between learn-next-form-actions"
-									>
-										<div className="gx-d-flex gx-align-items-center gx-mr-3 gx-ml-2 ">
-											<Tooltip title={'Visit Dashboard'} placement="left">
-												<div className="learn-next-pill-action gx-d-flex gx-align-items-center gx-pointer" onClick={() => Navigate('/dashboard')}>
-													<IoReturnDownBackOutline size={14} className="gx-mr-1" aria-hidden />
-													<span className="gx-fs-sm">Back to Dashboard</span>
-												</div>
-											</Tooltip>
+							<div className="learn-compose-studio">
 
-											<span className="learn-next-action-vrule" aria-hidden />
-
-											<button
-												type="button"
-												className="learn-next-pill-action learn-next-pill-action--ghost gx-d-flex gx-align-items-center"
-												onClick={() => form.setFieldValue('text', '')}
-											>
-												<GrPowerReset size={14} className="gx-mr-1" aria-hidden />
-												<span className="gx-fs-sm">Reset</span>
-											</button>
-
-											<span className="learn-next-action-vrule" aria-hidden />
-
-											<button
-												type="button"
-												className="learn-next-pill-action learn-next-pill-action--danger gx-d-flex gx-align-items-center"
-												onClick={() => setShowNote(false)}
-											>
-												<FaCircleMinus size={14} className="gx-mr-1" aria-hidden />
-												<span className="gx-fs-sm">Minimize</span>
-											</button>
-										</div>
-
-										<div>
-											<Form.Item className="gx-p-0 gx-m-0">
-												<Button
-													htmlType="submit"
-													size="small"
-													type="primary"
-													className="learn-next-generate-btn gx-fs-xs gx-text-uppercase gx-m-0 gx-px-3 gx-d-flex gx-align-items-center"
-													disabled={learnLoader || summaryLoader || isGenerated}
-													loading={learnLoader || summaryLoader}
-												>
-													Generate Now
-													<PiEngineBold size={12} className="gx-ml-1" aria-hidden />
-												</Button>
-											</Form.Item>
-										</div>
+																{/* ── Compose body ── */}
+								<div className="learn-compose-body">
+									{/* eyebrow + status */}
+									<div className="learn-compose-eyebrow-row">
+										<span className="learn-compose-eyebrow">
+											<MdAutoAwesome size={11} className="learn-compose-eyebrow-icon" />
+											AI Path Engine
+										</span>
+										<span className="learn-compose-status">
+											<span className="learn-compose-status-dot" aria-hidden />
+											Ready
+										</span>
 									</div>
-									<div className="learn-next-input-section-head gx-mt-2 gx-mb-1">
-										<span className="learn-next-input-section-eyebrow">Input</span>
-										<h2 className="learn-next-input-section-title gx-m-0">Job description or goals</h2>
-										<p className="learn-next-input-section-hint gx-m-0">
-											Minimum 100 characters — paste a full JD or describe the role you are targeting.
-										</p>
-									</div>
-									<Form.Item
-										name="text"
-										validateTrigger="onBlur"
-										// label="Type Text to Generate Learning Path"
-										className="gx-m-0 gx-mb-2 learn-next-jd-field"
-										rules={[
-											{ required: true, message: <p className="gx-p-0 gx-m-0 gx-fs-sm gx-mt-1">Please enter some text!</p> },
-											{ min: 100, message: <p className="gx-p-0 gx-m-0 gx-fs-sm gx-mt-1">Please enter at least 100 characters.</p> }
-										]}
+
+									<h2 className="learn-compose-title gx-m-0">Describe your target role</h2>
+									<p className="learn-compose-subtitle gx-m-0">
+										Paste a job description or tell us what you want to learn — AI builds a personalised path.
+									</p>
+
+									<Form
+										form={form}
+										layout="vertical"
+										onFinish={onFinish}
+										onValuesChange={(changed) => {
+											if (changed.text !== undefined && charCountRef.current) {
+												const len = (changed.text ?? '').length;
+												charCountRef.current.textContent = `${len} / 100`;
+												charCountRef.current.className = `learn-compose-char-count${len >= 100 ? ' learn-compose-char-count--ready' : ''}`;
+											}
+										}}
+										className="learn-compose-form"
 									>
-										<TextArea rows={3} placeholder="Type Text to Generate Learning Path..." className="learn-next-jd-textarea" />
-									</Form.Item>
+										<Form.Item
+											name="text"
+											validateTrigger="onBlur"
+											className="gx-m-0 learn-compose-field"
+											rules={[
+												{ required: true, message: <p className="gx-p-0 gx-m-0 gx-fs-sm gx-mt-1">Please enter some text!</p> },
+												{ min: 100, message: <p className="gx-p-0 gx-m-0 gx-fs-sm gx-mt-1">Please enter at least 100 characters.</p> }
+											]}
+										>
+											<div className="learn-compose-field-wrap">
+												<TextArea
+													rows={3}
+													placeholder="e.g. 'Frontend Engineer at a SaaS company — strong in React, TypeScript, system design…'"
+													className="learn-compose-textarea"
+												/>
+												<span ref={charCountRef} className="learn-compose-char-count">0 / 100</span>
+											</div>
+										</Form.Item>
 
-									{/* <Form.Item>
-        <Button type="primary" htmlType="submit">
-          Generate
-        </Button>
-      </Form.Item> */}
+										{!pagesummary && (
+											<div className="learn-compose-tip">
+												<MdAutoAwesome size={13} className="learn-compose-tip-icon" />
+												<span>AI generates a week-by-week or skill-by-skill plan from your input — the more detail you add, the sharper the path.</span>
+											</div>
+										)}
 
-									{/* {summaryData?.statusCode === 200 ? null :  
-                                    (                                    */}
-
-									{!pagesummary && (
-										<div className="gx-d-flex gx-align-items-center gx-justify-content-center">
-											<Alert
-												message="Based on the job description, Below is an example of how AI will generate a personalized learning path for the candidate."
-												banner
-												className="learn-next-hint-alert gx-m-0 gx-fs-sm gx-rounded-lg alertpulse-fastpause gx-mx-1"
-												style={{ width: '100%' }}
-											/>
-										</div>
-									)}
-									{/* // ) */}
-									{/* // } */}
-								</Form>
+										<Form.Item className="gx-p-0 gx-m-0">
+											<Button
+												htmlType="submit"
+												type="primary"
+												className="learn-compose-cta"
+												disabled={learnLoader || summaryLoader || isGenerated}
+												loading={learnLoader || summaryLoader}
+												block
+											>
+												{!(learnLoader || summaryLoader) && <PiEngineBold size={15} className="learn-compose-cta-icon" />}
+												Generate Learning Path
+											</Button>
+										</Form.Item>
+									</Form>
+								</div>
 							</div>
 						</div>
 
