@@ -1,4 +1,4 @@
-import { Alert, Avatar, Button, Checkbox, Drawer, Empty, Input, message, Modal, Popover, Radio, Segmented, Select, Skeleton, Tabs, Tooltip, Upload } from 'antd';
+﻿import { Alert, Avatar, Button, Checkbox, Drawer, Empty, Input, message, Modal, Popover, Radio, Segmented, Select, Skeleton, Tabs, Tooltip, Upload } from 'antd';
 import { CheckCircleFilled, InboxOutlined, InfoCircleTwoTone } from '@ant-design/icons';
 import { easeInOut, motion } from 'framer-motion';
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -393,6 +393,7 @@ function JobSearch() {
 	const listToRender = showForcedEmpty ? [] : filteredJobs;
 
 	const isPristine = activeView === 'matches' && submittedFilters === null && !showSkeleton && !showError;
+	const hasResumeOrJd = uploadedFile !== null || pastedJd.trim().length > 0;
 
 	const PIPELINE_STAGE_META: Record<string, { title: string; sub: string }> = {
 		applied:    { title: 'Applied',    sub: 'Jobs you have submitted an application for.' },
@@ -574,20 +575,28 @@ function JobSearch() {
 			<LocationFilter key={locationResetKey} />
 			<div className="js-filter-cta-row">
 			<Button type="link" size="small" className="job-search-filters-reset" onClick={resetFilters}><MdRestartAlt size={13} style={{ verticalAlign: 'middle', marginRight: 3 }} />Reset</Button>
-			<button
-				ref={findBtnRef}
-				type="button"
-				className={`js-find-btn${activeFilterCount === 0 ? ' js-find-btn--disabled' : ''}${filtersJustApplied ? ' js-find-btn--glow' : ''}${showFindTour ? ' js-find-btn--tour-target' : ''}`}
-				onClick={() => { setShowFindTour(false); handleFindJobs(); }}
-				disabled={activeFilterCount === 0}
+			<Tooltip
+				title={!hasResumeOrJd ? 'Upload a resume or paste a job description first' : ''}
+				placement="top"
 			>
-				<MdAutoAwesome size={13} />
-				Find AI Matches
-				{activeFilterCount > 0 && <span className="js-find-btn-badge">{activeFilterCount}</span>}
-			</button>
+				<span style={{ display: 'inline-block', cursor: !hasResumeOrJd ? 'not-allowed' : 'default' }}>
+					<button
+						ref={findBtnRef}
+						type="button"
+						className={`js-find-btn${(activeFilterCount === 0 || !hasResumeOrJd) ? ' js-find-btn--disabled' : ''}${filtersJustApplied ? ' js-find-btn--glow' : ''}${showFindTour ? ' js-find-btn--tour-target' : ''}`}
+						onClick={() => { setShowFindTour(false); handleFindJobs(); }}
+						disabled={activeFilterCount === 0 || !hasResumeOrJd}
+						style={{ pointerEvents: !hasResumeOrJd ? 'none' : 'auto' }}
+					>
+						<MdAutoAwesome size={13} />
+						Find AI Matches
+						{activeFilterCount > 0 && <span className="js-find-btn-badge">{activeFilterCount}</span>}
+					</button>
+				</span>
+			</Tooltip>
 		</div>
 		</div>
-	), [empFilter, workFilter, expFilter, sectorFilter, skillInput, skillsFilter, locationResetKey, activeFilterCount, filtersJustApplied, showFindTour, resetFilters, handleFindJobs]);
+	), [empFilter, workFilter, expFilter, sectorFilter, skillInput, skillsFilter, locationResetKey, activeFilterCount, filtersJustApplied, showFindTour, resetFilters, handleFindJobs, hasResumeOrJd]);
 
 	return (
 		<>
@@ -1751,10 +1760,20 @@ function JobSearch() {
 						<button type="button" className="js-review-edit-btn" onClick={() => setShowReviewModal(false)}>
 							Edit filters
 						</button>
-						<button type="button" className="js-review-confirm-btn" onClick={handleConfirmSearch}>
+					<Tooltip
+					title={!hasResumeOrJd ? 'Upload a resume or paste a job description to unlock AI matching' : ''}
+					placement="top"
+				>
+					<span style={{ display: 'inline-flex', cursor: !hasResumeOrJd ? 'not-allowed' : 'default' }}>
+						<button type="button" className={`js-review-confirm-btn${!hasResumeOrJd ? ' js-review-confirm-btn--locked' : ''}`}
+							disabled={!hasResumeOrJd}
+							style={{ pointerEvents: !hasResumeOrJd ? 'none' : 'auto' }}
+							onClick={handleConfirmSearch}>
 							<MdRocketLaunch size={14} />
 							Find my matches
 						</button>
+					</span>
+				</Tooltip>
 					</div>
 				</div>
 			</Modal>

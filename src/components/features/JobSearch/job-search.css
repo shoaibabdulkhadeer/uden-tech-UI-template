@@ -4201,6 +4201,15 @@ body.dark-theme .job-meta-icon               { opacity: 0.4; }
 	transform: translateY(-1px);
 }
 
+.js-review-confirm-btn--locked,
+.js-review-confirm-btn--locked:hover {
+	background: #e2e8f0;
+	color: #94a3b8;
+	box-shadow: none;
+	transform: none;
+	cursor: not-allowed;
+}
+
 /* ── AI Detected Banner ── */
 .js-ai-banner {
 	margin: 10px 16px 12px;
@@ -5314,6 +5323,7 @@ body.dark-theme .job-reveal-gate {
 }
 
 .job-reveal-gate-inner {
+	pointer-events: auto;
 	display: flex;
 	flex-direction: column;
 	align-items: center;
