@@ -392,6 +392,8 @@ function JobSearch() {
 	const showForcedEmpty = uiPreview === 'empty';
 	const listToRender = showForcedEmpty ? [] : filteredJobs;
 
+	const isPristine = activeView === 'matches' && submittedFilters === null && !showSkeleton && !showError;
+
 	const PIPELINE_STAGE_META: Record<string, { title: string; sub: string }> = {
 		applied:    { title: 'Applied',    sub: 'Jobs you have submitted an application for.' },
 		screening:  { title: 'Screening',  sub: 'Applications currently in the HR / initial screening stage.' },
@@ -1149,6 +1151,7 @@ function JobSearch() {
 									);
 								})() : null}
 
+								<div className={`job-list-reveal-wrap${isPristine ? ' job-list-reveal-wrap--pristine' : ''}`}>
 								{!showSkeleton && !showError && activeView !== 'applied' ? (
 									<ul className="job-search-job-list">
 										{matchLoading ? (
@@ -1299,7 +1302,26 @@ function JobSearch() {
 										)))}
 									</ul>
 								) : null}
-
+									{isPristine && (
+										<div className="job-reveal-gate" role="region" aria-label="Get matched jobs">
+											<div className="job-reveal-gate-inner">
+												<div className="job-reveal-gate-icon"><MdRocketLaunch size={30} /></div>
+												<h3 className="job-reveal-gate-title">Discover roles matched for you</h3>
+												<p className="job-reveal-gate-sub">Apply your filters and let AI surface the best-fit roles for you.</p>
+												<div className="job-reveal-gate-actions">
+													<button type="button" className="job-reveal-btn job-reveal-btn--primary"
+													  onClick={() => { document.querySelector('.match-engine-container')?.scrollIntoView({ behavior: 'smooth', block: 'center' }); setMatchEngineTab('resume'); }}>
+													  <MdFileUpload size={15} /> Upload Resume
+													</button>
+													<button type="button" className="job-reveal-btn job-reveal-btn--secondary"
+													  onClick={() => { document.querySelector('.match-engine-container')?.scrollIntoView({ behavior: 'smooth', block: 'center' }); setMatchEngineTab('jd'); }}>
+													  <MdContentPaste size={15} /> Paste Job Description
+													</button>
+												</div>
+											</div>
+										</div>
+									)}
+								</div>
 								{!showSkeleton && !showError && activeView !== 'applied' && listToRender.length === 0 ? (
 									<div className="job-search-empty-wrap">
 										<Empty description={emptyDescription} image={Empty.PRESENTED_IMAGE_SIMPLE} />
