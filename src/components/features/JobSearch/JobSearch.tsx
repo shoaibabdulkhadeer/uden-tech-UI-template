@@ -1,7 +1,8 @@
 ﻿import { Alert, Avatar, Button, Checkbox, Drawer, Empty, Input, message, Modal, Popover, Radio, Segmented, Select, Skeleton, Tabs, Tooltip, Upload } from 'antd';
 import { CheckCircleFilled, InboxOutlined, InfoCircleTwoTone } from '@ant-design/icons';
 import { easeInOut, motion } from 'framer-motion';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import ReactDOM from 'react-dom';
 import { decodeToken } from 'react-jwt';
 import {
 	MdAutoAwesome,
@@ -133,6 +134,19 @@ function JobSearch() {
 	const [aiSteps, setAiSteps] = useState<string[]>([]);
 	const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 	const [showFullResume, setShowFullResume] = useState(false);
+	const [detectedFilters, setDetectedFilters] = useState<{ skills: string[]; expLevel: string | null; workMode: WorkMode | null; source: 'resume' | 'jd' } | null>(null);
+	const [filtersJustApplied, setFiltersJustApplied] = useState(false);
+	const [showFindTour, setShowFindTour] = useState(false);
+	const [tourStep, setTourStep] = useState<1 | 2>(1);
+	const [tourBubblePos, setTourBubblePos] = useState<{ top: number; left: number; width: number } | null>(null);
+	const [tourCardRect, setTourCardRect] = useState<{ top: number; left: number; width: number; height: number } | null>(null);
+	const findBtnRef = useRef<HTMLButtonElement>(null);
+	const filterCardRef = useRef<HTMLElement>(null);
+	const [showReviewModal, setShowReviewModal] = useState(false);
+	const [submittedFilters, setSubmittedFilters] = useState<{
+		searchQuery: string; empFilter: EmploymentKind[]; workFilter: WorkMode[];
+		expFilter: string | undefined; sectorFilter: string | undefined; skillsFilter: string[];
+	} | null>(null);
 
 	const mockUploadRequest = ({ onSuccess }: any) => {
 		setTimeout(() => {
@@ -177,7 +191,7 @@ function JobSearch() {
 					clearInterval(interval);
 					setMatchLoading(false);
 					setAiSteps([]);
-					message.success('AI Matching complete! Your feed has been updated.');
+					setDetectedFilters({ skills: ['React', 'TypeScript', 'Node.js', 'System Design'], expLevel: 'mid', workMode: 'remote', source: 'resume' });
 				}
 			}, 800);
 		} else if (status === 'error') {
@@ -197,7 +211,7 @@ function JobSearch() {
 			setMatchLoading(false);
 			setJdResult(pastedJd.trim());
 			setShowJdInput(false);
-			message.success('AI Matching complete! Your feed has been updated.');
+			setDetectedFilters({ skills: ['Python', 'Machine Learning', 'SQL', 'Data Analysis'], expLevel: 'senior', workMode: 'hybrid', source: 'jd' });
 		}, 1500);
 	};
 
@@ -209,6 +223,43 @@ function JobSearch() {
 		sessionStorage.setItem(APPLIED_STORAGE_KEY, JSON.stringify(Array.from(appliedIds)));
 	}, [appliedIds]);
 
+	useEffect(() => {
+		if (!showFindTour) { setTourBubblePos(null); setTourCardRect(null); return; }
+		const selector = tourStep === 1
+			? '.job-search-sidebar .skill-filter'
+			: '.job-search-sidebar .js-filter-cta-row';
+
+		// Scroll target into view first, then measure after scroll settles
+		const el = document.querySelector(selector) as HTMLElement | null;
+		el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+		const measure = () => {
+			const target = document.querySelector(selector) as HTMLElement | null;
+			if (!target) return;
+			const r = target.getBoundingClientRect();
+			if (r.width === 0) return;
+			const vw = window.innerWidth;
+			const vh = window.innerHeight;
+			const rect = { top: Math.round(r.top), left: Math.round(r.left), width: Math.round(r.width), height: Math.round(r.height) };
+			setTourCardRect(rect);
+			const wantLeft = rect.left + rect.width + 14;
+			const bubbleW = 280;
+			const fitsRight = wantLeft + bubbleW + 10 <= vw;
+			setTourBubblePos(fitsRight ? {
+				top: Math.min(Math.round(r.top + r.height / 2), vh - 220),
+				left: wantLeft,
+				width: bubbleW,
+			} : {
+				top: Math.min(Math.round(r.bottom + 10), vh - 220),
+				left: Math.max(8, Math.round(r.left + r.width / 2 - bubbleW / 2)),
+				width: bubbleW,
+			});
+		};
+		// 500ms: enough for smooth scroll to finish before we measure
+		const t = setTimeout(measure, 500);
+		return () => clearTimeout(t);
+	}, [showFindTour, tourStep]);
+
 	/* Deep-link from Dashboard (e.g. /job-search?tab=matches) */
 	useEffect(() => {
 		const tab = new URLSearchParams(location.search).get('tab');
@@ -217,12 +268,7 @@ function JobSearch() {
 		}
 	}, [location]);
 
-	useEffect(() => {
-		if (uiPreview !== 'normal') return;
-		setListLoading(true);
-		const t = window.setTimeout(() => setListLoading(false), 480 + Math.floor(Math.random() * 220));
-		return () => clearTimeout(t);
-	}, [searchQuery, empFilter, workFilter, activeView, uiPreview]);
+
 
 	const displayName = useMemo(() => {
 		try {
@@ -255,11 +301,13 @@ function JobSearch() {
 		if (activeView !== 'saved') {
 			list = list.filter((j) => !dismissedIds.has(j.id));
 		}
-		list = list.filter((j) => jobMatchesQuery(j, searchQuery));
-		list = list.filter((j) => filterJobsByEmployment(j, empFilter));
-		list = list.filter((j) => filterJobsByWorkMode(j, workFilter));
+		const f = submittedFilters;
+		if (!f) return list;
+		list = list.filter((j) => jobMatchesQuery(j, f.searchQuery));
+		list = list.filter((j) => filterJobsByEmployment(j, f.empFilter));
+		list = list.filter((j) => filterJobsByWorkMode(j, f.workFilter));
 		return list;
-	}, [baseJobs, dismissedIds, searchQuery, empFilter, workFilter, activeView]);
+	}, [baseJobs, dismissedIds, submittedFilters, activeView]);
 
 	const toggleSave = useCallback((id: string, e?: React.MouseEvent) => {
 		e?.stopPropagation();
@@ -279,6 +327,47 @@ function JobSearch() {
 		[]
 	);
 
+	const activeFilterCount = [
+		searchQuery.trim() !== '',
+		empFilter.length > 0,
+		workFilter.length > 0,
+		expFilter != null,
+		sectorFilter != null,
+		skillsFilter.length > 0,
+	].filter(Boolean).length;
+
+	const handleFindJobs = () => {
+		if (activeFilterCount === 0) return;
+		setShowReviewModal(true);
+	};
+
+	const handleConfirmSearch = () => {
+		setShowReviewModal(false);
+		setListLoading(true);
+		setSubmittedFilters({ searchQuery, empFilter, workFilter, expFilter, sectorFilter, skillsFilter });
+		// TODO: dispatch AI matching API here
+		const t = window.setTimeout(() => setListLoading(false), 900 + Math.floor(Math.random() * 400));
+		return () => clearTimeout(t);
+	};
+
+	const applyDetectedFilters = useCallback(() => {
+		if (!detectedFilters) return;
+		if (detectedFilters.skills.length > 0) {
+			setSkillsFilter((prev) => {
+				const merged = [...prev];
+				detectedFilters.skills.forEach((s) => { if (!merged.includes(s)) merged.push(s); });
+				return merged;
+			});
+		}
+		if (detectedFilters.expLevel) setExpFilter(detectedFilters.expLevel);
+		if (detectedFilters.workMode) setWorkFilter((prev) => prev.includes(detectedFilters.workMode!) ? prev : [...prev, detectedFilters.workMode!]);
+		setDetectedFilters(null);
+		setFiltersJustApplied(true);
+		setTourStep(1);
+		setShowFindTour(true);
+		setTimeout(() => setFiltersJustApplied(false), 3000);
+	}, [detectedFilters]);
+
 	const resetFilters = useCallback(() => {
 		setSearchQuery('');
 		setEmpFilter([]);
@@ -289,6 +378,7 @@ function JobSearch() {
 		setSkillInput('');
 		setLocationResetKey((k) => k + 1);
 		setDismissedIds(new Set());
+		setSubmittedFilters(null);
 		setUiPreview('normal');
 	}, []);
 
@@ -341,6 +431,7 @@ function JobSearch() {
 
 	const filtersBlock = (
 		<div className="job-search-filters-block">
+			<div className="js-filter-top-group">
 			<p className="job-search-filters-label">
 				<span className="filter-label-icon filter-label-icon--indigo"><MdWorkOutline size={12} /></span>
 				Employment
@@ -406,6 +497,7 @@ function JobSearch() {
 					{ value: 'mnc',          label: 'MNC' },
 				]}
 			/>
+			</div>{/* end js-filter-top-group */}
 			<div className="job-search-filters-divider" />
 			<div className="skill-filter">
 				<div className="skill-filter-head">
@@ -469,7 +561,20 @@ function JobSearch() {
 			</div>
 			<div className="job-search-filters-divider" />
 			<LocationFilter key={locationResetKey} />
-			<Button type="link" size="small" className="job-search-filters-reset" onClick={resetFilters}><MdRestartAlt size={13} style={{ verticalAlign: 'middle', marginRight: 3 }} />Reset all</Button>
+			<div className="js-filter-cta-row">
+			<Button type="link" size="small" className="job-search-filters-reset" onClick={resetFilters}><MdRestartAlt size={13} style={{ verticalAlign: 'middle', marginRight: 3 }} />Reset</Button>
+			<button
+				ref={findBtnRef}
+				type="button"
+				className={`js-find-btn${activeFilterCount === 0 ? ' js-find-btn--disabled' : ''}${filtersJustApplied ? ' js-find-btn--glow' : ''}${showFindTour ? ' js-find-btn--tour-target' : ''}`}
+				onClick={() => { setShowFindTour(false); handleFindJobs(); }}
+				disabled={activeFilterCount === 0}
+			>
+				<MdAutoAwesome size={13} />
+				Find AI Matches
+				{activeFilterCount > 0 && <span className="js-find-btn-badge">{activeFilterCount}</span>}
+			</button>
+		</div>
 		</div>
 	);
 
@@ -569,7 +674,7 @@ function JobSearch() {
 							</section>
 
 
-							<section className="job-search-card job-search-filters-card" aria-label="Job filters">
+							<section ref={filterCardRef as React.RefObject<HTMLDivElement>} className={`job-search-card job-search-filters-card${filtersJustApplied ? ' js-filter-card--pulse' : ''}${showFindTour ? ' js-filter-card--tour-active' : ''}`} aria-label="Job filters">
 								<div className="job-search-filters-card-head">
 									<span className="filters-head-icon"><MdTune size={14} /></span>
 									<h3 className="job-search-filters-card-title">Filters</h3>
@@ -841,7 +946,36 @@ function JobSearch() {
 													</motion.div>
 												)}
 											</div>
-										</div>
+
+										{detectedFilters && !matchLoading && (
+											<div className="js-ai-banner">
+												<div className="js-ai-banner-head">
+													<span className="js-ai-banner-icon"><MdAutoAwesome size={13} /></span>
+													<span className="js-ai-banner-title">
+														AI detected from your {detectedFilters.source === 'resume' ? 'resume' : 'job description'}
+													</span>
+													<button type="button" className="js-ai-banner-dismiss" onClick={() => setDetectedFilters(null)} aria-label="Dismiss">
+														<IoClose size={13} />
+													</button>
+												</div>
+												<div className="js-ai-banner-chips">
+													{detectedFilters.skills.map((s) => (
+														<span key={s} className="js-ai-chip js-ai-chip--skill">{s}</span>
+													))}
+													{detectedFilters.expLevel && (
+														<span className="js-ai-chip js-ai-chip--exp">{detectedFilters.expLevel}</span>
+													)}
+													{detectedFilters.workMode && (
+														<span className="js-ai-chip js-ai-chip--mode">{detectedFilters.workMode}</span>
+													)}
+												</div>
+												<button type="button" className="js-ai-apply-btn" onClick={applyDetectedFilters}>
+													<MdBolt size={12} />
+													Apply to filters
+												</button>
+											</div>
+										)}
+									</div>
 									)}
 
 									<div className="job-search-toolbar">
@@ -1341,6 +1475,148 @@ function JobSearch() {
 						</footer>
 					</div>
 				) : null}
+			</Modal>
+
+			{/* ── Tour spotlight ── */}
+			{showFindTour && tourCardRect && ReactDOM.createPortal(
+				<>
+					{/* Click outside to dismiss */}
+					<div style={{ position: 'fixed', inset: 0, zIndex: 1079 }} onClick={() => setShowFindTour(false)} aria-hidden />
+
+					{/* Spotlight: expand by sp px on each side so the outline has breathing room */}
+					{(() => { const sp = 10; return (
+						<div
+							className="js-tour-spotlight"
+							style={{ top: tourCardRect.top - sp, left: tourCardRect.left - sp, width: tourCardRect.width + sp * 2, height: tourCardRect.height + sp * 2 }}
+							aria-hidden
+						/>
+					); })()}
+
+					{/* Bubble */}
+					{tourBubblePos && (
+						<div className="js-tour-bubble js-tour-bubble--right" style={{ top: tourBubblePos.top, left: tourBubblePos.left, width: tourBubblePos.width, transform: 'translateY(-50%)' }}>
+							<div className="js-tour-bubble-arrow" aria-hidden />
+							<button type="button" className="js-tour-bubble-close" onClick={() => setShowFindTour(false)} aria-label="Dismiss tour">
+								<IoClose size={12} />
+							</button>
+							{tourStep === 1 ? (
+								<>
+									<p className="js-tour-bubble-eyebrow"><MdAutoAwesome size={11} />Step 1 of 2</p>
+									<p className="js-tour-bubble-text">
+										These filters have been <strong>pre-filled from your resume / JD</strong>. Feel free to tweak them to better match what you're looking for.
+									</p>
+									<div className="js-tour-bubble-footer">
+										<span className="js-tour-bubble-dots"><span className="js-tour-dot js-tour-dot--active" /><span className="js-tour-dot" /></span>
+										<button type="button" className="js-tour-bubble-cta" onClick={() => {
+											setTourCardRect(null);
+											setTourBubblePos(null);
+											setTourStep(2);
+											setTimeout(() => {
+												const btn = document.querySelector('.job-search-sidebar .js-find-btn') as HTMLElement | null;
+												btn?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+											}, 100);
+										}}>Next →</button>
+									</div>
+								</>
+							) : (
+								<>
+									<p className="js-tour-bubble-eyebrow"><MdAutoAwesome size={11} />Step 2 of 2</p>
+									<p className="js-tour-bubble-text">
+										Happy with your filters? Click <strong>Find AI Matches</strong> to run your personalised AI job search.
+									</p>
+									<div className="js-tour-bubble-footer">
+										<span className="js-tour-bubble-dots"><span className="js-tour-dot" /><span className="js-tour-dot js-tour-dot--active" /></span>
+										<button type="button" className="js-tour-bubble-cta" onClick={() => setShowFindTour(false)}>Got it ✓</button>
+									</div>
+								</>
+							)}
+						</div>
+					)}
+				</>,
+				document.body
+			)}
+
+			{/* ── AI Filter Review Modal ── */}
+			<Modal
+				open={showReviewModal}
+				onCancel={() => setShowReviewModal(false)}
+				footer={null}
+				width={520}
+				centered
+				className="js-review-modal"
+				closeIcon={<IoClose size={18} />}
+			>
+				<div className="js-review-body">
+					<div className="js-review-hero">
+						<div className="js-review-hero-bg" aria-hidden />
+						<div className="js-review-hero-icon"><MdAutoAwesome size={22} /></div>
+						<div>
+							<p className="js-review-eyebrow">AI Match Engine</p>
+							<h2 className="js-review-title">Review your filters</h2>
+							<p className="js-review-sub">Make sure these look right before we run the search — each query uses AI matching.</p>
+						</div>
+					</div>
+
+					<div className="js-review-filters">
+						{searchQuery.trim() && (
+							<div className="js-review-row">
+								<span className="js-review-row-label">Search</span>
+								<span className="js-review-chip js-review-chip--blue">{searchQuery}</span>
+							</div>
+						)}
+						{empFilter.length > 0 && (
+							<div className="js-review-row">
+								<span className="js-review-row-label">Employment</span>
+								<div className="js-review-chips">
+									{empFilter.map((e) => <span key={e} className="js-review-chip js-review-chip--indigo">{e}</span>)}
+								</div>
+							</div>
+						)}
+						{workFilter.length > 0 && (
+							<div className="js-review-row">
+								<span className="js-review-row-label">Work mode</span>
+								<div className="js-review-chips">
+									{workFilter.map((w) => <span key={w} className="js-review-chip js-review-chip--cyan">{w}</span>)}
+								</div>
+							</div>
+						)}
+						{expFilter && (
+							<div className="js-review-row">
+								<span className="js-review-row-label">Experience</span>
+								<span className="js-review-chip js-review-chip--amber">{expFilter}</span>
+							</div>
+						)}
+						{sectorFilter && (
+							<div className="js-review-row">
+								<span className="js-review-row-label">Sector</span>
+								<span className="js-review-chip js-review-chip--emerald">{sectorFilter}</span>
+							</div>
+						)}
+						{skillsFilter.length > 0 && (
+							<div className="js-review-row">
+								<span className="js-review-row-label">Skills</span>
+								<div className="js-review-chips">
+									{skillsFilter.map((s) => <span key={s} className="js-review-chip js-review-chip--violet">{s}</span>)}
+								</div>
+							</div>
+						)}
+					</div>
+
+					<div className="js-review-notice">
+						<MdWarning size={13} />
+						Filters can't be changed mid-search. Edit first if needed, then confirm.
+					</div>
+
+					<div className="js-review-actions">
+						<button type="button" className="js-review-edit-btn" onClick={() => setShowReviewModal(false)}>
+							Edit filters
+						</button>
+						<button type="button" className="js-review-confirm-btn" onClick={handleConfirmSearch}>
+							<MdRocketLaunch size={14} />
+							Find my matches
+						</button>
+					</div>
+				</div>
 			</Modal>
 		</>
 	);
