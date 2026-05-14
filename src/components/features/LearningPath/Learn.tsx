@@ -404,8 +404,15 @@ const Learn = () => {
 	}, []);
 
 	useEffect(() => {
-		if (location.state?.jd) {
-			form.setFieldsValue({ text: location.state.jd });
+		const prefill = sessionStorage.getItem('lpPrefillJd') || location.state?.jd;
+		if (prefill) {
+			form.setFieldsValue({ text: prefill });
+			sessionStorage.removeItem('lpPrefillJd');
+			if (charCountRef.current) {
+				const len = prefill.length;
+				charCountRef.current.textContent = `${len} / 100`;
+				charCountRef.current.className = `learn-compose-char-count${len >= 100 ? ' learn-compose-char-count--ready' : ''}`;
+			}
 		}
 	}, []);
 
@@ -908,24 +915,24 @@ const Learn = () => {
 										}}
 										className="learn-compose-form"
 									>
-										<Form.Item
-											name="text"
-											validateTrigger="onBlur"
-											className="gx-m-0 learn-compose-field"
-											rules={[
-												{ required: true, message: <p className="gx-p-0 gx-m-0 gx-fs-sm gx-mt-1">Please enter some text!</p> },
-												{ min: 100, message: <p className="gx-p-0 gx-m-0 gx-fs-sm gx-mt-1">Please enter at least 100 characters.</p> }
-											]}
-										>
-											<div className="learn-compose-field-wrap">
+										<div className="learn-compose-field-wrap">
+											<Form.Item
+												name="text"
+												validateTrigger="onBlur"
+												className="gx-m-0 learn-compose-field"
+												rules={[
+													{ required: true, message: <p className="gx-p-0 gx-m-0 gx-fs-sm gx-mt-1">Please enter some text!</p> },
+													{ min: 100, message: <p className="gx-p-0 gx-m-0 gx-fs-sm gx-mt-1">Please enter at least 100 characters.</p> }
+												]}
+											>
 												<TextArea
 													rows={3}
 													placeholder="e.g. 'Frontend Engineer at a SaaS company — strong in React, TypeScript, system design…'"
 													className="learn-compose-textarea"
 												/>
-												<span ref={charCountRef} className="learn-compose-char-count">0 / 100</span>
-											</div>
-										</Form.Item>
+											</Form.Item>
+											<span ref={charCountRef} className="learn-compose-char-count">0 / 100</span>
+										</div>
 
 										{!pagesummary && (
 											<div className="learn-compose-tip">

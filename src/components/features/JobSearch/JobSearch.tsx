@@ -1168,7 +1168,10 @@ function JobSearch() {
 																	content: `You'll be taken to the Learning Path page with the job description for "${job.title}" at ${job.company} pre-filled. Ready to generate your path?`,
 																	okText: 'Yes, let\'s go',
 																	cancelText: 'Cancel',
-																	onOk: () => navigate('/learn', { state: { jd: job.detail.description } }),
+																	onOk: () => {
+								sessionStorage.setItem('lpPrefillJd', job.detail.description ?? '');
+								window.open('/learn', '_blank');
+							},
 																});
 															}}
 														>
