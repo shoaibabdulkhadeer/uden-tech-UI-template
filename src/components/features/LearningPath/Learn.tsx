@@ -54,10 +54,10 @@ import AttemptedQuizModal from './attemptedQuizModal';
 import './learn.css';
 import '../../../styles/dashboard-nextgen.css';
 import '../../../styles/dashboard-arena.css';
+import '../JobSearch/job-search.css';
 import QuizAttempts from './quizPopover';
 import { DeleteLearningPath } from '../../../redux/features/learningPath/deleteLearningPathSlice';
 import { getJobDescriptionApi, getJobDescriptionReset } from '../../../redux/features/learningPath/getJobDescriptionSlice';
-import { RootState } from '@react-three/fiber';
 import { environment } from '../../../environments/environment';
 
 const twoColors: ProgressProps['strokeColor'] = { '0%': '#108ee9', '100%': '#87d068' };

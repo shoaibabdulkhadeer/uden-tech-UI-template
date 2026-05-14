@@ -27,7 +27,6 @@ import { PiTimerFill } from 'react-icons/pi';
 import { SiProgress } from 'react-icons/si';
 import { useDispatch, useSelector } from 'react-redux';
 import { useLocation, useNavigate } from 'react-router-dom';
-import * as THREE from 'three';
 import { truncateText } from '../../../common/commonfunctions';
 import { DUMMY_LEARNING_PATHS, environment } from '../../../environments/environment';
 import { getQuizAPI, resetgetQuiz } from '../../../redux/features/Quiz/getQuiz';
@@ -412,12 +411,6 @@ const Dashboard = () => {
 		}
 	}, [searchText, effectiveLearningPaths]);
 
-	useEffect(() => {
-		return () => {
-			// Cleanup cache manually (optional)
-			THREE.Cache.clear();
-		};
-	}, []);
 
 	useEffect(() => {
 		dispatch(getTokenDetails());

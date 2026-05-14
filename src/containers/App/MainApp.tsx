@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { Suspense, useEffect } from 'react';
 import { Layout } from 'antd';
 import { useDispatch, useSelector } from 'react-redux';
 import HorizontalDefault from '../Topbar/HorizontalDefault/index';
@@ -120,7 +120,14 @@ const MainApp = () => {
 									ease: [0.22, 1, 0.36, 1]
 								}}
 							>
-								<Outlet />
+								<Suspense fallback={
+									<div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '60vh' }}>
+										<div style={{ width: 32, height: 32, border: '3px solid #e0e0e0', borderTop: '3px solid #6366f1', borderRadius: '50%', animation: 'spin 0.7s linear infinite' }} />
+										<style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+									</div>
+								}>
+									<Outlet />
+								</Suspense>
 							</motion.div>
 						</div>
 					</div>
