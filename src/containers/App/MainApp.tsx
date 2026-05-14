@@ -90,11 +90,11 @@ const MainApp = () => {
 			sessionStorage.setItem('refreshToken', 'bypass-dev');
 		}
 
-		window.addEventListener('resize', () => {
-			dispatch(updateWindowWidth(window.innerWidth));
-		});
+		const handleResize = () => dispatch(updateWindowWidth(window.innerWidth));
+		window.addEventListener('resize', handleResize);
 
 		// dispatch(fetchMenusDataApi())
+		return () => window.removeEventListener('resize', handleResize);
 	}, [dispatch, switchRoleData]);
 
 	return (

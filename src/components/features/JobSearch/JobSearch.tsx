@@ -336,10 +336,10 @@ function JobSearch() {
 		skillsFilter.length > 0,
 	].filter(Boolean).length;
 
-	const handleFindJobs = () => {
+	const handleFindJobs = useCallback(() => {
 		if (activeFilterCount === 0) return;
 		setShowReviewModal(true);
-	};
+	}, [activeFilterCount]);
 
 	const handleConfirmSearch = () => {
 		setShowReviewModal(false);
@@ -409,7 +409,7 @@ function JobSearch() {
 			? 'Save jobs from matches with the bookmark control.'
 			: activeView === 'matches'
 				? 'No recommended roles match your filters — try widening work mode or employment type.'
-				: 'You haven’t applied to any roles yet.';
+				: 'You havent applied to any roles yet';
 
 	const previewPanel = (
 		<div className="job-search-state-preview">
@@ -429,7 +429,7 @@ function JobSearch() {
 		</div>
 	);
 
-	const filtersBlock = (
+	const filtersBlock = useMemo(() => (
 		<div className="job-search-filters-block">
 			<div className="js-filter-top-group">
 			<p className="job-search-filters-label">
@@ -576,7 +576,7 @@ function JobSearch() {
 			</button>
 		</div>
 		</div>
-	);
+	), [empFilter, workFilter, expFilter, sectorFilter, skillInput, skillsFilter, locationResetKey, activeFilterCount, filtersJustApplied, showFindTour, resetFilters, handleFindJobs]);
 
 	return (
 		<>
@@ -1010,7 +1010,7 @@ function JobSearch() {
 										<Alert
 											type="error"
 											showIcon
-											message="Couldn’t load jobs"
+											message="Couldn't load jobs"
 											description="Network or server issue (simulated). Retry will succeed once APIs are wired."
 											action={
 												<Button size="small" type="primary" onClick={() => setUiPreview('normal')}>

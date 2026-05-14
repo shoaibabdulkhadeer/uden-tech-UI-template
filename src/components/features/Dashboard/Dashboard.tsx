@@ -1,4 +1,4 @@
-import { InfoCircleTwoTone, LoadingOutlined } from '@ant-design/icons';
+﻿import { InfoCircleTwoTone, LoadingOutlined } from '@ant-design/icons';
 import { Badge, Button, Col, Empty, message, notification, Progress, ProgressProps, Row, Skeleton, Tag, Tooltip } from 'antd';
 import Search from 'antd/lib/input/Search';
 import { easeInOut, motion } from 'framer-motion';
@@ -188,8 +188,21 @@ const CAREER_ORBIT_RADII = [
 	'min(124px, 36vw)'
 ] as const;
 
-/** Each ring runs at its own speed so orbits don’t look synced. */
+/** Each ring runs at its own speed so orbits don't look synced. */
 const CAREER_ORBIT_DURATIONS = ['40s', '52s', '45s', '58s', '48s'] as const;
+
+const TITLE_STYLE = [
+	{ textStyle: 'gx-text-green' },
+	{ textStyle: 'gx-text-red' },
+	{ textStyle: 'gx-text-purple' },
+	{ textStyle: 'gx-text-orange' },
+	{ textStyle: 'gx-text-blue' }
+];
+
+const TWO_COLORS: ProgressProps['strokeColor'] = {
+	'0%': '#108ee9',
+	'100%': '#87d068'
+};
 
 const Dashboard = () => {
 	const { dashboardData, status: dashboardLoader } = useSelector((state: any) => state?.dashboardReducer),
@@ -326,7 +339,7 @@ const Dashboard = () => {
 					),
 					description: (
 						<div> 
-							<p>You don’t have minimum available tokens. Please purchase tokens to continue.</p>
+							<p>You don't have minimum available tokens. Please purchase tokens to continue.</p>
 							<Button type="primary" size="small" onClick={() => (window.location.href = redirectUrl)} style={{ marginTop: 8 }}>
 								Go to Token Purchase
 							</Button>
@@ -356,26 +369,6 @@ const Dashboard = () => {
 		Navigate('/learn', { state: { fromContinue: true } });
 	};
 
-	const titleStyle = [
-		// {
-		// 	textStyle: 'gx-text-pink'
-		// },
-		{
-			textStyle: 'gx-text-green'
-		},
-		{
-			textStyle: 'gx-text-red'
-		},
-		{
-			textStyle: 'gx-text-purple'
-		},
-		{
-			textStyle: 'gx-text-orange'
-		},
-		{
-			textStyle: 'gx-text-blue'
-		}
-	];
 
 	const [activeLoadingId, setActiveLoadingId] = useState<string | null>(null);
 
@@ -416,10 +409,6 @@ const Dashboard = () => {
 		dispatch(getTokenDetails());
 	}, []);
 
-	const twoColors: ProgressProps['strokeColor'] = {
-		'0%': '#108ee9',
-		'100%': '#87d068'
-	};
 
 	const handleButtonText = (progress: any) => {
 		if (progress === 100) {
@@ -1085,7 +1074,7 @@ const Dashboard = () => {
 										<Progress
 											className="dash-next-path-progress"
 											percent={Math?.round(filteredPaths?.[0]?.progress || 0)}
-											strokeColor={twoColors}
+											strokeColor={TWO_COLORS}
 											showInfo
 										/>
 
@@ -1195,8 +1184,8 @@ const Dashboard = () => {
 											</div>
 										))
 									: filteredPaths?.slice(1)?.map((learn: any, index: number) => {
-											const titleIndex = index % titleStyle?.length;
-											const { textStyle } = titleStyle[titleIndex];
+											const titleIndex = index % TITLE_STYLE?.length;
+											const { textStyle } = TITLE_STYLE[titleIndex];
 											const ThumbIcon = PATH_GRID_THUMB_ICONS[index % PATH_GRID_THUMB_ICONS.length];
 											return (
 												<div key={index} className="learning-path-card dash-next-path-card dash-next-path-card--grid gx-my-1">
@@ -1221,7 +1210,7 @@ const Dashboard = () => {
 														<Progress
 															className="dash-next-path-progress gx-px-2"
 															percent={Math?.round(learn?.progress || 0)}
-															strokeColor={twoColors}
+															strokeColor={TWO_COLORS}
 															showInfo
 														/>
 

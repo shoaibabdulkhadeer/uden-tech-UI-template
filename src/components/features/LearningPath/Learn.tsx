@@ -62,6 +62,11 @@ import { environment } from '../../../environments/environment';
 
 const twoColors: ProgressProps['strokeColor'] = { '0%': '#108ee9', '100%': '#87d068' };
 
+const COMPOSE_FIELD_RULES = [
+	{ required: true, message: <p className="gx-p-0 gx-m-0 gx-fs-sm gx-mt-1">Please enter some text!</p> },
+	{ min: 100, message: <p className="gx-p-0 gx-m-0 gx-fs-sm gx-mt-1">Please enter at least 100 characters.</p> }
+];
+
 const Learn = () => {
 	const Navigate = useNavigate(),
 		{ pathdata, status: learnLoader } = useSelector((state: any) => state?.learningPathReducer),
@@ -212,7 +217,7 @@ const Learn = () => {
 					),
 					description: (
 						<div>
-							<p>You don’t have minimum available tokens. Please purchase tokens to continue.</p>
+							<p>You don't have minimum available tokens. Please purchase tokens to continue.</p>
 							<Button type="primary" size="small" onClick={() => (window.location.href = redirectUrl)} style={{ marginTop: 8 }}>
 								Go to Token Purchase
 							</Button>
@@ -247,7 +252,7 @@ const Learn = () => {
 			notification?.destroy();
 			notification.info({
 				message: 'Similar Learning Path Found',
-				description: 'You already have a similar learning path. You’ve been redirected there now.',
+				description: 'You already have a similar learning path. You have been redirected there now.',
 				duration: 5,
 				placement: 'topRight',
 				key: 'learning-path-notification'
@@ -361,7 +366,7 @@ const Learn = () => {
 		  ),
 		  description: (
 		   <div>
-			<p>You don’t have minimum available tokens. Please purchase tokens to continue.</p>
+			<p>You don't have minimum available tokens. Please purchase tokens to continue.</p>
 			<Button
 			 type="primary"
 			 size="small"
@@ -920,10 +925,7 @@ const Learn = () => {
 												name="text"
 												validateTrigger="onBlur"
 												className="gx-m-0 learn-compose-field"
-												rules={[
-													{ required: true, message: <p className="gx-p-0 gx-m-0 gx-fs-sm gx-mt-1">Please enter some text!</p> },
-													{ min: 100, message: <p className="gx-p-0 gx-m-0 gx-fs-sm gx-mt-1">Please enter at least 100 characters.</p> }
-												]}
+												rules={COMPOSE_FIELD_RULES}
 											>
 												<TextArea
 													rows={3}
@@ -1902,3 +1904,4 @@ const Learn = () => {
 };
 
 export default Learn;
+
