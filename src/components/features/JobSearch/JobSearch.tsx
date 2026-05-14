@@ -1,7 +1,7 @@
-﻿import { Alert, Avatar, Button, Checkbox, Drawer, Empty, Input, message, Modal, Popover, Radio, Segmented, Select, Skeleton, Tabs, Tooltip, Upload } from 'antd';
+import { Alert, Avatar, Button, Checkbox, Drawer, Empty, Input, message, Modal, Popover, Radio, Segmented, Select, Skeleton, Tabs, Tooltip, Upload } from 'antd';
 import { CheckCircleFilled, InboxOutlined, InfoCircleTwoTone } from '@ant-design/icons';
 import { easeInOut, motion } from 'framer-motion';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import ReactDOM from 'react-dom';
 import { decodeToken } from 'react-jwt';
 import {
@@ -120,6 +120,8 @@ function JobSearch() {
 	const [locationResetKey, setLocationResetKey] = useState(0);
 	const [savedIds, setSavedIds] = useState<Set<string>>(loadSavedIds);
 	const [appliedIds, setAppliedIds] = useState<Set<string>>(loadAppliedIds);
+	const [appStages, setAppStages] = useState<Record<string, 'applied' | 'screening' | 'interview' | 'offer'>>({});
+	const [pipelineTab, setPipelineTab] = useState<'applied' | 'screening' | 'interview' | 'offer'>('applied');
 	const [dismissedIds, setDismissedIds] = useState<Set<string>>(() => new Set());
 	const [previewJob, setPreviewJob] = useState<JobItem | null>(null);
 	const [listLoading, setListLoading] = useState(false);
@@ -390,19 +392,26 @@ function JobSearch() {
 	const showForcedEmpty = uiPreview === 'empty';
 	const listToRender = showForcedEmpty ? [] : filteredJobs;
 
+	const PIPELINE_STAGE_META: Record<string, { title: string; sub: string }> = {
+		applied:    { title: 'Applied',    sub: 'Jobs you have submitted an application for.' },
+		screening:  { title: 'Screening',  sub: 'Applications currently in the HR / initial screening stage.' },
+		interview:  { title: 'Interview',  sub: 'Roles where you have an interview scheduled or in progress.' },
+		offer:      { title: 'Offer',      sub: 'Congratulations — you have received an offer for these roles!' },
+	};
+
 	const feedTitle =
 		activeView === 'matches'
 			? 'Matched for you'
 			: activeView === 'saved'
 				? 'Saved jobs'
-				: 'Applied jobs';
+				: PIPELINE_STAGE_META[pipelineTab]?.title ?? 'Applied jobs';
 
 	const feedSub =
 		activeView === 'matches'
 			? 'Ranked by fit with your learning path and saved skills (mock scoring).'
 			: activeView === 'saved'
 				? 'Roles you bookmarked for later. Same detail view as search and matches.'
-				: 'Applications you have started or submitted through the portal.';
+				: PIPELINE_STAGE_META[pipelineTab]?.sub ?? 'Applications you have started or submitted through the portal.';
 
 	const emptyDescription =
 		activeView === 'saved'
@@ -698,39 +707,71 @@ function JobSearch() {
 						<main className="job-search-main">
 							<section className="job-search-card job-search-feed-card">
 								<header className="job-search-feed-head">
-									<div className="job-search-feed-head-top">
-										<div className="view-tabs">
-											<button type="button"
-												className={`view-tab view-tab--indigo${activeView === 'matches' ? ' view-tab--active' : ''}`}
-												onClick={() => setActiveView('matches')}>
-												<span className="view-tab-icon"><MdAutoAwesome size={13} /></span>
-												<span className="view-tab-label">Matched</span>
-												<span className="view-tab-count">{MOCK_JOBS.filter(j => j.matchScore).length}</span>
-											</button>
-											<button type="button"
-												className={`view-tab view-tab--amber${activeView === 'saved' ? ' view-tab--active' : ''}`}
-												onClick={() => setActiveView('saved')}>
-												<span className="view-tab-icon"><MdBookmark size={13} /></span>
-												<span className="view-tab-label">Saved</span>
-												{savedIds.size > 0 && <span className="view-tab-count">{savedIds.size}</span>}
-											</button>
-											<button type="button"
-												className={`view-tab view-tab--emerald${activeView === 'applied' ? ' view-tab--active' : ''}`}
-												onClick={() => setActiveView('applied')}>
-												<span className="view-tab-icon"><MdCheckCircle size={13} /></span>
-												<span className="view-tab-label">Applied</span>
-												{appliedIds.size > 0 && <span className="view-tab-count">{appliedIds.size}</span>}
-											</button>
-										</div>
-										<Button
-											type="default"
-											className="job-search-filters-mobile-trigger"
-											onClick={() => setFilterDrawerOpen(true)}
-										>
-											<MdTune size={18} style={{ marginRight: 6 }} aria-hidden />
-											Filters
-										</Button>
-									</div>									{activeView === 'matches' && (
+								<div className="job-search-feed-head-top">
+									<div className="view-tabs">
+										<button type="button"
+											className={`view-tab view-tab--indigo${activeView === 'matches' ? ' view-tab--active' : ''}`}
+											onClick={() => setActiveView('matches')}>
+											<span className="view-tab-icon"><MdAutoAwesome size={13} /></span>
+											<span className="view-tab-label">Matched</span>
+											<span className="view-tab-count">{MOCK_JOBS.filter(j => j.matchScore).length}</span>
+										</button>
+										<button type="button"
+											className={`view-tab view-tab--amber${activeView === 'saved' ? ' view-tab--active' : ''}`}
+											onClick={() => setActiveView('saved')}>
+											<span className="view-tab-icon"><MdBookmark size={13} /></span>
+											<span className="view-tab-label">Saved</span>
+											{savedIds.size > 0 && <span className="view-tab-count">{savedIds.size}</span>}
+										</button>
+										<span className="view-tabs-divider" />
+										<button type="button"
+											className={`view-tab view-tab--emerald${activeView === 'applied' ? ' view-tab--active' : ''}`}
+											onClick={() => setActiveView('applied')}>
+											<span className="view-tab-icon"><MdSend size={13} /></span>
+											<span className="view-tab-label">Application Tracker</span>
+											{appliedIds.size > 0 && <span className="view-tab-count">{appliedIds.size}</span>}
+										</button>
+									</div>
+									<Button
+										type="default"
+										className="job-search-filters-mobile-trigger"
+										onClick={() => setFilterDrawerOpen(true)}
+									>
+										<MdTune size={18} style={{ marginRight: 6 }} aria-hidden />
+										Filters
+									</Button>
+								</div>
+								{activeView === 'applied' && (
+									<div className="pipeline-stage-strip">
+										{(['applied', 'screening', 'interview', 'offer'] as const).map((stage, idx, arr) => {
+											const count = Array.from(appliedIds).filter(id => (appStages[id] || 'applied') === stage).length;
+											const stageOrder = ['applied', 'screening', 'interview', 'offer'] as const;
+											const activeIdx = stageOrder.indexOf(pipelineTab);
+											const isActive = pipelineTab === stage;
+											const isPast = activeIdx > idx;
+											const STAGE_ICONS = [MdSend, MdListAlt, MdPsychology, MdEmojiEvents];
+											const STAGE_LABELS = ['Applied', 'Screening', 'Interview', 'Offer'];
+											const Icon = STAGE_ICONS[idx];
+											return (
+												<Fragment key={stage}>
+													<button
+														type="button"
+														className={`pipeline-stage-pill${isActive ? ' pipeline-stage-pill--active' : ''}${isPast ? ' pipeline-stage-pill--past' : ''}`}
+														onClick={() => setPipelineTab(stage)}
+													>
+														<span className="pipeline-stage-pill-icon"><Icon size={12} /></span>
+														<span className="pipeline-stage-pill-label">{STAGE_LABELS[idx]}</span>
+														{count > 0 && <span className="pipeline-stage-pill-count">{count}</span>}
+													</button>
+													{idx < arr.length - 1 && (
+														<span className={`pipeline-stage-connector${isPast ? ' pipeline-stage-connector--filled' : ''}`} />
+													)}
+												</Fragment>
+											);
+										})}
+									</div>
+								)}
+										{activeView === 'matches' && (
 										<div className="job-search-card stalker-card match-engine-container">
 										
 											{/* <div className="match-engine-header">
@@ -992,15 +1033,21 @@ function JobSearch() {
 											</Button>
 										</Popover>
 									</div>
-									<div className="job-search-feed-head-copy">
+									<div
+										key={activeView === 'applied' ? pipelineTab : activeView}
+										className="job-search-feed-head-copy feed-stage-reveal"
+									>
 										<h2 className="job-search-feed-title">
 											<span className={`filter-label-icon filter-label-icon--${activeView === 'matches' ? 'indigo' : activeView === 'saved' ? 'amber' : 'emerald'}`} style={{ width: 22, height: 22, borderRadius: 6, flexShrink: 0 }}>
 												{activeView === 'matches' && <MdAutoAwesome size={13} />}
 												{activeView === 'saved' && <MdBookmark size={13} />}
-												{activeView === 'applied' && <MdSend size={13} />}
+												{activeView === 'applied' && pipelineTab === 'applied' && <MdSend size={13} />}
+												{activeView === 'applied' && pipelineTab === 'screening' && <MdListAlt size={13} />}
+												{activeView === 'applied' && pipelineTab === 'interview' && <MdPsychology size={13} />}
+												{activeView === 'applied' && pipelineTab === 'offer' && <MdEmojiEvents size={13} />}
 											</span>
 											{feedTitle}
-					</h2>
+										</h2>
 										<p className="job-search-feed-sub">{feedSub}</p>
 									</div>
 								</header>
@@ -1034,7 +1081,75 @@ function JobSearch() {
 									</ul>
 								) : null}
 
-								{!showSkeleton && !showError ? (
+								{/* ── Applied pipeline cards — filtered by selected pipeline tab ── */}
+								{activeView === 'applied' && !showSkeleton && !showError ? (() => {
+									const STAGES = ['applied', 'screening', 'interview', 'offer'] as const;
+									const stageJobs = listToRender.filter(j => (appStages[j.id] || 'applied') === pipelineTab);
+									if (stageJobs.length === 0) return (
+										<div className="job-search-empty-wrap">
+											<Empty description={listToRender.length === 0 ? 'No applications yet — apply to roles and they will appear here' : `No jobs in ${pipelineTab} stage`} image={Empty.PRESENTED_IMAGE_SIMPLE} />
+										</div>
+									);
+									return (
+										<ul className="job-search-job-list">
+											{stageJobs.map((job) => {
+												const currentIdx = STAGES.indexOf(appStages[job.id] || 'applied');
+												const canAdvance = currentIdx < STAGES.length - 1;
+												return (
+										<li key={job.id} className="job-search-job-row lineCard job-search-job-row--clickable" role="button" tabIndex={0}
+											onClick={() => openJobPreview(job)}
+											onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openJobPreview(job); } }}>
+											<div className="job-search-job-actions">
+												<Tooltip title={savedIds.has(job.id) ? 'Remove from saved' : 'Save job'}>
+													<button type="button" className={`job-search-job-save ${savedIds.has(job.id) ? 'job-search-job-save--on' : ''}`}
+														aria-pressed={savedIds.has(job.id)} onClick={(e) => toggleSave(job.id, e)}>
+														<span className="job-search-job-save-icon" aria-hidden>{savedIds.has(job.id) ? <MdBookmark size={18} /> : <MdBookmarkBorder size={18} />}</span>
+														<span className="job-search-job-save-label">{savedIds.has(job.id) ? 'Saved' : 'Save'}</span>
+													</button>
+												</Tooltip>
+											</div>
+											<div className="job-search-job-logo" style={{ background: `linear-gradient(135deg, hsl(${job.logoHue},70%,52%), hsl(${job.logoHue + 40},65%,42%))` }} aria-hidden>
+												<div className="logo-mesh-ring" />
+												<div className="logo-mesh-ring logo-mesh-ring--2" />
+												<span className="logo-monogram">{job.company.charAt(0)}</span>
+											</div>
+											<div className="job-search-job-main">
+												<div className="job-search-job-title-row">
+													<span className="job-search-job-title job-search-job-title--inline">{job.title}</span>
+													{job.matchScore != null && (
+														<span className="job-search-fit-pill" title="Match score">
+															{job.matchScore}% fit
+														</span>
+													)}
+												</div>
+												<p className="job-search-job-meta-line">
+													<MdBusiness size={12} className="job-meta-icon" aria-hidden />{job.company}
+													<span className="job-search-job-dot"> · </span>
+													<MdLocationOn size={12} className="job-meta-icon" aria-hidden />{job.location}
+													<span className="job-search-job-dot"> · </span>
+													<span className="job-search-job-kind">{EMPLOYMENT_OPTIONS.find((o) => o.value === job.employmentKind)?.label}</span>
+													<span className="job-search-job-dot"> · </span>
+													<span className="job-search-job-kind">{WORK_MODE_OPTIONS.find((o) => o.value === job.workMode)?.label}</span>
+												</p>
+												<div className="pipeline-card-advance" onClick={(e) => e.stopPropagation()}>
+													{canAdvance ? (
+														<button type="button" className="pipeline-advance-inline-btn"
+															onClick={(e) => { e.stopPropagation(); setAppStages(prev => ({ ...prev, [job.id]: STAGES[currentIdx + 1] })); setPipelineTab(STAGES[currentIdx + 1]); }}>
+															<MdCheckCircle size={12} /> Move to {STAGES[currentIdx + 1].charAt(0).toUpperCase() + STAGES[currentIdx + 1].slice(1)}
+														</button>
+													) : (
+														<span className="pipeline-offer-chip"><MdEmojiEvents size={12} /> Offer received!</span>
+													)}
+												</div>
+											</div>
+										</li>
+												);
+											})}
+										</ul>
+									);
+								})() : null}
+
+								{!showSkeleton && !showError && activeView !== 'applied' ? (
 									<ul className="job-search-job-list">
 										{matchLoading ? (
 											Array.from({ length: 4 }).map((_, i) => (
@@ -1185,7 +1300,7 @@ function JobSearch() {
 									</ul>
 								) : null}
 
-								{!showSkeleton && !showError && listToRender.length === 0 ? (
+								{!showSkeleton && !showError && activeView !== 'applied' && listToRender.length === 0 ? (
 									<div className="job-search-empty-wrap">
 										<Empty description={emptyDescription} image={Empty.PRESENTED_IMAGE_SIMPLE} />
 									</div>
@@ -1456,7 +1571,7 @@ function JobSearch() {
 
 						{/* ── 4-action footer ── */}
 						<footer className="jd-footer">
-							<button type="button" className="jd-action-btn jd-action-btn--apply" onClick={() => { setAppliedIds((prev) => new Set(prev).add(previewJob.id)); message.success('Application submitted!'); }} disabled={appliedIds.has(previewJob.id)}>
+							<button type="button" className="jd-action-btn jd-action-btn--apply" onClick={() => { setAppliedIds((prev) => new Set(prev).add(previewJob.id)); setAppStages((prev) => ({ ...prev, [previewJob.id]: 'applied' })); message.success('Application submitted!'); }} disabled={appliedIds.has(previewJob.id)}>
 								<span className="jd-action-icon jd-action-icon--apply">{appliedIds.has(previewJob.id) ? <MdCheckCircle size={16}/> : <MdRocketLaunch size={16}/>}</span>
 								<span className="jd-action-text"><span className="jd-action-label">{appliedIds.has(previewJob.id) ? 'Applied ✓' : 'Apply now'}</span><span className="jd-action-sub">→ tracker</span></span>
 							</button>

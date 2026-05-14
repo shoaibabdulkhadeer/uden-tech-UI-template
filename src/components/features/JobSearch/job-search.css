@@ -1,4 +1,4 @@
-﻿/* Job search page — layout + cards (shell uses dash-next / arena globals) */
+/* Job search page — layout + cards (shell uses dash-next / arena globals) */
 
 .job-search-page-inner {
 	position: relative;
@@ -4519,4 +4519,742 @@ body.dark-theme .job-meta-icon               { opacity: 0.4; }
 .js-tour-bubble-cta:hover {
 	box-shadow: 0 5px 18px rgba(99,102,241,0.55);
 	transform: translateY(-1px);
+}
+
+/* ═══════════════════════════════════════════════
+   Applied Pipeline View
+═══════════════════════════════════════════════ */
+
+.app-pipeline {
+	padding: 20px 16px 16px;
+	display: flex;
+	flex-direction: column;
+	gap: 20px;
+}
+
+/* ── Stage track ── */
+.app-pipeline-track {
+	display: flex;
+	align-items: center;
+	gap: 0;
+	background: rgba(99,102,241,0.04);
+	border: 1px solid rgba(99,102,241,0.12);
+	border-radius: 12px;
+	padding: 14px 20px;
+}
+
+.app-pipeline-stage-col {
+	display: flex;
+	align-items: center;
+	flex: 1;
+	min-width: 0;
+}
+
+.app-pipeline-stage-node {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 4px;
+	min-width: 70px;
+}
+
+.app-pipeline-stage-dot {
+	width: 10px;
+	height: 10px;
+	border-radius: 50%;
+	background: rgba(99,102,241,0.2);
+	border: 2px solid rgba(99,102,241,0.35);
+	transition: background 0.2s, box-shadow 0.2s;
+}
+
+.app-pipeline-stage-node--has-items .app-pipeline-stage-dot {
+	background: #6366f1;
+	border-color: #6366f1;
+	box-shadow: 0 0 0 4px rgba(99,102,241,0.18);
+}
+
+.app-pipeline-stage-label {
+	font-size: 11px;
+	font-weight: 700;
+	letter-spacing: 0.03em;
+	color: #94a3b8;
+	text-transform: uppercase;
+}
+
+.app-pipeline-stage-node--has-items .app-pipeline-stage-label {
+	color: #6366f1;
+}
+
+.app-pipeline-stage-count {
+	font-size: 11px;
+	font-weight: 700;
+	color: #cbd5e1;
+	background: rgba(148,163,184,0.1);
+	border-radius: 20px;
+	padding: 1px 7px;
+	min-width: 20px;
+	text-align: center;
+}
+
+.app-pipeline-stage-node--has-items .app-pipeline-stage-count {
+	background: rgba(99,102,241,0.12);
+	color: #6366f1;
+}
+
+.app-pipeline-connector {
+	flex: 1;
+	display: flex;
+	align-items: center;
+	padding: 0 4px;
+}
+
+.app-pipeline-connector-line {
+	height: 2px;
+	flex: 1;
+	background: linear-gradient(90deg, rgba(99,102,241,0.3) 0%, rgba(99,102,241,0.08) 100%);
+	border-radius: 2px;
+	background-size: 8px 2px;
+	background-image: repeating-linear-gradient(90deg, rgba(99,102,241,0.35) 0, rgba(99,102,241,0.35) 4px, transparent 4px, transparent 8px);
+	background-color: transparent;
+}
+
+/* ── Cards grid ── */
+.app-pipeline-cards {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+}
+
+.app-pipeline-card {
+	background: rgba(255,255,255,0.65);
+	border: 1px solid rgba(99,102,241,0.1);
+	border-radius: 14px;
+	padding: 16px 18px 14px;
+	cursor: pointer;
+	transition: box-shadow 0.18s, transform 0.15s, border-color 0.18s;
+	backdrop-filter: blur(6px);
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+}
+
+.app-pipeline-card:hover {
+	box-shadow: 0 6px 28px rgba(99,102,241,0.13);
+	border-color: rgba(99,102,241,0.28);
+	transform: translateY(-1px);
+}
+
+.app-pipeline-card-head {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+}
+
+.app-pipeline-card-logo {
+	width: 38px;
+	height: 38px;
+	border-radius: 10px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 16px;
+	font-weight: 800;
+	color: #fff;
+	flex-shrink: 0;
+	letter-spacing: -0.5px;
+}
+
+.app-pipeline-card-identity {
+	min-width: 0;
+	flex: 1;
+}
+
+.app-pipeline-card-title {
+	margin: 0;
+	font-size: 14px;
+	font-weight: 700;
+	color: #1e293b;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	line-height: 1.3;
+}
+
+.app-pipeline-card-company {
+	margin: 2px 0 0;
+	font-size: 12px;
+	color: #64748b;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+/* ── Inline stepper ── */
+.app-pipeline-stepper {
+	display: flex;
+	align-items: center;
+	gap: 0;
+}
+
+.app-pipeline-step {
+	display: flex;
+	align-items: center;
+	flex: 1;
+	gap: 0;
+	position: relative;
+}
+
+.app-pipeline-step-dot {
+	width: 20px;
+	height: 20px;
+	border-radius: 50%;
+	border: 2px solid #e2e8f0;
+	background: #f8fafc;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+	font-size: 10px;
+	color: #fff;
+	transition: all 0.22s ease;
+	z-index: 1;
+}
+
+.app-pipeline-step-dot.active {
+	border-color: #6366f1;
+	background: #6366f1;
+	box-shadow: 0 0 0 4px rgba(99,102,241,0.18);
+}
+
+.app-pipeline-step-dot.done {
+	border-color: #22c55e;
+	background: #22c55e;
+	color: #fff;
+}
+
+.app-pipeline-step-label {
+	display: none;
+}
+
+.app-pipeline-step-line {
+	flex: 1;
+	height: 2px;
+	background: #e2e8f0;
+	margin: 0 4px;
+	border-radius: 2px;
+	transition: background 0.22s ease;
+}
+
+.app-pipeline-step-line.filled {
+	background: linear-gradient(90deg, #22c55e, #6366f1);
+}
+
+/* Extended stepper with labels (wider cards) */
+@media (min-width: 520px) {
+	.app-pipeline-stepper {
+		gap: 0;
+	}
+	.app-pipeline-step {
+		flex-direction: column;
+		align-items: center;
+		gap: 4px;
+		flex: 1;
+	}
+	.app-pipeline-step-line {
+		position: absolute;
+		top: 9px;
+		left: 50%;
+		width: 100%;
+		margin: 0;
+		z-index: 0;
+	}
+	.app-pipeline-step-dot {
+		position: relative;
+		z-index: 1;
+	}
+	.app-pipeline-step-label {
+		display: block;
+		font-size: 10px;
+		font-weight: 600;
+		color: #94a3b8;
+		letter-spacing: 0.02em;
+		text-align: center;
+		white-space: nowrap;
+	}
+	.app-pipeline-step-label.active {
+		color: #6366f1;
+		font-weight: 700;
+	}
+	.app-pipeline-step-label.done {
+		color: #22c55e;
+	}
+}
+
+/* ── Card footer ── */
+.app-pipeline-card-footer {
+	display: flex;
+	align-items: center;
+	justify-content: flex-end;
+	padding-top: 4px;
+	border-top: 1px solid rgba(99,102,241,0.07);
+}
+
+.app-pipeline-advance-btn {
+	background: transparent;
+	border: 1.5px solid rgba(99,102,241,0.35);
+	color: #6366f1;
+	font-size: 11px;
+	font-weight: 700;
+	padding: 4px 12px;
+	border-radius: 8px;
+	cursor: pointer;
+	transition: all 0.16s ease;
+	letter-spacing: 0.02em;
+}
+
+.app-pipeline-advance-btn:hover {
+	background: rgba(99,102,241,0.08);
+	border-color: #6366f1;
+	box-shadow: 0 2px 10px rgba(99,102,241,0.2);
+}
+
+.app-pipeline-offer-badge {
+	display: flex;
+	align-items: center;
+	gap: 5px;
+	font-size: 11px;
+	font-weight: 700;
+	color: #d97706;
+	background: rgba(245,158,11,0.1);
+	border: 1px solid rgba(245,158,11,0.25);
+	border-radius: 8px;
+	padding: 4px 10px;
+}
+
+/* ── Dark theme ── */
+body.dark-theme .app-pipeline-track {
+	background: rgba(99,102,241,0.06);
+	border-color: rgba(99,102,241,0.18);
+}
+
+body.dark-theme .app-pipeline-card {
+	background: rgba(30,35,60,0.65);
+	border-color: rgba(99,102,241,0.15);
+}
+
+body.dark-theme .app-pipeline-card-title {
+	color: #e2e8f0;
+}
+
+body.dark-theme .app-pipeline-card-company {
+	color: #94a3b8;
+}
+
+body.dark-theme .app-pipeline-step-dot {
+	background: #1e2340;
+	border-color: rgba(99,102,241,0.3);
+}
+
+body.dark-theme .app-pipeline-step-line {
+	background: rgba(99,102,241,0.2);
+}
+
+body.dark-theme .app-pipeline-card-footer {
+	border-top-color: rgba(99,102,241,0.1);
+}
+
+
+/* ═══════════════════════════════════════════════
+   Pipeline sub-tabs  (Applied > Screening > Interview > Offer)
+═══════════════════════════════════════════════ */
+.pipeline-tabs {
+	display: flex;
+	align-items: center;
+	gap: 0;
+	margin-top: 10px;
+	padding: 10px 14px 0;
+	width: 100%;
+	border-top: 1px solid rgba(99,102,241,0.1);
+}
+
+.pipeline-tab-item {
+	display: flex;
+	align-items: center;
+	flex: 1;
+	min-width: 0;
+}
+
+.pipeline-tab-btn {
+	display: flex;
+	align-items: center;
+	gap: 5px;
+	background: transparent;
+	border: none;
+	cursor: pointer;
+	padding: 5px 8px;
+	border-radius: 8px;
+	font-size: 12px;
+	font-weight: 600;
+	color: #94a3b8;
+	transition: color 0.16s, background 0.16s;
+	white-space: nowrap;
+}
+
+.pipeline-tab-btn:hover {
+	color: #6366f1;
+	background: rgba(99,102,241,0.06);
+}
+
+.pipeline-tab-btn--active {
+	color: #6366f1;
+	background: rgba(99,102,241,0.1);
+}
+
+.pipeline-tab-icon {
+	opacity: 0.7;
+	flex-shrink: 0;
+}
+
+.pipeline-tab-btn--active .pipeline-tab-icon {
+	opacity: 1;
+}
+
+.pipeline-tab-label {
+	font-size: 12px;
+	font-weight: 600;
+}
+
+.pipeline-tab-count {
+	background: rgba(99,102,241,0.15);
+	color: #6366f1;
+	font-size: 10px;
+	font-weight: 700;
+	padding: 1px 6px;
+	border-radius: 20px;
+	min-width: 18px;
+	text-align: center;
+}
+
+.pipeline-tab-arrow {
+	color: #cbd5e1;
+	font-size: 11px;
+	padding: 0 6px;
+	flex-shrink: 0;
+	letter-spacing: 2px;
+}
+
+/* advance button inside job card */
+.pipeline-card-advance {
+	margin-top: 6px;
+	display: flex;
+	align-items: center;
+}
+
+.pipeline-advance-inline-btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	background: transparent;
+	border: 1.5px solid rgba(99,102,241,0.3);
+	color: #6366f1;
+	font-size: 11px;
+	font-weight: 700;
+	padding: 3px 10px;
+	border-radius: 7px;
+	cursor: pointer;
+	transition: all 0.15s;
+}
+
+.pipeline-advance-inline-btn:hover {
+	background: rgba(99,102,241,0.08);
+	border-color: #6366f1;
+}
+
+.pipeline-offer-chip {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	font-size: 11px;
+	font-weight: 700;
+	color: #d97706;
+	background: rgba(245,158,11,0.1);
+	border: 1px solid rgba(245,158,11,0.25);
+	border-radius: 7px;
+	padding: 3px 9px;
+}
+
+/* dark theme */
+body.dark-theme .pipeline-tabs {
+	border-top-color: rgba(99,102,241,0.15);
+}
+
+body.dark-theme .pipeline-tab-btn {
+	color: #64748b;
+}
+
+body.dark-theme .pipeline-tab-btn:hover,
+body.dark-theme .pipeline-tab-btn--active {
+	color: #818cf8;
+	background: rgba(99,102,241,0.12);
+}
+/* ── Pipeline stages merged into main tab row ── */
+.view-tabs-divider {
+	width: 1px;
+	height: 22px;
+	background: rgba(99,102,241,0.15);
+	margin: 0 6px;
+	flex-shrink: 0;
+	align-self: center;
+}
+
+.view-tab-pipeline-item {
+	display: flex;
+	align-items: center;
+	gap: 0;
+}
+
+.view-tab-pipeline-arrow {
+	font-size: 11px;
+	color: #cbd5e1;
+	padding: 0 2px;
+	flex-shrink: 0;
+	user-select: none;
+}
+
+/* ── Pipeline tab base ── */
+.view-tab--pipeline {
+	color: #94a3b8;
+}
+
+.view-tab--pipeline:hover:not(.view-tab--active) {
+	color: #6366f1;
+	background: rgba(99,102,241,0.07);
+}
+
+/* ── Pipeline tab ACTIVE — solid indigo gradient, white text (same pattern as Matched/Saved) ── */
+.view-tab--pipeline-active {
+	background: linear-gradient(135deg, #6366f1 0%, #7c3aed 100%) !important;
+	color: #fff !important;
+	box-shadow: 0 3px 12px rgba(99,102,241,0.38), inset 0 1px 0 rgba(255,255,255,0.15) !important;
+}
+
+/* count badge on active pipeline tab — white, like other active tabs */
+.view-tab--pipeline-active .view-tab-count {
+	background: rgba(255,255,255,0.25) !important;
+	color: #fff !important;
+}
+
+/* icon on active pipeline tab */
+.view-tab--pipeline-active .view-tab-icon {
+	color: #fff !important;
+}
+
+body.dark-theme .view-tabs-divider {
+	background: rgba(99,102,241,0.2);
+}
+
+body.dark-theme .view-tab-pipeline-arrow {
+	color: #475569;
+}
+
+/* ── Make all tabs fit in one row ── */
+.view-tabs {
+	overflow-x: auto;
+	flex-wrap: nowrap !important;
+	scrollbar-width: none;
+}
+.view-tabs::-webkit-scrollbar { display: none; }
+
+/* Pipeline tab sizing — compact but roomy enough for count badge */
+.view-tab--pipeline {
+	padding: 5px 9px !important;
+	gap: 4px !important;
+	flex-shrink: 0;
+}
+
+.view-tab--pipeline .view-tab-label {
+	font-size: 11px !important;
+}
+
+/* Count badge sizing for pipeline tabs */
+.view-tab--pipeline .view-tab-count {
+	min-width: 16px;
+	height: 16px;
+	padding: 0 4px;
+	font-size: 9px;
+	border-radius: 5px;
+	flex-shrink: 0;
+}
+
+.view-tab-pipeline-arrow {
+	font-size: 10px;
+	color: #cbd5e1;
+	padding: 0 1px;
+	flex-shrink: 0;
+	user-select: none;
+}
+
+.view-tab-pipeline-item {
+	display: flex;
+	align-items: center;
+	flex-shrink: 0;
+}
+
+.view-tabs-divider {
+	width: 1px;
+	height: 22px;
+	background: rgba(99,102,241,0.15);
+	margin: 0 5px;
+	flex-shrink: 0;
+	align-self: center;
+}
+/* ══════════════════════════════════════════════════
+   Feed stage title — next-gen reveal animation
+══════════════════════════════════════════════════ */
+
+@keyframes feed-stage-slide-in {
+	0%  { opacity: 0; transform: translateY(7px) skewX(-1.5deg); filter: blur(3px); }
+	60% { opacity: 1; filter: blur(0); }
+	100%{ opacity: 1; transform: translateY(0) skewX(0); filter: blur(0); }
+}
+
+.feed-stage-reveal {
+	animation: feed-stage-slide-in 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+
+
+/* ══════════════════════════════════════════════════
+   Pipeline stage stepper strip (below main tabs)
+══════════════════════════════════════════════════ */
+.pipeline-stage-strip {
+	display: flex;
+	align-items: center;
+	gap: 0;
+	padding: 10px 2px 6px;
+	margin-top: 2px;
+	margin-bottom: 3px;
+}
+
+.pipeline-stage-pill {
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	padding: 5px 13px;
+	border: 1.5px solid rgba(148, 163, 184, 0.22);
+	border-radius: 20px;
+	background: rgba(15, 23, 42, 0.03);
+	cursor: pointer;
+	font-size: 11.5px;
+	font-weight: 600;
+	color: #94a3b8;
+	transition: all 0.2s ease;
+	white-space: nowrap;
+	font-family: inherit;
+	line-height: 1;
+	position: relative;
+	flex-shrink: 0;
+}
+
+.pipeline-stage-pill:hover:not(.pipeline-stage-pill--active) {
+	border-color: rgba(99, 102, 241, 0.35);
+	color: #6366f1;
+	background: rgba(99, 102, 241, 0.05);
+}
+
+/* Past stage — completed look */
+.pipeline-stage-pill--past {
+	border-color: rgba(99, 102, 241, 0.3);
+	color: #6366f1;
+	background: rgba(99, 102, 241, 0.06);
+}
+
+/* Active stage — filled pill */
+.pipeline-stage-pill--active {
+	background: linear-gradient(135deg, #6366f1 0%, #7c3aed 100%);
+	border-color: transparent;
+	color: #fff;
+	box-shadow: 0 3px 14px rgba(99, 102, 241, 0.38), inset 0 1px 0 rgba(255,255,255,0.18);
+}
+
+.pipeline-stage-pill-icon {
+	display: flex;
+	align-items: center;
+	opacity: 0.85;
+}
+
+.pipeline-stage-pill--active .pipeline-stage-pill-icon {
+	opacity: 1;
+}
+
+.pipeline-stage-pill-label {
+	letter-spacing: -0.01em;
+}
+
+.pipeline-stage-pill-count {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 16px;
+	height: 16px;
+	padding: 0 4px;
+	border-radius: 10px;
+	font-size: 9px;
+	font-weight: 700;
+	background: rgba(148, 163, 184, 0.2);
+	color: #64748b;
+	flex-shrink: 0;
+}
+
+.pipeline-stage-pill--active .pipeline-stage-pill-count {
+	background: rgba(255, 255, 255, 0.25);
+	color: #fff;
+}
+
+.pipeline-stage-pill--past .pipeline-stage-pill-count {
+	background: rgba(99, 102, 241, 0.15);
+	color: #6366f1;
+}
+
+/* Connector line between pills */
+.pipeline-stage-connector {
+	flex-shrink: 0;
+	width: 28px;
+	height: 2px;
+	background: rgba(148, 163, 184, 0.25);
+	border-radius: 2px;
+	margin: 0 2px;
+	transition: background 0.25s ease;
+}
+
+.pipeline-stage-connector--filled {
+	background: linear-gradient(90deg, #6366f1, #7c3aed);
+	opacity: 0.6;
+}
+
+/* Dark theme */
+body.dark-theme .pipeline-stage-strip {
+	border-color: rgba(99, 102, 241, 0.12);
+}
+
+body.dark-theme .pipeline-stage-pill {
+	background: rgba(255, 255, 255, 0.03);
+	border-color: rgba(148, 163, 184, 0.15);
+	color: #64748b;
+}
+
+body.dark-theme .pipeline-stage-pill:hover:not(.pipeline-stage-pill--active) {
+	border-color: rgba(99, 102, 241, 0.4);
+	color: #818cf8;
+	background: rgba(99, 102, 241, 0.08);
+}
+
+body.dark-theme .pipeline-stage-pill--past {
+	border-color: rgba(99, 102, 241, 0.25);
+	color: #818cf8;
+	background: rgba(99, 102, 241, 0.1);
+}
+
+body.dark-theme .pipeline-stage-connector {
+	background: rgba(148, 163, 184, 0.15);
 }
