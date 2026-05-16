@@ -329,14 +329,14 @@ function JobSearch() {
 		[]
 	);
 
-	const activeFilterCount = [
+	const activeFilterCount = useMemo(() => [
 		searchQuery.trim() !== '',
 		empFilter.length > 0,
 		workFilter.length > 0,
 		expFilter != null,
 		sectorFilter != null,
 		skillsFilter.length > 0,
-	].filter(Boolean).length;
+	].filter(Boolean).length, [searchQuery, empFilter, workFilter, expFilter, sectorFilter, skillsFilter]);
 
 	const handleFindJobs = useCallback(() => {
 		if (activeFilterCount === 0) return;
@@ -646,9 +646,9 @@ function JobSearch() {
 				</header>
 
 				<motion.div
-					initial={{ y: 24, opacity: 0.6 }}
+					initial={{ y: 16, opacity: 0.7 }}
 					animate={{ y: 0, opacity: 1 }}
-					transition={{ duration: 0.75, ease: easeInOut }}
+					transition={{ duration: 0.35, ease: easeInOut }}
 					className="job-search-motion"
 				>
 					<div className="job-search-layout">
@@ -704,6 +704,46 @@ function JobSearch() {
 								</div>
 								<div className="job-search-filters-card-body">{filtersBlock}</div>
 							</section>
+
+							<div className="learn-path-ad-card" role="complementary" aria-label="Upgrade your skills">
+								<div className="learn-path-ad-orb learn-path-ad-orb--1" aria-hidden />
+								<div className="learn-path-ad-orb learn-path-ad-orb--2" aria-hidden />
+								<div className="learn-path-ad-orb learn-path-ad-orb--3" aria-hidden />
+								<div className="learn-path-ad-grid" aria-hidden />
+								<div className="learn-path-ad-body">
+									<div className="learn-path-ad-badge">
+										<MdRocketLaunch size={11} aria-hidden />
+										AI-Powered
+									</div>
+									<h3 className="learn-path-ad-title">
+										Upgrade your<br />
+										<span className="learn-path-ad-title-highlight">skills today</span>
+									</h3>
+									<p className="learn-path-ad-sub">
+										Let AI build a personalised learning path in seconds — tailored to your goals and career.
+									</p>
+									<button
+										type="button"
+										className="learn-path-ad-cta"
+										onClick={() => navigate('/learn')}
+									>
+										<MdAutoAwesome size={14} aria-hidden />
+										<span>Generate Learn Path</span>
+										<span className="learn-path-ad-cta-arrow" aria-hidden>→</span>
+									</button>
+								</div>
+								<div className="learn-path-ad-metrics" aria-hidden>
+									<div className="learn-path-ad-metric">
+										<span className="learn-path-ad-metric-num">2.4k+</span>
+										<span className="learn-path-ad-metric-label">Paths built</span>
+									</div>
+									<div className="learn-path-ad-metric-divider" />
+									<div className="learn-path-ad-metric">
+										<span className="learn-path-ad-metric-num">94%</span>
+										<span className="learn-path-ad-metric-label">Success rate</span>
+									</div>
+								</div>
+							</div>
 
 							<button
 								type="button"
