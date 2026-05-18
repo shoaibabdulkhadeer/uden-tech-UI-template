@@ -1,7 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Bash(powershell -Command \"Get-ChildItem -Path 'C:\\\\Users\\\\Shoail\\\\Desktop\\\\Projects\\\\UdenUI_Gitlab\\\\udentech_learnpathui\\\\uden-tech-UI-template\\\\src\\\\util' -File | Select-Object -ExpandProperty Name\")"
-    ]
-  }
-}

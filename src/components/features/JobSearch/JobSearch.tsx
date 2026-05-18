@@ -601,7 +601,7 @@ function JobSearch() {
 	return (
 		<>
 			<div className="job-search-page phase2-dashboard dash-next dash-next-shell">
-			<DashboardShellNetwork />
+			{/* <DashboardShellNetwork /> */}
 			<div className="job-search-page-inner">
 				<header className="dash-next-page-head">
 					<div className="dash-next-page-head-row">
@@ -1657,10 +1657,11 @@ function JobSearch() {
 								<span className="jd-action-text"><span className="jd-action-label">Build skills</span><span className="jd-action-sub">→ full learning path</span></span>
 							</button>
 
-							<button type="button" className="jd-action-btn jd-action-btn--prepare" onClick={() => message.info('Opening round prep…')}>
+                      {/* for now commented maybe in future can be used based on requirement */}
+							{/* <button type="button" className="jd-action-btn jd-action-btn--prepare" onClick={() => message.info('Opening round prep…')}>
 								<span className="jd-action-icon jd-action-icon--prepare"><MdPsychology size={16}/></span>
 								<span className="jd-action-text"><span className="jd-action-label">Prepare round</span><span className="jd-action-sub">→ round learning path</span></span>
-							</button>
+							</button> */}
 						</footer>
 					</div>
 				) : null}

@@ -3923,7 +3923,7 @@ body.dark-theme .job-meta-icon               { opacity: 0.4; }
 /* —— 4-action glassmorphism footer —— */
 .jd-footer {
 	display: grid;
-	grid-template-columns: repeat(4, 1fr);
+	grid-template-columns: repeat(3, 1fr);
 	gap: 0;
 	flex-shrink: 0;
 	background: #fff;

@@ -97,6 +97,15 @@ const MainApp = () => {
 		return () => window.removeEventListener('resize', handleResize);
 	}, [dispatch, switchRoleData]);
 
+	// Reset scroll to top on every route change
+	useEffect(() => {
+		// Reset window scroll
+		window.scrollTo(0, 0);
+		// Also reset the Ant Design Layout content scroll container
+		const contentEl = document.querySelector<HTMLElement>('.gx-layout-content');
+		if (contentEl) contentEl.scrollTop = 0;
+	}, [location.pathname]);
+
 	return (
 		<Layout className="gx-app-layout">
 			<AppSidebar navStyle={navStyle} />
