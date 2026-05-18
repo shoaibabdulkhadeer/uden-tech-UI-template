@@ -1652,7 +1652,20 @@ function JobSearch() {
 								<span className="jd-action-text"><span className="jd-action-label">{savedIds.has(previewJob.id) ? 'Saved' : 'Save for later'}</span><span className="jd-action-sub">→ saved list</span></span>
 							</button>
 
-							<button type="button" className="jd-action-btn jd-action-btn--skills" onClick={() => message.info('Opening learning path…')}>
+							<button
+								type="button"
+								className="jd-action-btn jd-action-btn--skills"
+								onClick={() => {
+									// Build a rich JD string: title + company + description
+									const jdText = [
+										previewJob.title && `Role: ${previewJob.title}`,
+										previewJob.company && `Company: ${previewJob.company}`,
+										previewJob.detail?.description,
+									].filter(Boolean).join('\n\n');
+									sessionStorage.setItem('lpPrefillJd', jdText);
+									window.open('/learn', '_blank');
+								}}
+							>
 								<span className="jd-action-icon jd-action-icon--skills"><MdSchool size={16}/></span>
 								<span className="jd-action-text"><span className="jd-action-label">Build skills</span><span className="jd-action-sub">→ full learning path</span></span>
 							</button>

@@ -411,6 +411,7 @@ const Learn = () => {
 	useEffect(() => {
 		const prefill = sessionStorage.getItem('lpPrefillJd') || location.state?.jd;
 		if (prefill) {
+			// Populate main compose textarea with the JD from Career Acceleration
 			form.setFieldsValue({ text: prefill });
 			sessionStorage.removeItem('lpPrefillJd');
 			if (charCountRef.current) {
