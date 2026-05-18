@@ -1,28 +1,25 @@
-import { Avatar, Modal, Popover } from 'antd';
+import { Modal, Popover } from 'antd';
 import { useEffect, useState } from 'react';
 import { CiLogout } from 'react-icons/ci';
 import { decodeToken } from 'react-jwt';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import { FaFingerprint, FaRegSnowflake, FaUserCircle } from 'react-icons/fa';
+import { FaFingerprint, FaRegSnowflake } from 'react-icons/fa';
+import { MdAdminPanelSettings, MdVerified } from 'react-icons/md';
 import { logoutSession } from '../../../redux/features/auth/logoutSessionSlice';
-
 
 const UserInfo = () => {
 	const [userData, setUserdata] = useState<any>({});
-	const dispatch = useDispatch(); // Initialize useDispatch hook
-	const navigate = useNavigate(); // Initialize useNavigate hook
+	const dispatch = useDispatch();
+	const navigate = useNavigate();
 	const status = useSelector((state: any) => state.logout.logoutStatus);
 	const { tokenDetails } = useSelector((state: any) => state?.tokenReducer);
-
-	const confirm = Modal.confirm;
+	const [visible, setVisible] = useState(false);
 
 	useEffect(() => {
 		const myDecodedToken: any = decodeToken(sessionStorage?.accessToken);
 		setUserdata(myDecodedToken);
 	}, []);
-
-	
 
 	useEffect(() => {
 		if (status === 'success') {
@@ -31,57 +28,89 @@ const UserInfo = () => {
 		}
 	}, [status, navigate]);
 
-	const [visible, setVisible] = useState(false);
-
-	const handleLogout = async () => {
-		// setVisible(true);
-		confirm({
+	const handleLogout = () => {
+		Modal.confirm({
 			title: 'Are you sure you want to log out?',
 			okText: 'Yes',
 			okType: 'primary',
 			cancelText: 'No',
 			onOk() {
-				// dispatch(logoutAction(sessionStorage.caAccessToken));
-				dispatch(logoutSession())
+				dispatch(logoutSession());
 				navigate('/sessionexpired');
-				// setVisible(false);
 			},
 			onCancel() {}
 		});
 	};
 
+	const displayName = userData?.userName || userData?.name || 'Learner';
+	const initial = displayName.charAt(0).toUpperCase();
+	const email = userData?.email || userData?.Email || '';
+	const role = userData?.RoleName || userData?.role || 'Learner';
 
+	const profileCard = (
+		<div className="up-card">
+			{/* Gradient banner with shimmer */}
+			<div className="up-banner" aria-hidden>
+				<div className="up-banner-orb up-banner-orb--1" />
+				<div className="up-banner-orb up-banner-orb--2" />
+			</div>
 
-	const userMenuOptions = (
-		<ul className="gx-user-popover">
-			<li style={{ display: 'flex', alignItems: 'center', width: '100%', gap: '5px' }}>
-				<FaUserCircle  size={18} />  {userData?.userName} 
-			</li>
-			<li 
-				style={{ display: 'flex', alignItems: 'center', width: '100%', gap: '5px' }}
-				onClick={() => {
-					navigate('/job-management');
-					setVisible(false);
-				}}
-			>
-				<FaFingerprint size={18} /> Job Management
-			</li>
-			<li
-				style={{ backgroundColor: '#f1f5f9', color: 'red', display: 'flex', alignItems: 'center', gap: '2px', width: '100%' }}
-				onClick={
-					// navigate('/sessionexpired');
-					handleLogout
-				}
-				
-			>
-				<CiLogout style={{ marginRight: '5px' }} /> Log out
-			</li>
-		</ul>
+			{/* Avatar */}
+			<div className="up-avatar-wrap">
+				<div className="up-avatar">{initial}</div>
+				<span className="up-online-dot" aria-label="Online" />
+			</div>
+
+			{/* Identity */}
+			<div className="up-identity">
+				<div className="up-name-row">
+					<span className="up-name">{displayName}</span>
+					<MdVerified className="up-verified" />
+				</div>
+				{email && <p className="up-email">{email}</p>}
+				<span className="up-role-badge">{role}</span>
+			</div>
+
+			{/* Token stats */}
+			<div className="up-stats">
+				<div className="up-stat">
+					<FaRegSnowflake className="up-stat-icon up-stat-icon--blue" />
+					<span className="up-stat-num">{tokenDetails?.data?.availablePoints ?? 0}</span>
+					<span className="up-stat-label">Available</span>
+				</div>
+				<div className="up-stat-divider" />
+				<div className="up-stat">
+					<FaFingerprint className="up-stat-icon up-stat-icon--violet" />
+					<span className="up-stat-num">{tokenDetails?.data?.consumePoints ?? 0}</span>
+					<span className="up-stat-label">Consumed</span>
+				</div>
+			</div>
+
+			{/* Actions */}
+			<div className="up-actions">
+				<button
+					type="button"
+					className="up-action-item"
+					onClick={() => { navigate('/job-management'); setVisible(false); }}
+				>
+					<MdAdminPanelSettings className="up-action-icon" />
+					<span>Job Management</span>
+				</button>
+				<button
+					type="button"
+					className="up-action-item up-action-item--logout"
+					onClick={handleLogout}
+				>
+					<CiLogout className="up-action-icon" />
+					<span>Log out</span>
+				</button>
+			</div>
+		</div>
 	);
-
 
 	return (
 		<div className="app-header-user-wrap" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+			{/* Token pills */}
 			<div className="app-header-token-strip" aria-label="Token balance">
 				<span className="app-header-token-pill app-header-token-pill--available">
 					<FaRegSnowflake size={12} aria-hidden />
@@ -93,18 +122,21 @@ const UserInfo = () => {
 				</span>
 			</div>
 
-		<Popover
-			overlayClassName="gx-popover-horizantal"
-			placement="bottomRight"
-			content={userMenuOptions}
-			trigger="click"
-			visible={visible}
-			onVisibleChange={setVisible}
-		>
-			<Avatar src="/assets/images/userlogo.png" className="gx-avatar gx-pointer" alt="" style={{ width: '40px', height: '40px' }} />
-		</Popover>
+			{/* Profile trigger */}
+			<Popover
+				overlayClassName="up-popover"
+				placement="bottomRight"
+				content={profileCard}
+				trigger="click"
+				visible={visible}
+				onVisibleChange={setVisible}
+			>
+				<button type="button" className="up-trigger" aria-label="Open profile">
+					<span className="up-trigger-initial">{initial}</span>
+					<span className="up-trigger-dot" aria-hidden />
+				</button>
+			</Popover>
 		</div>
-
 	);
 };
 

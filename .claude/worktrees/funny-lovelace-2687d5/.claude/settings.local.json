@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls -la /c/Users/Shoail/Desktop/Projects/UdenUI_Gitlab/udentech_learnpathui/uden-tech-UI-template/src/redux/features)",
+      "Bash(find /c/Users/Shoail/Desktop/Projects/UdenUI_Gitlab/udentech_learnpathui/uden-tech-UI-template/src/styles -type f -name \"*.css\" | head -10)"
+    ]
+  }
+}
