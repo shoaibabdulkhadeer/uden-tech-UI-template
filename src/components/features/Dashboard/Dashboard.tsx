@@ -8,6 +8,7 @@ import { BsBatteryFull } from 'react-icons/bs';
 import { FaFireAlt } from 'react-icons/fa';
 import { FaLocationArrow, FaNoteSticky } from 'react-icons/fa6';
 import { GiSkills } from 'react-icons/gi';
+import { TbRadar2 } from 'react-icons/tb';
 import { IoFileTrayFull } from 'react-icons/io5';
 import {
 	MdAutoAwesome,
@@ -832,44 +833,61 @@ const Dashboard = () => {
 							className="dash-next-career-constellation phase2-card-interactive"
 							aria-labelledby="dash-career-constellation-title"
 						>
+							{/* Gradient accent strip */}
+							<div className="dash-next-career-constellation-accent" aria-hidden />
 							<div className="dash-next-career-constellation-sheen" aria-hidden />
+
 							<div className="dash-next-career-constellation-grid">
 								<div className="dash-next-career-constellation-intro">
-									<p className="dash-next-career-constellation-eyebrow gx-m-0">Skill constellation</p>
+
+									{/* Eyebrow with pulsing dot */}
+									<div className="dash-next-career-constellation-eyebrow-row">
+										<span className="dash-next-career-eyebrow-dot" aria-hidden />
+										<p className="dash-next-career-constellation-eyebrow gx-m-0">Skill Constellation</p>
+									</div>
+
+									{/* Title + icon */}
 									<div className="dash-next-career-constellation-title-row gx-d-flex gx-align-items-center gx-flex-wrap">
 										<span className="dash-next-career-constellation-icon" aria-hidden>
-											<GiSkills className="dash-next-career-constellation-icon-svg" />
+											<TbRadar2 className="dash-next-career-constellation-icon-svg" />
 										</span>
 										<div className="dash-next-career-constellation-heading-group">
 											<h3 id="dash-career-constellation-title" className="dash-next-career-constellation-title gx-m-0">
-												Your stack from learning paths
+												Your skill radar
 											</h3>
 											<p className="dash-next-career-constellation-sub gx-m-0">
-												Up to five rings with a few skills each (about 3–4 when there are enough). Dots blink and each ring
-												spins at its own speed — hover for the full skill name.
+												Skills from your learning paths orbit a live map — each ring is a depth tier. Hover any node to inspect.
 											</p>
 										</div>
 									</div>
+
+									{/* KPI chips */}
 									{careerSkillsProfile.length > 0 ? (
-										<ul className="dash-next-career-constellation-stats" aria-label="Skill summary">
-											<li>
-												<span className="dash-next-career-stat-value">{careerSkillsStats.total}</span>
-												<span className="dash-next-career-stat-label">skills mapped</span>
-											</li>
-											<li>
-												<span className="dash-next-career-stat-value dash-next-career-stat-value--emerald">
-													{careerSkillsStats.mastered}
-												</span>
-												<span className="dash-next-career-stat-label">from completed paths</span>
-											</li>
-											<li>
-												<span className="dash-next-career-stat-value dash-next-career-stat-value--cyan">
-													{careerSkillsStats.building}
-												</span>
-												<span className="dash-next-career-stat-label">in progress</span>
-											</li>
-										</ul>
+										<div className="dash-next-career-kpi-strip" aria-label="Skill summary">
+											<div className="dash-next-career-kpi dash-next-career-kpi--indigo">
+												<div className="dash-next-career-kpi-icon-row">
+													<span className="dash-next-career-kpi-icon"><MdAutoAwesome size={13} /></span>
+													<span className="dash-next-career-kpi-num">{careerSkillsStats.total}</span>
+												</div>
+												<span className="dash-next-career-kpi-label">Skills Mapped</span>
+											</div>
+											<div className="dash-next-career-kpi dash-next-career-kpi--emerald">
+												<div className="dash-next-career-kpi-icon-row">
+													<span className="dash-next-career-kpi-icon"><MdEmojiEvents size={13} /></span>
+													<span className="dash-next-career-kpi-num">{careerSkillsStats.mastered}</span>
+												</div>
+												<span className="dash-next-career-kpi-label">Completed</span>
+											</div>
+											<div className="dash-next-career-kpi dash-next-career-kpi--cyan">
+												<div className="dash-next-career-kpi-icon-row">
+													<span className="dash-next-career-kpi-icon"><MdRocketLaunch size={13} /></span>
+													<span className="dash-next-career-kpi-num">{careerSkillsStats.building}</span>
+												</div>
+												<span className="dash-next-career-kpi-label">In Progress</span>
+											</div>
+										</div>
 									) : null}
+
 									<div className="dash-next-career-constellation-actions">
 										<button
 											type="button"
@@ -881,7 +899,7 @@ const Dashboard = () => {
 											<span>Open matched jobs</span>
 										</button>
 										<p className="dash-next-career-constellation-cta-hint gx-m-0">
-											Lands on <strong>Matched</strong> — roles scored to this stack (mock data until APIs connect).
+											Lands on <strong>Matched</strong> — roles scored to this stack.
 										</p>
 									</div>
 								</div>
@@ -889,14 +907,46 @@ const Dashboard = () => {
 								<div
 									className={`dash-next-career-constellation-canvas${careerSkillsProfile.length === 0 ? ' dash-next-career-constellation-canvas--empty' : ''}`}
 								>
-									<div className="dash-next-career-orbit-rings" aria-hidden>
-										{[0, 1, 2, 3, 4].map((i) => (
-											<div key={i} className={`dash-next-career-orbit-ring dash-next-career-orbit-ring--${i + 1}`} />
-										))}
+									{/* Radar sweep cone */}
+									<div className="dash-next-career-radar-sweep" aria-hidden />
+
+									<div className="dash-next-career-orbit-rings">
+										{[0, 1, 2, 3, 4].map((i) => {
+											const ringSkills  = careerSkillRings[i] ?? [];
+											const tierLabels  = ['Core', 'Foundation', 'Intermediate', 'Advanced', 'Expert'];
+											const label       = tierLabels[i] ?? `Ring ${i + 1}`;
+											const count       = ringSkills.length;
+											return (
+												<Tooltip
+													key={i}
+													overlayClassName="dash-next-career-skill-tooltip"
+													placement="top"
+													mouseEnterDelay={0.1}
+													title={
+														<div>
+															<div className="dash-next-career-tooltip-title">Ring {i + 1} — {label}</div>
+															<div className="dash-next-career-tooltip-sub">
+																{count > 0
+																	? `${count} skill${count !== 1 ? 's' : ''} orbiting this tier`
+																	: 'No skills mapped to this tier yet'}
+															</div>
+														</div>
+													}
+												>
+													<div className={`dash-next-career-orbit-ring dash-next-career-orbit-ring--${i + 1}`} />
+												</Tooltip>
+											);
+										})}
 									</div>
 									<div className="dash-next-career-hub">
 										<span className="dash-next-career-hub-ring" aria-hidden />
-										<GiSkills className="dash-next-career-hub-icon" aria-hidden />
+										<span className="dash-next-career-hub-ring-2" aria-hidden />
+										<img
+											className="dash-next-career-hub-icon"
+											src="https://raw.githubusercontent.com/microsoft/fluentui-emoji/main/assets/Bullseye/3D/bullseye_3d.png"
+											alt=""
+											aria-hidden
+										/>
 									</div>
 									{careerSkillsProfile.length === 0 ? (
 										<div className="dash-next-career-constellation-empty-callout">

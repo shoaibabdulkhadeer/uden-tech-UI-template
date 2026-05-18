@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {useDispatch, useSelector} from "react-redux";
 import {Drawer, Layout} from "antd";
 
@@ -23,9 +23,9 @@ const Sidebar = () => {
   const width = useSelector(({common}:any) => common.width);
   const dispatch = useDispatch();
 
-  const onToggleCollapsedNav = () => {
+  const onToggleCollapsedNav = useCallback(() => {
     dispatch(toggleCollapsedSideNav(!navCollapsed));
-  };
+  }, [dispatch, navCollapsed]);
 
   useEffect(() => {
     if (navStyle === NAV_STYLE_MINI_SIDEBAR || navStyle === NAV_STYLE_NO_HEADER_MINI_SIDEBAR) {
@@ -33,23 +33,22 @@ const Sidebar = () => {
     }
   }, [navStyle]);
 
-  let drawerStyle = "gx-collapsed-sidebar";
+  // Recomputes only when navStyle or width changes
+  const drawerStyle = useMemo(() => {
+    if (
+      (navStyle === NAV_STYLE_FIXED ||
+        navStyle === NAV_STYLE_MINI_SIDEBAR ||
+        navStyle === NAV_STYLE_NO_HEADER_EXPANDED_SIDEBAR) &&
+      width < TAB_SIZE
+    ) return "gx-collapsed-sidebar";
 
-  if (navStyle === NAV_STYLE_FIXED) {
-    drawerStyle = "";
-  } else if (navStyle === NAV_STYLE_NO_HEADER_MINI_SIDEBAR) {
-    drawerStyle = "gx-mini-sidebar gx-mini-custom-sidebar";
-  } else if (navStyle === NAV_STYLE_NO_HEADER_EXPANDED_SIDEBAR) {
-    drawerStyle = "gx-custom-sidebar"
-  } else if (navStyle === NAV_STYLE_MINI_SIDEBAR) {
-    drawerStyle = "gx-mini-sidebar";
-  } else if (navStyle === NAV_STYLE_DRAWER) {
-    drawerStyle = "gx-collapsed-sidebar"
-  }
-  if ((navStyle === NAV_STYLE_FIXED || navStyle === NAV_STYLE_MINI_SIDEBAR
-    || navStyle === NAV_STYLE_NO_HEADER_EXPANDED_SIDEBAR) && width < TAB_SIZE) {
-    drawerStyle = "gx-collapsed-sidebar"
-  }
+    if (navStyle === NAV_STYLE_FIXED)                       return "";
+    if (navStyle === NAV_STYLE_NO_HEADER_MINI_SIDEBAR)      return "gx-mini-sidebar gx-mini-custom-sidebar";
+    if (navStyle === NAV_STYLE_NO_HEADER_EXPANDED_SIDEBAR)  return "gx-custom-sidebar";
+    if (navStyle === NAV_STYLE_MINI_SIDEBAR)                return "gx-mini-sidebar";
+    if (navStyle === NAV_STYLE_DRAWER)                      return "gx-collapsed-sidebar";
+    return "gx-collapsed-sidebar";
+  }, [navStyle, width]);
 
   return (
     <Sider

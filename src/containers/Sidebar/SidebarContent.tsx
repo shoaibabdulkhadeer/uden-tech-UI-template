@@ -1,5 +1,5 @@
 import { Modal, Tooltip } from 'antd';
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { CiLogout } from 'react-icons/ci';
 import {
 	MdSpaceDashboard,
@@ -75,23 +75,25 @@ const SidebarContent = ({
 		}
 	}, [dispatch, navStyle, width]);
 
-	const [selectedKey, setSelectedKey] = useState<string>('');
 	const location = useLocation();
 
-	useEffect(() => {
+	// Derived directly from pathname — no extra render cycle from useEffect+setState
+	const selectedKey = useMemo(() => {
 		const p = location.pathname;
-		if      (p === '/dashboard')       setSelectedKey('dashboard');
-		else if (p === '/learn')           setSelectedKey('generate');
-		else if (p === '/job-search')      setSelectedKey('job-search');
-		else if (p === '/job-management')  setSelectedKey('job-management');
-		else if (p === '/user-management') setSelectedKey('user-management');
-		else                               setSelectedKey('');
-	}, [location]);
+		if      (p === '/dashboard')       return 'dashboard';
+		else if (p === '/learn')           return 'generate';
+		else if (p === '/job-search')      return 'job-search';
+		else if (p === '/job-management')  return 'job-management';
+		else if (p === '/user-management') return 'user-management';
+		else                               return '';
+	}, [location.pathname]);
 
-	const shellThemeClass =
+	// Only recomputes when theme changes
+	const shellThemeClass = useMemo(() =>
 		themeType === THEME_TYPE_LITE
 			? 'gx-sidebar-learn-shell--light'
-			: 'gx-sidebar-learn-shell--dark';
+			: 'gx-sidebar-learn-shell--dark',
+	[themeType]);
 
 	const handleSidebarLogout = useCallback(() => {
 		Modal.confirm({
@@ -106,6 +108,35 @@ const SidebarContent = ({
 			onCancel() {},
 		});
 	}, [dispatch, navigate]);
+
+	// Only re-renders nav list when active route or collapsed state changes
+	const navList = useMemo(() =>
+		NAV_ITEMS.map(({ id, url, Icon, color, label, sub, tag }) => {
+			const isActive = selectedKey === id;
+			return (
+				<Tooltip key={id} title={sidebarCollapsed ? label : ''} placement="right">
+					<Link
+						to={url}
+						className={`sidebar-nav-item sidebar-nav-item--${color}${isActive ? ' sidebar-nav-item--active' : ''}`}
+						onClick={closeOverlayDrawer}
+					>
+						<span className="sidebar-nav-icon">
+							<Icon size={18} />
+						</span>
+						{!sidebarCollapsed && (
+							<span className="sidebar-nav-text">
+								<span className="sidebar-nav-label-row">
+									<span className="sidebar-nav-label">{label}</span>
+									<span className={`sidebar-nav-tag sidebar-nav-tag--${color}`}>{tag}</span>
+								</span>
+								<span className="sidebar-nav-sub">{sub}</span>
+							</span>
+						)}
+					</Link>
+				</Tooltip>
+			);
+		}),
+	[selectedKey, sidebarCollapsed, closeOverlayDrawer]);
 
 	return (
 		<div className={`gx-sidebar-learn-shell ${shellThemeClass}`}>
@@ -127,39 +158,7 @@ const SidebarContent = ({
 							{!sidebarCollapsed && (
 								<span className="sidebar-nav-section">Navigation</span>
 							)}
-
-							{NAV_ITEMS.map(({ id, url, Icon, color, label, sub, tag }) => {
-								const isActive = selectedKey === id;
-								return (
-									<Tooltip
-										key={id}
-										title={sidebarCollapsed ? label : ''}
-										placement="right"
-									>
-										<Link
-											to={url}
-											className={`sidebar-nav-item sidebar-nav-item--${color}${isActive ? ' sidebar-nav-item--active' : ''}`}
-											onClick={() => {
-												setSelectedKey(id);
-												closeOverlayDrawer();
-											}}
-										>
-											<span className="sidebar-nav-icon">
-												<Icon size={18} />
-											</span>
-											{!sidebarCollapsed && (
-												<span className="sidebar-nav-text">
-													<span className="sidebar-nav-label-row">
-														<span className="sidebar-nav-label">{label}</span>
-														<span className={`sidebar-nav-tag sidebar-nav-tag--${color}`}>{tag}</span>
-													</span>
-													<span className="sidebar-nav-sub">{sub}</span>
-												</span>
-											)}
-										</Link>
-									</Tooltip>
-								);
-							})}
+							{navList}
 						</nav>
 					</CustomScrollbars>
 				</div>

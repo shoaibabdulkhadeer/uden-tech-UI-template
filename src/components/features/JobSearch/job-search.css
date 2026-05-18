@@ -2904,6 +2904,11 @@ body.dark-theme .career-accel-feature-chip--emerald {
 /* Leaflet overrides inside the small map */
 .loc-map-wrap .leaflet-container {
 	background: #e8edf3;
+	cursor: crosshair !important;
+}
+
+.loc-map-wrap .leaflet-container .leaflet-marker-pane {
+	cursor: pointer !important;
 }
 
 body.dark-theme .loc-filter-head {
@@ -2926,6 +2931,131 @@ body.dark-theme .loc-use-location-btn:hover:not(:disabled) {
 	font-size: 8px !important;
 	background: rgba(255,255,255,0.55) !important;
 	padding: 1px 4px !important;
+}
+
+/* ── Map expanded state ── */
+.loc-map-wrap--expanded {
+	height: 300px !important;
+	transition: height 0.3s ease;
+}
+
+/* ── Map toolbar ── */
+.loc-map-toolbar {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	margin-bottom: 6px;
+}
+
+.loc-map-toolbar-gap { flex: 1; }
+
+.loc-tool-btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	padding: 4px 8px;
+	border-radius: 7px;
+	border: 1px solid rgba(148, 163, 184, 0.25);
+	background: #f8fafc;
+	font-size: 11px;
+	font-weight: 600;
+	color: #475569;
+	cursor: pointer;
+	transition: background 0.15s, color 0.15s, border-color 0.15s;
+	font-family: 'Outfit', sans-serif;
+	white-space: nowrap;
+}
+
+.loc-tool-btn:hover,
+.loc-tool-btn.active {
+	background: rgba(99, 102, 241, 0.08);
+	color: #6366f1;
+	border-color: rgba(99, 102, 241, 0.25);
+}
+
+
+/* ── Job popup ── */
+.loc-job-popup .leaflet-popup-content-wrapper {
+	border-radius: 10px !important;
+	padding: 0 !important;
+	box-shadow: 0 4px 16px rgba(15, 23, 42, 0.15) !important;
+	border: 1px solid rgba(148, 163, 184, 0.2) !important;
+}
+
+.loc-job-popup .leaflet-popup-content {
+	margin: 0 !important;
+}
+
+.loc-job-popup .leaflet-popup-tip-container {
+	display: none;
+}
+
+.loc-job-popup-inner {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	padding: 8px 12px;
+	font-family: 'Outfit', sans-serif;
+}
+
+.loc-job-popup-inner strong {
+	font-size: 12px;
+	font-weight: 700;
+	color: #0f172a;
+}
+
+.loc-job-popup-inner span {
+	font-size: 11px;
+	color: #64748b;
+}
+
+.loc-job-popup-loc {
+	font-size: 10px !important;
+	color: #94a3b8 !important;
+}
+
+/* ── Zoom controls ── */
+.loc-zoom-controls {
+	position: absolute;
+	top: 8px;
+	right: 8px;
+	z-index: 1000;
+	display: flex;
+	flex-direction: column;
+	border-radius: 8px;
+	overflow: hidden;
+	box-shadow: 0 2px 8px rgba(15, 23, 42, 0.14), 0 0 0 1px rgba(148, 163, 184, 0.2);
+	background: #fff;
+}
+
+.loc-zoom-btn {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 28px;
+	height: 28px;
+	border: none;
+	background: #fff;
+	color: #334155;
+	cursor: pointer;
+	transition: background 0.15s ease, color 0.15s ease;
+	font-size: 15px;
+	line-height: 1;
+}
+
+.loc-zoom-btn:hover {
+	background: #f1f5f9;
+	color: #6366f1;
+}
+
+.loc-zoom-btn:active {
+	background: rgba(99, 102, 241, 0.08);
+}
+
+.loc-zoom-divider {
+	height: 1px;
+	background: rgba(148, 163, 184, 0.2);
+	margin: 0 4px;
 }
 
 
