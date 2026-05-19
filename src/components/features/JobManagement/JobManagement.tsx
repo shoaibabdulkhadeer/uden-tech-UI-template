@@ -374,23 +374,25 @@ const JobManagement = () => {
 					</Col>
 					<Col xs={24} sm={12} lg={6}>
 						<motion.div whileHover={{ y: -5 }} transition={{ type: 'spring', stiffness: 300 }}>
-							<div className="admin-stat-card nexus-premium-card card-security">
+							<div className="admin-stat-card nexus-premium-card card-conversion">
 								<div className="card-glow-accent" />
 								<div className="card-header-row">
 									<div className="dot-wrapper"><span className="pulse-dot" /></div>
 									<div className="glass-pill">
-										<MdOutlineSecurity className="pill-icon" />
-										<span className="pill-text">SECURITY</span>
+										<MdPeople className="pill-icon" />
+										<span className="pill-text">PIPELINE</span>
 									</div>
 								</div>
 								<div className="card-content">
 									<div className="stat-main">
-										<span className="stat-number">99.8</span>
-										<div className="stat-trend-box"><span className="stat-trend">OPTIMAL</span></div>
+										<span className="stat-number">
+											{jobs.length > 0 ? (jobs.reduce((a, j) => a + j.applicants, 0) / jobs.length).toFixed(1) : '0'}
+										</span>
+										<div className="stat-trend-box"><MdTrendingUp size={10} /><span className="stat-trend">+8.3%</span></div>
 									</div>
-									<div className="stat-desc">Network Health</div>
+									<div className="stat-desc">Avg. Applicants / Role</div>
 									<div className="sparkline-container">
-										{[95,98,92,96,99].map((h,i) => <div key={i} className="spark-bar" style={{ height: `${h}%` }} />)}
+										{[30,42,38,55,48].map((h,i) => <div key={i} className="spark-bar" style={{ height: `${h}%` }} />)}
 									</div>
 								</div>
 							</div>
