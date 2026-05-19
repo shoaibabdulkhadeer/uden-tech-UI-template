@@ -1,8 +1,8 @@
 import { useEffect, useRef } from 'react';
 
 const TAU = Math.PI * 2;
-/** Moderate density — between the original light mesh (~58) and the heavy 128-node pass. */
-const N = 128;
+/** Light density — reduced for smoother performance. */
+const N = 48;
 
 type Pt = {
 	nx: number;
@@ -38,7 +38,7 @@ function initPoints(): Pt[] {
 		'34, 211, 238'  // Bright Cyan
 	];
 
-	const headerTopRight: Pt[] = Array.from({ length: 24 }, () => ({
+	const headerTopRight: Pt[] = Array.from({ length: 10 }, () => ({
 		nx: 0.56 + Math.random() * 0.44,
 		ny: 0.02 + Math.random() * 0.16,
 		phase: Math.random() * TAU,
@@ -164,19 +164,18 @@ const DashboardShellNetwork = ({ className, suspendLoop = false }: DashboardShel
 					const d = Math.hypot(dx, dy);
 					if (d < linkNear) {
 						const f = 1 - d / linkNear;
-						const a = (dark ? 0.45 : 0.38) * f * f;
-						// Blend colors of both nodes
+						const a = (dark ? 0.72 : 0.62) * f * f;
 						ctx.strokeStyle = `rgba(${pts[i].color},${a.toFixed(4)})`;
-						ctx.lineWidth = 0.7 + f * 0.5;
+						ctx.lineWidth = 1.0 + f * 0.8;
 						ctx.beginPath();
 						ctx.moveTo(xs[i], ys[i]);
 						ctx.lineTo(xs[j], ys[j]);
 						ctx.stroke();
 					} else if (d < linkFar) {
 						const f = 1 - (d - linkNear) / (linkFar - linkNear);
-						const a = (dark ? 0.28 : 0.24) * f * f;
+						const a = (dark ? 0.44 : 0.38) * f * f;
 						ctx.strokeStyle = `rgba(${pts[j].color},${a.toFixed(4)})`;
-						ctx.lineWidth = 0.5;
+						ctx.lineWidth = 0.75;
 						ctx.beginPath();
 						ctx.moveTo(xs[i], ys[i]);
 						ctx.lineTo(xs[j], ys[j]);
@@ -190,12 +189,12 @@ const DashboardShellNetwork = ({ className, suspendLoop = false }: DashboardShel
 				const tw = 0.42 + 0.58 * (0.5 + 0.5 * Math.sin(t * 0.0028 + p.spark));
 				const cx = xs[i];
 				const cy = ys[i];
-				const r = 1.3 + tw * 0.7;
+				const r = 2.2 + tw * 1.2;
 
-				ctx.shadowBlur = rm ? 0 : 5 + tw * 7;
-				ctx.shadowColor = `rgba(${p.color}, ${dark ? 0.5 + tw * 0.2 : 0.45 + tw * 0.25})`;
+				ctx.shadowBlur = rm ? 0 : 10 + tw * 14;
+				ctx.shadowColor = `rgba(${p.color}, ${dark ? 0.75 + tw * 0.2 : 0.65 + tw * 0.3})`;
 
-				ctx.fillStyle = dark ? `rgba(255, 255, 255, ${0.65 + tw * 0.2})` : `rgba(${p.color}, ${0.7 + tw * 0.15})`;
+				ctx.fillStyle = dark ? `rgba(255, 255, 255, ${0.82 + tw * 0.18})` : `rgba(${p.color}, ${0.88 + tw * 0.12})`;
 				ctx.beginPath();
 				ctx.arc(cx, cy, r, 0, TAU);
 				ctx.fill();
@@ -203,7 +202,7 @@ const DashboardShellNetwork = ({ className, suspendLoop = false }: DashboardShel
 				ctx.shadowBlur = 0;
 				ctx.fillStyle = '#fff';
 				ctx.beginPath();
-				ctx.arc(cx, cy, r * 0.5, 0, TAU);
+				ctx.arc(cx, cy, r * 0.45, 0, TAU);
 				ctx.fill();
 			}
 

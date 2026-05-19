@@ -762,7 +762,7 @@ function JobSearch() {
 	return (
 		<>
 			<div className="job-search-page phase2-dashboard dash-next dash-next-shell">
-			{/* <DashboardShellNetwork /> */}
+			<DashboardShellNetwork />
 			<div className="job-search-page-inner">
 				<header className="dash-next-page-head">
 					<div className="dash-next-page-head-row">
