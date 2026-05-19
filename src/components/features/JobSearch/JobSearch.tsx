@@ -216,6 +216,7 @@ function JobSearch() {
 	const [matchEngineTab, setMatchEngineTab] = useState('resume');
 	const [uploadedFile, setUploadedFile] = useState<any>(null);
 	const [aiSteps, setAiSteps] = useState<string[]>([]);
+	const [typingLine, setTypingLine] = useState<string>('');
 	const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 	const [showFullResume, setShowFullResume] = useState(false);
 	const [detectedFilters, setDetectedFilters] = useState<{ skills: string[]; expLevel: string | null; workMode: WorkMode | null; employment: EmploymentKind[]; source: 'resume' | 'jd' } | null>(null);
@@ -270,16 +271,27 @@ function JobSearch() {
 				'Generating compatibility scores...',
 			];
 
-			let currentStep = 0;
-			const interval = setInterval(() => {
-				if (currentStep < steps.length) {
-					setAiSteps((prev: any) => [...prev, steps[currentStep]]);
-					currentStep++;
+			setTypingLine('');
+
+			let stepIndex = 0;
+			let charIndex = 0;
+
+			const typeChar = () => {
+				if (stepIndex >= steps.length) return;
+				const current = steps[stepIndex];
+				if (charIndex <= current.length) {
+					setTypingLine(current.slice(0, charIndex));
+					charIndex++;
+					setTimeout(typeChar, 32);
 				} else {
-					// All steps shown — keep spinner running until API responds
-					clearInterval(interval);
+					setAiSteps((prev: any) => [...prev, current]);
+					setTypingLine('');
+					stepIndex++;
+					charIndex = 0;
+					setTimeout(typeChar, 380);
 				}
-			}, 800);
+			};
+			typeChar();
 		} else if (status === 'error') {
 			message.error(`${info.file.name} file upload failed.`);
 			setMatchLoading(false);
@@ -292,6 +304,7 @@ function JobSearch() {
 			notification.destroy();
 			setMatchLoading(false);
 			setAiSteps([]);
+			setTypingLine('');
 			const data = resumeData?.data;
 			setDetectedFilters({
 				skills:      data?.skills             || data?.extractedSkills || [],
@@ -310,6 +323,7 @@ function JobSearch() {
 			message.error(resumeData?.message || 'Internal Server Error');
 			setMatchLoading(false);
 			setAiSteps([]);
+			setTypingLine('');
 			dispatch(resumeUploadReset());
 		}
 	}, [resumeData, resumeStatus]);
@@ -1111,8 +1125,13 @@ function JobSearch() {
 																		</div>
 																		<div className="thinking-logs">
 																			{aiSteps.map((step, idx) => (
-																				<div key={idx} className="thinking-text">{step}</div>
+																				<div key={idx} className="thinking-text thinking-text--done">{step}</div>
 																			))}
+																			{typingLine && (
+																				<div className="thinking-text thinking-text--typing">
+																					{typingLine}<span className="typing-cursor" />
+																				</div>
+																			)}
 																		</div>
 																	</div>
 																)}

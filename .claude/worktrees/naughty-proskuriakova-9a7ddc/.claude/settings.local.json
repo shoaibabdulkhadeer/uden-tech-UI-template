@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls \"C:\\\\Users\\\\Shoail\\\\Desktop\\\\Projects\\\\UdenUI_Gitlab\\\\udentech_learnpathui\\\\uden-tech-UI-template\")",
+      "Bash(python -c ' *)",
+      "Bash(npx tsc *)",
+      "Bash(timeout 25)"
+    ]
+  }
+}
