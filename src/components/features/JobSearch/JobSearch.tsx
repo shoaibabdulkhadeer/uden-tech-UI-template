@@ -1,4 +1,4 @@
-﻿import { Alert, Avatar, Button, Checkbox, Drawer, Empty, Input, message, Modal, Popover, Radio, Segmented, Select, Skeleton, Tabs, Tooltip, Upload } from 'antd';
+﻿import { Alert, Avatar, Button, Checkbox, Drawer, Empty, Input, message, Modal, notification, Popover, Radio, Segmented, Select, Skeleton, Tabs, Tooltip, Upload } from 'antd';
 import { CheckCircleFilled, InboxOutlined, InfoCircleTwoTone } from '@ant-design/icons';
 import { easeInOut, motion } from 'framer-motion';
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -46,11 +46,17 @@ import {
 	MdWorkspacePremium,
 	MdThumbUp,
 	MdWarning,
+	MdSearch,
+	MdSyncAlt,
+	MdFactory,
 } from 'react-icons/md';
 import { IoClose } from 'react-icons/io5';
 import { SiBookstack } from 'react-icons/si';
 import { Typewriter } from 'react-simple-typewriter';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
+import { AppDispatch } from '../../../redux/store';
+import { uploadResume, resumeUploadReset } from '../../../redux/features/profile/resumeUploadSlice';
 import DashboardPageHeadArt from '../Dashboard/DashboardPageHeadArt';
 import DashboardShellNetwork from '../Dashboard/DashboardShellNetwork';
 import { LocationFilter } from './LocationFilter';
@@ -71,6 +77,55 @@ import '../../../styles/dashboard-arena.css';
 
 const SAVED_STORAGE_KEY = 'jobSearch.savedIds';
 const APPLIED_STORAGE_KEY = 'jobSearch.appliedIds';
+
+/**
+ * Maps whatever wording the API returns for experience level
+ * to one of the three dropdown values: 'entry' | 'mid' | 'senior'.
+ * Returns null if nothing matches (filter simply won't be pre-filled).
+ */
+const normalizeExpLevel = (raw: string | null | undefined): 'entry' | 'mid' | 'senior' | null => {
+
+	if (!raw) return null;
+	const v = raw.toLowerCase().replace(/[^a-z0-9\s\-\+]/g, '');
+
+	if (/entry|junior|fresher|intern|trainee|graduate|beginner|0\s*[-–to]+\s*2|less than 2/.test(v))
+		return 'entry';
+
+	if (/\bmid\b|middle|intermediate|associate|2\s*[-–to]+\s*5|3\s*[-–to]+\s*5/.test(v))
+		return 'mid';
+
+	if (/senior|lead|principal|staff|expert|architect|head|director|manager|5\s*[-–to]+\s*10|5\s*\+|above 5|more than 5/.test(v))
+		return 'senior';
+
+	return null;
+};
+
+/**
+ * Maps whatever wording the API returns for employment type
+ * to EmploymentKind values: 'fulltime' | 'contract' | 'parttime' | 'internship'.
+ * Accepts a single string OR an array of strings (API may send either).
+ * Returns only recognised values — unmatched items are silently dropped.
+ */
+const normalizeEmployment = (raw: string | string[] | null | undefined): EmploymentKind[] => {
+	if (!raw) return [];
+	const items = Array.isArray(raw) ? raw : [raw];
+
+	const map = (v: string): EmploymentKind | null => {
+		const s = v.toLowerCase().replace(/[^a-z0-9\s]/g, ' ').trim();
+
+		if (/full.?time|permanent|fte|regular/.test(s))            return 'fulltime';
+		if (/\bpart.?time\b/.test(s))                               return 'parttime';
+		if (/intern(ship)?|trainee|apprentice/.test(s))             return 'internship';
+		if (/contract|freelance|consultant|c2c|c2h|temporary/.test(s)) return 'contract';
+		return null;
+	};
+
+	return items.reduce<EmploymentKind[]>((acc, item) => {
+		const result = map(item);
+		if (result && !acc.includes(result)) acc.push(result);
+		return acc;
+	}, []);
+};
 
 const ROUND_ICONS: Record<string, React.ReactNode> = {
 	'HR Screening':    <MdRecordVoiceOver size={14}/>,
@@ -106,9 +161,36 @@ function loadAppliedIds(): Set<string> {
 type ActiveView = 'matches' | 'saved' | 'applied';
 type UiPreview = 'normal' | 'loading' | 'error' | 'empty';
 
+const EMP_META: Record<string, { icon: React.ReactNode; label: string }> = {
+	fulltime:   { icon: <MdWorkOutline size={13} />,  label: 'Full-time'   },
+	contract:   { icon: <MdDescription size={13} />,  label: 'Contract'    },
+	parttime:   { icon: <MdAccessTime  size={13} />,  label: 'Part-time'   },
+	internship: { icon: <MdSchool      size={13} />,  label: 'Internship'  },
+};
+
+const WORK_META: Record<string, { icon: React.ReactNode; label: string }> = {
+	remote:  { icon: <MdLaptop    size={13} />, label: 'Remote'  },
+	hybrid:  { icon: <MdSyncAlt   size={13} />, label: 'Hybrid'  },
+	onsite:  { icon: <MdBusiness  size={13} />, label: 'On-site' },
+};
+
+const EXP_META: Record<string, string> = {
+	internship: 'Internship',
+	entry:      'Entry level',
+	mid:        'Mid level',
+	senior:     'Senior',
+	lead:       'Lead / Principal',
+	executive:  'Executive',
+};
+
 function JobSearch() {
 	const navigate = useNavigate();
 	const location = useLocation();
+	const dispatch = useDispatch<AppDispatch>();
+	const { resumeData, status: resumeStatus, error: resumeError } = useSelector(
+		(state: any) => state.resumeUploadReducer
+	);
+
 	const [activeView, setActiveView] = useState<ActiveView>('matches');
 	const [searchQuery, setSearchQuery] = useState('');
 	const [empFilter, setEmpFilter] = useState<EmploymentKind[]>([]);
@@ -136,7 +218,7 @@ function JobSearch() {
 	const [aiSteps, setAiSteps] = useState<string[]>([]);
 	const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 	const [showFullResume, setShowFullResume] = useState(false);
-	const [detectedFilters, setDetectedFilters] = useState<{ skills: string[]; expLevel: string | null; workMode: WorkMode | null; source: 'resume' | 'jd' } | null>(null);
+	const [detectedFilters, setDetectedFilters] = useState<{ skills: string[]; expLevel: string | null; workMode: WorkMode | null; employment: EmploymentKind[]; source: 'resume' | 'jd' } | null>(null);
 	const [filtersJustApplied, setFiltersJustApplied] = useState(false);
 	const [showFindTour, setShowFindTour] = useState(false);
 	const [tourStep, setTourStep] = useState<1 | 2>(1);
@@ -168,6 +250,8 @@ function JobSearch() {
 				const url = URL.createObjectURL(file);
 				setPreviewUrl(url);
 				setUploadedFile(file);
+				// Hit the real resume upload API
+				dispatch(uploadResume(file as File));
 			} else {
 				setUploadedFile(info.file);
 			}
@@ -175,25 +259,25 @@ function JobSearch() {
 
 		if (status === 'done') {
 			setMatchLoading(true);
-			
+			setAiSteps([]);
+
+			// Show scanning steps while waiting for API response
 			const steps = [
 				'AI is scanning document structure...',
 				'Extracting skills and experience...',
 				'Parsing career trajectory...',
 				'Cross-referencing with live roles...',
-				'Generating compatibility scores...'
+				'Generating compatibility scores...',
 			];
 
 			let currentStep = 0;
 			const interval = setInterval(() => {
 				if (currentStep < steps.length) {
-					setAiSteps((prev:any) => [...prev, steps[currentStep]]);
+					setAiSteps((prev: any) => [...prev, steps[currentStep]]);
 					currentStep++;
 				} else {
+					// All steps shown — keep spinner running until API responds
 					clearInterval(interval);
-					setMatchLoading(false);
-					setAiSteps([]);
-					setDetectedFilters({ skills: ['React', 'TypeScript', 'Node.js', 'System Design'], expLevel: 'mid', workMode: 'remote', source: 'resume' });
 				}
 			}, 800);
 		} else if (status === 'error') {
@@ -201,6 +285,34 @@ function JobSearch() {
 			setMatchLoading(false);
 		}
 	};
+
+	// Handle resume upload API response
+	useEffect(() => {
+		if (!resumeStatus && resumeData && resumeData?.statusCode === 200) {
+			notification.destroy();
+			setMatchLoading(false);
+			setAiSteps([]);
+			const data = resumeData?.data;
+			setDetectedFilters({
+				skills:      data?.skills             || data?.extractedSkills || [],
+				expLevel:    normalizeExpLevel(data?.experienceLevel ?? data?.expLevel ?? data?.experience ?? null),
+				workMode:    data?.workMode            || null,
+				employment:  normalizeEmployment(data?.employmentType ?? data?.employment ?? data?.jobType ?? null),
+				source:      'resume',
+			});
+			dispatch(resumeUploadReset());
+		} else if (!resumeStatus && resumeData && resumeData?.statusCode === 400) {
+			message.warning(resumeData?.message || 'Bad Request');
+			setMatchLoading(false);
+			setAiSteps([]);
+			dispatch(resumeUploadReset());
+		} else if (!resumeStatus && resumeData && resumeData?.statusCode === 500) {
+			message.error(resumeData?.message || 'Internal Server Error');
+			setMatchLoading(false);
+			setAiSteps([]);
+			dispatch(resumeUploadReset());
+		}
+	}, [resumeData, resumeStatus]);
 
 	const handleMatchJd = () => {
 		if (!pastedJd.trim()) {
@@ -213,7 +325,7 @@ function JobSearch() {
 			setMatchLoading(false);
 			setJdResult(pastedJd.trim());
 			setShowJdInput(false);
-			setDetectedFilters({ skills: ['Python', 'Machine Learning', 'SQL', 'Data Analysis'], expLevel: 'senior', workMode: 'hybrid', source: 'jd' });
+			setDetectedFilters({ skills: ['Python', 'Machine Learning', 'SQL', 'Data Analysis'], expLevel: 'senior', workMode: 'hybrid', employment: ['fulltime'], source: 'jd' });
 		}, 1500);
 	};
 
@@ -363,6 +475,13 @@ function JobSearch() {
 		}
 		if (detectedFilters.expLevel) setExpFilter(detectedFilters.expLevel);
 		if (detectedFilters.workMode) setWorkFilter((prev) => prev.includes(detectedFilters.workMode!) ? prev : [...prev, detectedFilters.workMode!]);
+		if (detectedFilters.employment?.length) {
+			setEmpFilter((prev) => {
+				const merged = [...prev];
+				detectedFilters.employment.forEach((e) => { if (!merged.includes(e)) merged.push(e); });
+				return merged;
+			});
+		}
 		setDetectedFilters(null);
 		setFiltersJustApplied(true);
 		setTourStep(1);
@@ -448,22 +567,46 @@ function JobSearch() {
 				<span className="filter-label-icon filter-label-icon--indigo"><MdWorkOutline size={12} /></span>
 				Employment
 			</p>
-			<Checkbox.Group
-				className="job-search-checkbox-group"
-				options={EMPLOYMENT_OPTIONS}
-				value={empFilter}
-				onChange={(v) => setEmpFilter(v as EmploymentKind[])}
-			/>
+			<div className="js-chip-group js-chip-group--indigo">
+				{EMPLOYMENT_OPTIONS.map(({ label, value }) => (
+					<button
+						key={value}
+						type="button"
+						className={`js-chip${empFilter.includes(value as EmploymentKind) ? ' js-chip--active' : ''}`}
+						onClick={() => setEmpFilter((prev) =>
+							prev.includes(value as EmploymentKind)
+								? prev.filter((v) => v !== value)
+								: [...prev, value as EmploymentKind]
+						)}
+					>
+						<span className="js-chip-dot" aria-hidden />
+						<span className="js-chip-icon" aria-hidden>{EMP_META[value]?.icon}</span>
+						{label}
+					</button>
+				))}
+			</div>
 			<p className="job-search-filters-label">
 				<span className="filter-label-icon filter-label-icon--cyan"><MdLaptop size={12} /></span>
 				Work Mode
 			</p>
-			<Checkbox.Group
-				className="job-search-checkbox-group"
-				options={WORK_MODE_OPTIONS}
-				value={workFilter}
-				onChange={(v) => setWorkFilter(v as WorkMode[])}
-			/>
+			<div className="js-chip-group js-chip-group--cyan">
+				{WORK_MODE_OPTIONS.map(({ label, value }) => (
+					<button
+						key={value}
+						type="button"
+						className={`js-chip${workFilter.includes(value as WorkMode) ? ' js-chip--active' : ''}`}
+						onClick={() => setWorkFilter((prev) =>
+							prev.includes(value as WorkMode)
+								? prev.filter((v) => v !== value)
+								: [...prev, value as WorkMode]
+						)}
+					>
+						<span className="js-chip-dot" aria-hidden />
+						<span className="js-chip-icon" aria-hidden>{WORK_META[value]?.icon}</span>
+						{label}
+					</button>
+				))}
+			</div>
 			<p className="job-search-filters-label">
 				<span className="filter-label-icon filter-label-icon--amber"><MdBarChart size={12} /></span>
 				Experience level
@@ -477,6 +620,8 @@ function JobSearch() {
 				onClear={() => setExpFilter(undefined)}
 				style={{ width: '100%' }}
 				className="job-search-exp-select"
+				popupClassName="js-select-dropdown"
+				transitionName=""
 				options={[
 					{ value: 'internship',   label: 'Internship' },
 					{ value: 'entry',        label: 'Entry level (0–2 yrs)' },
@@ -499,6 +644,8 @@ function JobSearch() {
 				onClear={() => setSectorFilter(undefined)}
 				style={{ width: '100%' }}
 				className="job-search-exp-select"
+				popupClassName="js-select-dropdown"
+				transitionName=""
 				options={[
 					{ value: 'private',      label: 'Private' },
 					{ value: 'psu',          label: 'Public Sector / PSU' },
@@ -949,6 +1096,7 @@ function JobSearch() {
 																			setPreviewUrl(null);
 																			setMatchLoading(false);
 																			setAiSteps([]);
+																			dispatch(resumeUploadReset());
 																		}}
 																		className="analysis-remove-btn"
 																	/>
@@ -1060,6 +1208,9 @@ function JobSearch() {
 													{detectedFilters.workMode && (
 														<span className="js-ai-chip js-ai-chip--mode">{detectedFilters.workMode}</span>
 													)}
+													{detectedFilters.employment?.map((e) => (
+														<span key={e} className="js-ai-chip js-ai-chip--emp">{e}</span>
+													))}
 												</div>
 												<button type="button" className="js-ai-apply-btn" onClick={applyDetectedFilters}>
 													<MdBolt size={12} />
@@ -1203,7 +1354,7 @@ function JobSearch() {
 								<div className={`job-list-reveal-wrap${isPristine ? ' job-list-reveal-wrap--pristine' : ''}`}>
 								{!showSkeleton && !showError && activeView !== 'applied' ? (
 									<ul className="job-search-job-list">
-										{matchLoading ? (
+										{listLoading ? (
 											Array.from({ length: 4 }).map((_, i) => (
 												<li key={`skeleton-${i}`} className="job-search-job-row lineCard">
 													<Skeleton active avatar paragraph={{ rows: 2 }} />
@@ -1764,14 +1915,21 @@ function JobSearch() {
 						{searchQuery.trim() && (
 							<div className="js-review-row">
 								<span className="js-review-row-label">Search</span>
-								<span className="js-review-chip js-review-chip--blue">{searchQuery}</span>
+								<span className="js-review-chip js-review-chip--blue">
+									<MdSearch size={10} />{searchQuery}
+								</span>
 							</div>
 						)}
 						{empFilter.length > 0 && (
 							<div className="js-review-row">
 								<span className="js-review-row-label">Employment</span>
 								<div className="js-review-chips">
-									{empFilter.map((e) => <span key={e} className="js-review-chip js-review-chip--indigo">{e}</span>)}
+									{empFilter.map((e) => (
+										<span key={e} className="js-review-chip js-review-chip--indigo">
+											{EMP_META[e]?.icon}
+											{EMP_META[e]?.label ?? e}
+										</span>
+									))}
 								</div>
 							</div>
 						)}
@@ -1779,27 +1937,41 @@ function JobSearch() {
 							<div className="js-review-row">
 								<span className="js-review-row-label">Work mode</span>
 								<div className="js-review-chips">
-									{workFilter.map((w) => <span key={w} className="js-review-chip js-review-chip--cyan">{w}</span>)}
+									{workFilter.map((w) => (
+										<span key={w} className="js-review-chip js-review-chip--cyan">
+											{WORK_META[w]?.icon}
+											{WORK_META[w]?.label ?? w}
+										</span>
+									))}
 								</div>
 							</div>
 						)}
 						{expFilter && (
 							<div className="js-review-row">
 								<span className="js-review-row-label">Experience</span>
-								<span className="js-review-chip js-review-chip--amber">{expFilter}</span>
+								<span className="js-review-chip js-review-chip--amber">
+									<MdBarChart size={10} />
+									{EXP_META[expFilter] ?? expFilter}
+								</span>
 							</div>
 						)}
 						{sectorFilter && (
 							<div className="js-review-row">
 								<span className="js-review-row-label">Sector</span>
-								<span className="js-review-chip js-review-chip--emerald">{sectorFilter}</span>
+								<span className="js-review-chip js-review-chip--emerald">
+									<MdFactory size={10} />{sectorFilter}
+								</span>
 							</div>
 						)}
 						{skillsFilter.length > 0 && (
 							<div className="js-review-row">
 								<span className="js-review-row-label">Skills</span>
 								<div className="js-review-chips">
-									{skillsFilter.map((s) => <span key={s} className="js-review-chip js-review-chip--violet">{s}</span>)}
+									{skillsFilter.map((s) => (
+										<span key={s} className="js-review-chip js-review-chip--violet">
+											<MdCode size={10} />{s}
+										</span>
+									))}
 								</div>
 							</div>
 						)}

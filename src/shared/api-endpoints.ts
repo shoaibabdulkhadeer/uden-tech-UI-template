@@ -32,5 +32,9 @@ export const API_ENDPOINTS = {
 	GET_TOPIC_WISE_QUIZ: '/getTopicWiseQuiz',
 
 
-	// #endregion QUIZ
+	//#region Career Accelaration
+	RESUME_UPLOAD : '/v2/profile/resume',
+	
+
+	//#endregion
 };

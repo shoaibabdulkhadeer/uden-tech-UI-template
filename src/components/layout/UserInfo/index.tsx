@@ -77,18 +77,10 @@ const UserInfo = () => {
 				<p className="up-bio">
 					Building AI-powered skills on Uden Tech — focused on career growth, React, and system design.
 				</p>
-
-				{/* ── Pills ── */}
 				<div className="up-pills">
-					<span className="up-pill up-pill--indigo">
-						<MdBolt size={10} />{role}
-					</span>
-					<span className="up-pill up-pill--cyan">
-						<MdAutoAwesome size={10} />AI Learner
-					</span>
-					<span className="up-pill up-pill--emerald">
-						<MdTrendingUp size={10} />Active
-					</span>
+					<span className="up-pill up-pill--indigo"><MdBolt size={10} />{role}</span>
+					<span className="up-pill up-pill--cyan"><MdAutoAwesome size={10} />AI Learner</span>
+					<span className="up-pill up-pill--emerald"><MdTrendingUp size={10} />Active</span>
 				</div>
 			</div>
 
@@ -149,13 +141,30 @@ const UserInfo = () => {
 
 	return (
 		<>
-			{/* Blur backdrop — rendered as a portal so it sits below the popover */}
+			{/* Blur backdrop */}
 			{visible && (
-				<div
-					className="up-backdrop"
-					onClick={() => setVisible(false)}
-					aria-hidden
-				/>
+				<div className="up-backdrop">
+					{/* Gaming / PlayStation-style close button */}
+					<button
+						type="button"
+						className="up-close-btn"
+						onClick={() => setVisible(false)}
+						aria-label="Close profile panel"
+					>
+						<span className="up-close-btn-wrap" aria-hidden>
+							<span className="up-close-btn-ring up-close-btn-ring--1" />
+							<span className="up-close-btn-ring up-close-btn-ring--2" />
+							<span className="up-close-btn-ring up-close-btn-ring--3" />
+							<span className="up-close-btn-face">
+								<svg width="22" height="22" viewBox="0 0 22 22" fill="none" aria-hidden>
+									<line x1="5" y1="5" x2="17" y2="17" stroke="white" strokeWidth="2.8" strokeLinecap="round"/>
+									<line x1="17" y1="5" x2="5" y2="17" stroke="white" strokeWidth="2.8" strokeLinecap="round"/>
+								</svg>
+							</span>
+						</span>
+						<span className="up-close-btn-label" aria-hidden>CLOSE</span>
+					</button>
+				</div>
 			)}
 
 			<div className="app-header-user-wrap" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -176,7 +185,8 @@ const UserInfo = () => {
 					content={profileCard}
 					trigger="click"
 					visible={visible}
-					onVisibleChange={setVisible}
+					onVisibleChange={(v) => { if (v) setVisible(true); }}
+					transitionName=""
 				>
 					<button type="button" className="up-trigger" aria-label="Open profile">
 						<span className="up-trigger-initial">{initial}</span>

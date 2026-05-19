@@ -18,6 +18,7 @@ import { feedbackLinksReducer } from './features/learningPath/feedbackLinksSlice
 import { markAsCompleteReducer } from './features/learningPath/markAsCompleteSlice';
 import { DeletelearningPathReducer } from './features/learningPath/deleteLearningPathSlice';
 import { getJobDescriptionReducer } from './features/learningPath/getJobDescriptionSlice';
+import { resumeUploadReducer } from './features/profile/resumeUploadSlice';
 
 export default combineReducers({
 	settings: Settings,
@@ -41,8 +42,9 @@ export default combineReducers({
 	feedbackLinksReducer:feedbackLinksReducer,
 	markAsCompleteReducer:markAsCompleteReducer,
 	deleteLearningPathReducer:DeletelearningPathReducer,
-	getJobDescriptionReducer:getJobDescriptionReducer
-	
+	getJobDescriptionReducer:getJobDescriptionReducer,
+	resumeUploadReducer:resumeUploadReducer,
+
 });
 
 

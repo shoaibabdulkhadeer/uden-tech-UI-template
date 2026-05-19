@@ -10,7 +10,8 @@ export const DEV_BYPASS_ACCESS_TOKEN =
 
 export const environment = {
 	// APP_API_URL: 'https://webappjobaiagentprod-a7fae9fgdkg2a0as.centralindia-01.azurewebsites.net',
-	APP_API_URL: 'http://127.0.0.1:8000/',
+	// APP_API_URL: 'http://127.0.0.1:8000/',
+	APP_API_URL: 'https://udentech-e2fufmcygshqenea.eastus-01.azurewebsites.net/',
 	SERVER_ENVIRONMENT: 'DEV',
 	REDIRECT_URL: 'https://cps.uden.tech/version-test/upgrade_to_pro'
 };
