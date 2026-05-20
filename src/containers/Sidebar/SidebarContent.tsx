@@ -19,7 +19,6 @@ import {
 	THEME_TYPE_LITE,
 } from '../../constants/ThemeSetting';
 import CustomScrollbars from '../../util/CustomScrollbars';
-import DashboardShellNetwork from '../../components/features/Dashboard/DashboardShellNetwork';
 import SidebarLogo from './SidebarLogo';
 import '../../styles/dashboard-nextgen.css';
 import './SidebarContent.css';
@@ -140,9 +139,7 @@ const SidebarContent = ({
 
 	return (
 		<div className={`gx-sidebar-learn-shell ${shellThemeClass}`}>
-			<div className="gx-sidebar-learn-nodes" aria-hidden>
-				<DashboardShellNetwork className="gx-sidebar-shell-network" suspendLoop={sidebarCollapsed} />
-			</div>
+
 			<div className="gx-sidebar-learn-front">
 				<SidebarLogo
 					sidebarCollapsed={sidebarCollapsed}

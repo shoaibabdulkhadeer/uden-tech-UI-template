@@ -19,6 +19,8 @@ import { markAsCompleteReducer } from './features/learningPath/markAsCompleteSli
 import { DeletelearningPathReducer } from './features/learningPath/deleteLearningPathSlice';
 import { getJobDescriptionReducer } from './features/learningPath/getJobDescriptionSlice';
 import { resumeUploadReducer } from './features/profile/resumeUploadSlice';
+import { jobSearchReducer } from './features/jobSearch/jobSearchSlice';
+import { saveJobReducer } from './features/jobSearch/saveJobSlice';
 
 export default combineReducers({
 	settings: Settings,
@@ -44,6 +46,8 @@ export default combineReducers({
 	deleteLearningPathReducer:DeletelearningPathReducer,
 	getJobDescriptionReducer:getJobDescriptionReducer,
 	resumeUploadReducer:resumeUploadReducer,
+	jobSearchReducer:jobSearchReducer,
+	saveJobReducer:saveJobReducer,
 
 });
 

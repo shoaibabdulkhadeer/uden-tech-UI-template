@@ -12,6 +12,8 @@ export type JobDetail = {
 	employmentType: string;
 	posted: string;
 	salary?: string;
+	experience?: string;
+	applyUrl?: string;
 	description: string;
 	responsibilities: string[];
 	skills: string[];
@@ -30,6 +32,7 @@ export type JobItem = {
 	verified?: boolean;
 	badges?: string[];
 	hiringStatus?: string;
+	sourceKind?: string;
 	employmentKind: EmploymentKind;
 	workMode: WorkMode;
 	/** Present when this role appears in “Matched for you” (learning-path alignment). */

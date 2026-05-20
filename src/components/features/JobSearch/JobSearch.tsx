@@ -1,4 +1,4 @@
-﻿import { Alert, Avatar, Button, Checkbox, Drawer, Empty, Input, message, Modal, notification, Popover, Radio, Segmented, Select, Skeleton, Tabs, Tooltip, Upload } from 'antd';
+﻿import { Alert, Avatar, Button, Checkbox, Drawer, Empty, Input, message, Modal, notification, Radio, Segmented, Select, Skeleton, Tabs, Tooltip, Upload } from 'antd';
 import { CheckCircleFilled, InboxOutlined, InfoCircleTwoTone } from '@ant-design/icons';
 import { easeInOut, motion } from 'framer-motion';
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -46,9 +46,9 @@ import {
 	MdWorkspacePremium,
 	MdThumbUp,
 	MdWarning,
-	MdSearch,
 	MdSyncAlt,
 	MdFactory,
+	MdLockOutline,
 } from 'react-icons/md';
 import { IoClose } from 'react-icons/io5';
 import { SiBookstack } from 'react-icons/si';
@@ -57,6 +57,8 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch } from '../../../redux/store';
 import { uploadResume, resumeUploadReset } from '../../../redux/features/profile/resumeUploadSlice';
+import { searchJobs, jobSearchReset } from '../../../redux/features/jobSearch/jobSearchSlice';
+import { saveJob, saveJobReset } from '../../../redux/features/jobSearch/saveJobSlice';
 import DashboardPageHeadArt from '../Dashboard/DashboardPageHeadArt';
 import DashboardShellNetwork from '../Dashboard/DashboardShellNetwork';
 import { LocationFilter } from './LocationFilter';
@@ -64,7 +66,6 @@ import {
 	EMPLOYMENT_OPTIONS,
 	filterJobsByEmployment,
 	filterJobsByWorkMode,
-	jobMatchesQuery,
 	MOCK_JOBS,
 	WORK_MODE_OPTIONS,
 	type EmploymentKind,
@@ -125,6 +126,23 @@ const normalizeEmployment = (raw: string | string[] | null | undefined): Employm
 		if (result && !acc.includes(result)) acc.push(result);
 		return acc;
 	}, []);
+};
+
+const STATE_TO_COUNTRY: Record<string, string> = {
+	KA:'India', MH:'India', DL:'India', TN:'India', UP:'India', GJ:'India',
+	WB:'India', RJ:'India', KL:'India', AP:'India', TS:'India', MP:'India',
+	NY:'United States', CA:'United States', TX:'United States', FL:'United States',
+	WA:'United States', MA:'United States', IL:'United States', GA:'United States',
+	NC:'United States', NJ:'United States', OH:'United States', CO:'United States',
+};
+
+const parseLocationString = (loc: string | null | undefined): { city: string; country: string } | null => {
+	if (!loc) return null;
+	const parts = loc.split(',').map((s) => s.trim());
+	const city = parts[0] || '';
+	const second = (parts[1] || '').toUpperCase();
+	const country = STATE_TO_COUNTRY[second] || parts[1]?.trim() || '';
+	return city ? { city, country } : null;
 };
 
 const ROUND_ICONS: Record<string, React.ReactNode> = {
@@ -190,9 +208,14 @@ function JobSearch() {
 	const { resumeData, status: resumeStatus, error: resumeError } = useSelector(
 		(state: any) => state.resumeUploadReducer
 	);
+	const { jobSearchData, status: jobSearchStatus, error: jobSearchError } = useSelector(
+		(state: any) => state.jobSearchReducer
+	);
+	const { saveJobData, status: saveJobStatus, error: saveJobError } = useSelector(
+		(state: any) => state.saveJobReducer
+	);
 
 	const [activeView, setActiveView] = useState<ActiveView>('matches');
-	const [searchQuery, setSearchQuery] = useState('');
 	const [empFilter, setEmpFilter] = useState<EmploymentKind[]>([]);
 	const [workFilter, setWorkFilter] = useState<WorkMode[]>([]);
 	const [expFilter, setExpFilter] = useState<string | undefined>(undefined);
@@ -214,22 +237,31 @@ function JobSearch() {
 	const [showJdInput, setShowJdInput] = useState(true);
 	const [matchLoading, setMatchLoading] = useState(false);
 	const [matchEngineTab, setMatchEngineTab] = useState('resume');
+	const [showJdSection, setShowJdSection] = useState(false);
 	const [uploadedFile, setUploadedFile] = useState<any>(null);
 	const [aiSteps, setAiSteps] = useState<string[]>([]);
 	const [typingLine, setTypingLine] = useState<string>('');
+	const [aiSearchStep, setAiSearchStep] = useState(-1);
 	const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 	const [showFullResume, setShowFullResume] = useState(false);
 	const [detectedFilters, setDetectedFilters] = useState<{ skills: string[]; expLevel: string | null; workMode: WorkMode | null; employment: EmploymentKind[]; source: 'resume' | 'jd' } | null>(null);
+	const [detectedLocation, setDetectedLocation] = useState<{ city: string; country: string } | null>(null);
 	const [filtersJustApplied, setFiltersJustApplied] = useState(false);
 	const [showFindTour, setShowFindTour] = useState(false);
-	const [tourStep, setTourStep] = useState<1 | 2>(1);
+	const [tourStep, setTourStep] = useState<1 | 2 | 3 | 4>(1);
 	const [tourBubblePos, setTourBubblePos] = useState<{ top: number; left: number; width: number } | null>(null);
 	const [tourCardRect, setTourCardRect] = useState<{ top: number; left: number; width: number; height: number } | null>(null);
 	const findBtnRef = useRef<HTMLButtonElement>(null);
 	const filterCardRef = useRef<HTMLElement>(null);
+	const jdSectionRef = useRef<HTMLDivElement>(null);
+	const jdOpenRef = useRef(false);
+	const aiProgressRef = useRef<HTMLDivElement>(null);
 	const [showReviewModal, setShowReviewModal] = useState(false);
+	const [apiMatchedJobs, setApiMatchedJobs] = useState<JobItem[]>([]);
+	const [locationFilter, setLocationFilter] = useState<{ city: string; country: string }>({ city: '', country: '' });
+	const [pendingApplyJob, setPendingApplyJob] = useState<JobItem | null>(null);
 	const [submittedFilters, setSubmittedFilters] = useState<{
-		searchQuery: string; empFilter: EmploymentKind[]; workFilter: WorkMode[];
+		empFilter: EmploymentKind[]; workFilter: WorkMode[];
 		expFilter: string | undefined; sectorFilter: string | undefined; skillsFilter: string[];
 	} | null>(null);
 
@@ -300,19 +332,34 @@ function JobSearch() {
 
 	// Handle resume upload API response
 	useEffect(() => {
-		if (!resumeStatus && resumeData && resumeData?.statusCode === 200) {
+		if (!resumeStatus && resumeData && (resumeData?.statusCode === 200 || resumeData?.statusCode === 201)) {
 			notification.destroy();
 			setMatchLoading(false);
 			setAiSteps([]);
 			setTypingLine('');
 			const data = resumeData?.data;
+			const mergedSkills: string[] = Array.from(new Set((data?.skills || []).filter(Boolean)));
+
 			setDetectedFilters({
-				skills:      data?.skills             || data?.extractedSkills || [],
-				expLevel:    normalizeExpLevel(data?.experienceLevel ?? data?.expLevel ?? data?.experience ?? null),
-				workMode:    data?.workMode            || null,
-				employment:  normalizeEmployment(data?.employmentType ?? data?.employment ?? data?.jobType ?? null),
-				source:      'resume',
+				skills:     mergedSkills,
+				expLevel:   normalizeExpLevel(
+					data?.career_level       ??
+					data?.experienceLevel    ??
+					data?.expLevel           ??
+					data?.experience         ??
+					(data?.total_experience_years != null
+						? String(data.total_experience_years) + ' years'
+						: null)
+				),
+				workMode:   data?.workMode   || data?.work_mode   || null,
+				employment: normalizeEmployment(
+					data?.employmentType ?? data?.employment ??
+					data?.jobType        ?? data?.job_type   ?? null
+				),
+				source: 'resume',
 			});
+			const parsedLoc = parseLocationString(data?.location);
+			if (parsedLoc) setDetectedLocation(parsedLoc);
 			dispatch(resumeUploadReset());
 		} else if (!resumeStatus && resumeData && resumeData?.statusCode === 400) {
 			message.warning(resumeData?.message || 'Bad Request');
@@ -327,6 +374,89 @@ function JobSearch() {
 			dispatch(resumeUploadReset());
 		}
 	}, [resumeData, resumeStatus]);
+
+	// Handle job search API response
+	useEffect(() => {
+		if (jobSearchStatus) return; // still loading
+		if (!jobSearchData && !jobSearchError) return;
+
+		setListLoading(false);
+
+		// Thunk rejected (network error or axios threw)
+		if (jobSearchError && !jobSearchData) {
+			message.error(jobSearchError || 'Job search failed. Please try again.');
+			dispatch(jobSearchReset());
+			return;
+		}
+
+		const code = jobSearchData?.statusCode ?? jobSearchData?.status;
+
+		// FastAPI validation errors come back as { detail: [...] } with no statusCode
+		if (jobSearchData?.detail) {
+			const msg = jobSearchData.detail?.[0]?.msg || 'Invalid search request';
+			message.warning(msg);
+			dispatch(jobSearchReset());
+			return;
+		}
+
+		if (code === 200 || code === 201) {
+			const rawJobs: any[] = jobSearchData?.data?.jobs
+				|| jobSearchData?.data?.results
+				|| jobSearchData?.jobs
+				|| [];
+
+			const mapped = Array.isArray(rawJobs) && rawJobs.length > 0
+				? rawJobs.map((item, idx) => mapApiJobToJobItem(item, idx))
+				: [];
+
+			setApiMatchedJobs(mapped);
+			setActiveView('matches');
+			dispatch(jobSearchReset());
+		} else if (code === 422) {
+			message.warning(jobSearchData?.message || 'Invalid search parameters');
+			dispatch(jobSearchReset());
+		} else if (code === 400) {
+			message.warning(jobSearchData?.message || 'Invalid search request');
+			dispatch(jobSearchReset());
+		} else if (code === 500 || code === 503) {
+			message.error(jobSearchData?.message || 'Job search service unavailable');
+			dispatch(jobSearchReset());
+		} else {
+			// Unknown shape — try to extract jobs anyway
+			const rawJobs: any[] = jobSearchData?.data?.jobs || jobSearchData?.jobs || [];
+			if (Array.isArray(rawJobs) && rawJobs.length > 0) {
+				setApiMatchedJobs(rawJobs.map((item, idx) => mapApiJobToJobItem(item, idx)));
+				setActiveView('matches');
+			}
+			dispatch(jobSearchReset());
+		}
+	// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [jobSearchData, jobSearchStatus, jobSearchError]);
+
+	// Handle save job API response
+	useEffect(() => {
+		if (saveJobStatus) return;
+		if (!saveJobData && !saveJobError) return;
+
+		if (saveJobError && !saveJobData) {
+			message.error(saveJobError || 'Failed to save job');
+			dispatch(saveJobReset());
+			return;
+		}
+
+		const code = saveJobData?.statusCode ?? saveJobData?.status;
+
+		if (code === 200 || code === 201) {
+			message.success(saveJobData?.message || 'Job saved successfully');
+		} else if (code === 400) {
+			message.warning(saveJobData?.message || 'Bad request');
+		} else if (code === 500) {
+			message.error(saveJobData?.message || 'Server error');
+		}
+
+		dispatch(saveJobReset());
+	// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [saveJobData, saveJobStatus, saveJobError]);
 
 	const handleMatchJd = () => {
 		if (!pastedJd.trim()) {
@@ -351,11 +481,18 @@ function JobSearch() {
 		sessionStorage.setItem(APPLIED_STORAGE_KEY, JSON.stringify(Array.from(appliedIds)));
 	}, [appliedIds]);
 
+	// total tour steps: 3 without resume, 4 with resume (adds JD step)
+	const tourTotal = uploadedFile ? 4 : 3;
+
 	useEffect(() => {
 		if (!showFindTour) { setTourBubblePos(null); setTourCardRect(null); return; }
-		const selector = tourStep === 1
-			? '.job-search-sidebar .skill-filter'
-			: '.job-search-sidebar .js-filter-cta-row';
+		const jdStep  = uploadedFile ? 3 : null;
+		const btnStep = uploadedFile ? 4 : 3;
+		const selector =
+			tourStep === 1 ? '.job-search-sidebar .skill-filter' :
+			tourStep === 2 ? '#js-emp-work-filter' :
+			tourStep === jdStep ? '.me-jd-divider' :
+			tourStep === btnStep ? '.me-find-btn-wrap' : '.me-find-btn-wrap';
 
 		// Scroll target into view first, then measure after scroll settles
 		const el = document.querySelector(selector) as HTMLElement | null;
@@ -388,6 +525,22 @@ function JobSearch() {
 		return () => clearTimeout(t);
 	}, [showFindTour, tourStep]);
 
+	/* Advance AI search step indicator while list is loading */
+	useEffect(() => {
+		if (!listLoading) { setAiSearchStep(-1); return; }
+		setAiSearchStep(0);
+		setTimeout(() => {
+			aiProgressRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+		}, 80);
+		let step = 0;
+		const id = setInterval(() => {
+			step += 1;
+			if (step >= 4) { clearInterval(id); return; }
+			setAiSearchStep(step);
+		}, 1400);
+		return () => clearInterval(id);
+	}, [listLoading]);
+
 	/* Deep-link from Dashboard (e.g. /job-search?tab=matches) */
 	useEffect(() => {
 		const tab = new URLSearchParams(location.search).get('tab');
@@ -411,18 +564,26 @@ function JobSearch() {
 
 	const baseJobs = useMemo(() => {
 		if (activeView === 'saved') {
-			return MOCK_JOBS.filter((j) => savedIds.has(j.id));
+			const pool = apiMatchedJobs.length > 0 ? [...MOCK_JOBS, ...apiMatchedJobs] : MOCK_JOBS;
+			return pool.filter((j) => savedIds.has(j.id));
 		}
 		if (activeView === 'applied') {
-			return MOCK_JOBS.filter((j) => appliedIds.has(j.id));
+			const pool = apiMatchedJobs.length > 0 ? [...MOCK_JOBS, ...apiMatchedJobs] : MOCK_JOBS;
+			return pool.filter((j) => appliedIds.has(j.id));
 		}
 		if (activeView === 'matches') {
+			// Once a real search has been submitted, always show API results (even if empty)
+			// so the user sees "no results" rather than falling back to mock data.
+			if (submittedFilters !== null) {
+				return [...apiMatchedJobs].sort((a, b) => (b.matchScore ?? 0) - (a.matchScore ?? 0));
+			}
+			// Pre-search: show mock data as preview
 			return [...MOCK_JOBS]
 				.filter((j) => j.matchScore != null)
 				.sort((a, b) => (b.matchScore ?? 0) - (a.matchScore ?? 0));
 		}
 		return MOCK_JOBS;
-	}, [activeView, savedIds, appliedIds]);
+	}, [activeView, savedIds, appliedIds, apiMatchedJobs, submittedFilters]);
 
 	const filteredJobs = useMemo(() => {
 		let list = baseJobs;
@@ -431,7 +592,6 @@ function JobSearch() {
 		}
 		const f = submittedFilters;
 		if (!f) return list;
-		list = list.filter((j) => jobMatchesQuery(j, f.searchQuery));
 		list = list.filter((j) => filterJobsByEmployment(j, f.empFilter));
 		list = list.filter((j) => filterJobsByWorkMode(j, f.workFilter));
 		return list;
@@ -441,8 +601,12 @@ function JobSearch() {
 		e?.stopPropagation();
 		setSavedIds((prev) => {
 			const next = new Set(prev);
-			if (next.has(id)) next.delete(id);
-			else next.add(id);
+			if (next.has(id)) {
+				next.delete(id);
+			} else {
+				next.add(id);
+				dispatch(saveJob(id));
+			}
 			return next;
 		});
 	}, []);
@@ -456,26 +620,136 @@ function JobSearch() {
 	);
 
 	const activeFilterCount = useMemo(() => [
-		searchQuery.trim() !== '',
 		empFilter.length > 0,
 		workFilter.length > 0,
 		expFilter != null,
 		sectorFilter != null,
 		skillsFilter.length > 0,
-	].filter(Boolean).length, [searchQuery, empFilter, workFilter, expFilter, sectorFilter, skillsFilter]);
+		locationFilter.city.trim() !== '' || locationFilter.country.trim() !== '',
+	].filter(Boolean).length, [empFilter, workFilter, expFilter, sectorFilter, skillsFilter, locationFilter]);
 
 	const handleFindJobs = useCallback(() => {
 		if (activeFilterCount === 0) return;
 		setShowReviewModal(true);
 	}, [activeFilterCount]);
 
+	const mapExpLevel = (v: string | undefined): string | undefined => {
+		if (!v) return undefined;
+		if (v === 'entry')  return 'junior';
+		if (v === 'mid')    return 'mid-level';
+		if (v === 'senior') return 'senior';
+		return v;
+	};
+
+	const mapWorkMode = (modes: WorkMode[]): string | undefined => {
+		if (!modes.length) return undefined;
+		const m = modes[0];
+		if (m === 'onsite') return 'on-site';
+		return m;
+	};
+
+	const mapJobType = (kinds: EmploymentKind[]): string | undefined => {
+		if (!kinds.length) return undefined;
+		const m = kinds[0];
+		if (m === 'fulltime')   return 'full-time';
+		if (m === 'parttime')   return 'part-time';
+		if (m === 'internship') return 'internship';
+		return m;
+	};
+
+	const mapApiJobToJobItem = (item: any, idx: number): JobItem => {
+		const rawSalary = item.salary || item.salary_range || '';
+		// Filter out garbage salary values (e.g. "rs," or single chars)
+		const salary = rawSalary.replace(/[^a-z0-9$£€\s,.\-–]/gi, '').trim().length > 3 ? rawSalary : undefined;
+
+		const skills: string[] = item.skills_required || item.skills || item.required_skills || [];
+
+		// Compute a basic match score from skills overlap if not provided by API
+		let matchScore: number | undefined = item.score != null
+			? Math.min(100, Math.round(Number(item.score) * 100))
+			: item.match_score ?? item.matchScore;
+		if (matchScore == null && skillsFilter.length > 0 && skills.length > 0) {
+			const lower = skillsFilter.map((s) => s.toLowerCase());
+			const matched = skills.filter((s) => lower.some((f) => s.toLowerCase().includes(f) || f.includes(s.toLowerCase())));
+			matchScore = Math.round((matched.length / Math.max(skills.length, skillsFilter.length)) * 100);
+		}
+
+		return {
+			id:             item.job_id || item._id || item.id || String(idx),
+			title:          item.title || item.job_title || 'Untitled Role',
+			company:        item.company || item.company_name || item.employer || 'Unknown Company',
+			location:       item.location || item.city || '',
+			logoHue:        (idx * 47 + 180) % 360,
+			verified:       item.url_status === 'valid' || item.verified || false,
+			badges:         item.source === 'ai_discovered' ? ['AI Match'] : (item.badges || []),
+			hiringStatus:   item.hiringStatus || item.hiring_status || 'Actively Recruiting',
+			sourceKind:     item.source_kind || item.sourceKind,
+			employmentKind: (() => {
+				const v = (item.job_type || item.employment_type || item.employmentType || '').toLowerCase();
+				if (v.includes('part')) return 'parttime';
+				if (v.includes('intern')) return 'internship';
+				if (v.includes('contract')) return 'contract';
+				return 'fulltime';
+			})(),
+			workMode: (() => {
+				const v = (item.work_mode || item.workMode || '').toLowerCase();
+				if (v.includes('hybrid')) return 'hybrid';
+				if (v.includes('remote')) return 'remote';
+				return 'onsite';
+			})(),
+			matchScore,
+			matchReasons: item.match_reasons || item.matchReasons || [],
+			detail: {
+				employmentType:   item.job_type || item.employment_type || '',
+				posted:           item.posted_date || item.posted_at || item.postedAt || 'Recently',
+				salary,
+				experience:       item.experience || item.experience_level || undefined,
+				applyUrl:         item.apply_url || item.applyUrl || item.source_url || undefined,
+				description:      item.description_summary || item.description || item.job_description || '',
+				responsibilities: item.responsibilities || [],
+				skills,
+				skillsMatched:    item.skills_matched || item.skillsMatched || [],
+				skillGaps:        item.skill_gaps || item.skillGaps || [],
+				interviewRounds:  item.interview_rounds || item.interviewRounds,
+			},
+		};
+	};
+
+	const VALID_SECTORS = new Set(['private', 'public', 'government', 'freelance']);
+
 	const handleConfirmSearch = () => {
 		setShowReviewModal(false);
 		setListLoading(true);
-		setSubmittedFilters({ searchQuery, empFilter, workFilter, expFilter, sectorFilter, skillsFilter });
-		// TODO: dispatch AI matching API here
-		const t = window.setTimeout(() => setListLoading(false), 900 + Math.floor(Math.random() * 400));
-		return () => clearTimeout(t);
+		setSubmittedFilters({ empFilter, workFilter, expFilter, sectorFilter, skillsFilter });
+
+		const locParts = [locationFilter.city, locationFilter.country].filter(Boolean);
+		const locationStr = locParts.length ? locParts.join(', ') : undefined;
+
+		const jd = pastedJd.trim();
+		// Use 'description' mode when only JD is provided; otherwise 'title'
+		const mode = jd && !uploadedFile ? 'description' : 'title';
+		// mode='title' requires a query — fall back to first skill or generic term
+		const query = mode === 'title'
+			? (skillsFilter.length > 0 ? skillsFilter[0] : 'Software Engineer')
+			: undefined;
+
+		// sector must be one of the API's accepted values
+		const sector = sectorFilter && VALID_SECTORS.has(sectorFilter) ? sectorFilter : undefined;
+
+		dispatch(searchJobs({
+			mode,
+			query,
+			description: jd || undefined,
+			max_results: 20,
+			filters: {
+				sector,
+				work_mode:         mapWorkMode(workFilter),
+				job_type:          mapJobType(empFilter),
+				experience_level:  mapExpLevel(expFilter),
+				location:          locationStr,
+				skills:            skillsFilter.length ? skillsFilter : undefined,
+			},
+		}));
 	};
 
 	const applyDetectedFilters = useCallback(() => {
@@ -504,18 +778,33 @@ function JobSearch() {
 	}, [detectedFilters]);
 
 	const resetFilters = useCallback(() => {
-		setSearchQuery('');
 		setEmpFilter([]);
 		setWorkFilter([]);
 		setExpFilter(undefined);
 		setSectorFilter(undefined);
 		setSkillsFilter([]);
 		setSkillInput('');
+		setPastedJd('');
+		setJdResult('');
+		// close JD section via DOM ref (lag-free) then sync React state
+		jdOpenRef.current = false;
+		jdSectionRef.current?.classList.remove('me-jd-section--open');
+		setShowJdSection(false);
+		// clear uploaded resume
+		setUploadedFile(null);
+		if (previewUrl) {
+			URL.revokeObjectURL(previewUrl);
+			setPreviewUrl(null);
+		}
+		setDetectedFilters(null);
+		setDetectedLocation(null);
+		setLocationFilter({ city: '', country: '' });
 		setLocationResetKey((k) => k + 1);
 		setDismissedIds(new Set());
 		setSubmittedFilters(null);
+		setApiMatchedJobs([]);
 		setUiPreview('normal');
-	}, []);
+	}, [previewUrl]);
 
 	const openJobPreview = useCallback((job: JobItem) => setPreviewJob(job), []);
 	const closeJobPreview = useCallback(() => setPreviewJob(null), []);
@@ -556,27 +845,9 @@ function JobSearch() {
 				? 'No recommended roles match your filters — try widening work mode or employment type.'
 				: 'You havent applied to any roles yet';
 
-	const previewPanel = (
-		<div className="job-search-state-preview">
-			<p className="job-search-state-preview-hint">Stakeholder preview (no API)</p>
-			<Button type="link" size="small" onClick={() => setUiPreview('loading')}>
-				Loading
-			</Button>
-			<Button type="link" size="small" onClick={() => setUiPreview('empty')}>
-				Empty list
-			</Button>
-			<Button type="link" size="small" onClick={() => setUiPreview('error')}>
-				Error + retry
-			</Button>
-			<Button type="link" size="small" onClick={() => setUiPreview('normal')}>
-				Reset
-			</Button>
-		</div>
-	);
-
 	const filtersBlock = useMemo(() => (
 		<div className="job-search-filters-block">
-			<div className="js-filter-top-group">
+			<div id="js-emp-work-filter" className="js-filter-top-group">
 			<p className="job-search-filters-label">
 				<span className="filter-label-icon filter-label-icon--indigo"><MdWorkOutline size={12} /></span>
 				Employment
@@ -717,7 +988,7 @@ function JobSearch() {
 				{skillsFilter?.length > 0 && (
 					<div className="skill-badges-wrap">
 						{skillsFilter.map((skill, idx) => (
-							<span key={skill} className={`skill-badge skill-badge--${idx % 8}`}>
+							<span key={skill} className={`skill-badge`}>
 								{skill}
 								<button
 									type="button"
@@ -733,28 +1004,16 @@ function JobSearch() {
 				)}
 			</div>
 			<div className="job-search-filters-divider" />
-			<LocationFilter key={locationResetKey} />
+			<LocationFilter
+				key={`${locationResetKey}-${detectedLocation?.city ?? ''}`}
+				initialCity={detectedLocation?.city ?? ''}
+				initialCountry={detectedLocation?.country ?? ''}
+				onChange={(country, city) => setLocationFilter({ city, country })}
+			/>
 			<div className="js-filter-cta-row">
-			<Button type="link" size="small" className="job-search-filters-reset" onClick={resetFilters}><MdRestartAlt size={13} style={{ verticalAlign: 'middle', marginRight: 3 }} />Reset</Button>
-			<Tooltip
-				title={!hasResumeOrJd ? 'Upload a resume or paste a job description first' : ''}
-				placement="top"
-			>
-				<span style={{ display: 'inline-block', cursor: !hasResumeOrJd ? 'not-allowed' : 'default' }}>
-					<button
-						ref={findBtnRef}
-						type="button"
-						className={`js-find-btn${(activeFilterCount === 0 || !hasResumeOrJd) ? ' js-find-btn--disabled' : ''}${filtersJustApplied ? ' js-find-btn--glow' : ''}${showFindTour ? ' js-find-btn--tour-target' : ''}`}
-						onClick={() => { setShowFindTour(false); handleFindJobs(); }}
-						disabled={activeFilterCount === 0 || !hasResumeOrJd}
-						style={{ pointerEvents: !hasResumeOrJd ? 'none' : 'auto' }}
-					>
-						<MdAutoAwesome size={13} />
-						Find AI Matches
-						{activeFilterCount > 0 && <span className="js-find-btn-badge">{activeFilterCount}</span>}
-					</button>
-				</span>
-			</Tooltip>
+			<Button type="link" size="small" className="job-search-filters-reset" onClick={resetFilters}>
+				<MdRestartAlt size={13} style={{ verticalAlign: 'middle', marginRight: 3 }} />Reset filters
+			</Button>
 		</div>
 		</div>
 	), [empFilter, workFilter, expFilter, sectorFilter, skillInput, skillsFilter, locationResetKey, activeFilterCount, filtersJustApplied, showFindTour, resetFilters, handleFindJobs, hasResumeOrJd]);
@@ -985,225 +1244,160 @@ function JobSearch() {
 								)}
 										{activeView === 'matches' && (
 										<div className="job-search-card stalker-card match-engine-container">
-										
-											{/* <div className="match-engine-header">
-												<div className="match-icon-box" style={{ background: '#f97316' }}>
-													<MdWorkOutline size={24} color="white" />
-												</div>
-												<div className="match-title-group">
-													<h3>Match Engine</h3>
-													<p>Real-time AI matching</p>
-												</div>
-											</div> */}
 
-											<div className="match-engine-nav">
-												<button 
-													type="button"
-													className={`match-engine-nav-item ${matchEngineTab === 'resume' ? 'active' : ''}`}
-													onClick={() => setMatchEngineTab('resume')}
-												>
-													<MdAutoAwesome className="match-nav-icon" />
-													<span>Upload Resume</span>
-												</button>
-												<button 
-													type="button"
-													className={`match-engine-nav-item ${matchEngineTab === 'jd' ? 'active' : ''}`}
-													onClick={() => setMatchEngineTab('jd')}
-												>
-													<MdInsights className="match-nav-icon" />
-													<span>Paste JD</span>
-												</button>
-												{matchEngineTab === 'jd' && jdResult && (
-													<button
-														type="button"
-														className="match-engine-nav-toggle"
-														onClick={() => setShowJdInput((v) => !v)}
-														aria-pressed={showJdInput}
-													>
-														<span className="jd-toggle-label">Input</span>
-														<span className={`jd-toggle-track${showJdInput ? ' on' : ''}`}>
-															<span className="jd-toggle-knob" />
-														</span>
-													</button>
-												)}
-												{matchEngineTab === 'jd' && (pastedJd || jdResult) && (
-													<button
-														type="button"
-														className="jd-reset-btn jd-reset-btn--nav"
-														onClick={() => { setPastedJd(''); setJdResult(''); setShowJdInput(true); }}
-													>
-														<MdRestartAlt size={11} />
-														Reset
-													</button>
-												)}
-											</div>
-
+											{/* Resume upload / file card */}
 											<div className="match-engine-content">
-												{matchEngineTab === 'resume' ? (
-													<motion.div 
-														key="resume"
-														initial={{ opacity: 0, y: 10 }}
-														animate={{ opacity: 1, y: 0 }}
-														className="match-upload-zone"
-													>
-														{!uploadedFile ? (
-															<Upload.Dragger
-																name="file"
-																multiple={false}
-																onChange={handleMatchResume}
-																customRequest={mockUploadRequest}
-																showUploadList={false}
-																className="premium-dragger"
-															>
-																<div className="dragger-inner">
-																	<div className="dragger-icon-wrap">
-																		<div className="ncs-wave-container">
-																			<div className="ncs-wave-ring" />
-																			<div className="ncs-wave-ring" />
-																			<div className="ncs-wave-ring" />
-																			<div className="ncs-wave-ring" />
-																			<MdFileUpload size={18} className="dragger-upload-icon" />
-																		</div>
-																	</div>
-																	<div className="dragger-text-wrap">
-																		<span className="dragger-main-text">Drop resume or click to browse</span>
-																		<span className="dragger-hint-text">PDF, DOCX · Max 5 MB</span>
+												<motion.div
+													key="resume"
+													initial={{ opacity: 0, y: 10 }}
+													animate={{ opacity: 1, y: 0 }}
+													className="match-upload-zone"
+												>
+													{!uploadedFile ? (
+														<Upload.Dragger
+															name="file"
+															multiple={false}
+															onChange={handleMatchResume}
+															customRequest={mockUploadRequest}
+															showUploadList={false}
+															className="premium-dragger"
+														>
+															<div className="dragger-inner">
+																<div className="dragger-icon-wrap">
+																	<div className="ncs-wave-container">
+																		<div className="ncs-wave-ring" />
+																		<div className="ncs-wave-ring" />
+																		<div className="ncs-wave-ring" />
+																		<div className="ncs-wave-ring" />
+																		<MdFileUpload size={18} className="dragger-upload-icon" />
 																	</div>
 																</div>
-															</Upload.Dragger>
-														) : (
-															<div className="ai-analysis-card">
-																<div className="analysis-doc-snap">
-																	<div className="doc-snap-preview">
-																		<div className="doc-snap-page">
-																			<div className="doc-snap-line short" />
-																			<div className="doc-snap-line long" />
-																			<div className="doc-snap-line mid" />
-																			<div className="doc-snap-line short" />
-																		</div>
-																		<div className="doc-snap-badge">
-																			<MdDescription size={14} />
-																		</div>
-																	</div>
-																	<div className="doc-details">
-																		<div className="doc-details-head">
-																			<span className="doc-name">{uploadedFile.name}</span>
-																			<Button 
-																				type="link" 
-																				size="small" 
-																				className="doc-view-link"
-																				onClick={() => setShowFullResume(true)}
-																			>
-																				View Full
-																			</Button>
-																		</div>
-																		<span className="doc-size">
-																			{(uploadedFile.size / 1024).toFixed(1)} KB • Ready
-																		</span>
-																	</div>
-																	<Button 
-																		type="text" 
-																		icon={<MdDelete size={18} />} 
-																		onClick={() => {
-																			if (previewUrl) URL.revokeObjectURL(previewUrl);
-																			setUploadedFile(null);
-																			setPreviewUrl(null);
-																			setMatchLoading(false);
-																			setAiSteps([]);
-																			dispatch(resumeUploadReset());
-																		}}
-																		className="analysis-remove-btn"
-																	/>
+																<div className="dragger-text-wrap">
+																	<span className="dragger-main-text">Drop resume or click to browse</span>
+																	<span className="dragger-hint-text">PDF, DOCX · Max 5 MB</span>
 																</div>
-																
-																{matchLoading && (
-																	<div className="ai-thinking-area">
-																		<div className="thinking-dot-wrap">
-																			<div className="thinking-dot" />
-																			<div className="thinking-dot" />
-																			<div className="thinking-dot" />
-																		</div>
-																		<div className="thinking-logs">
-																			{aiSteps.map((step, idx) => (
-																				<div key={idx} className="thinking-text thinking-text--done">{step}</div>
-																			))}
-																			{typingLine && (
-																				<div className="thinking-text thinking-text--typing">
-																					{typingLine}<span className="typing-cursor" />
-																				</div>
-																			)}
-																		</div>
-																	</div>
-																)}
 															</div>
-														)}
-													</motion.div>
-												) : (
-													<motion.div 
-														key="jd"
-														initial={{ opacity: 0, y: 10 }}
-														animate={{ opacity: 1, y: 0 }}
-														className="match-jd-zone"
-													>
-														{showJdInput && (
-															<>
-															<div className="jd-input-wrapper">
-																<div className="jd-input-label">
-																	<MdContentPaste size={11} className="jd-input-label-icon" />
-																	<span>Paste job description</span>
+														</Upload.Dragger>
+													) : (
+														<div className="ai-analysis-card">
+															<div className="analysis-doc-snap">
+																<div className="doc-snap-preview">
+																	<div className="doc-snap-page">
+																		<div className="doc-snap-line short" />
+																		<div className="doc-snap-line long" />
+																		<div className="doc-snap-line mid" />
+																		<div className="doc-snap-line short" />
+																	</div>
+																	<div className="doc-snap-badge">
+																		<MdDescription size={14} />
+																	</div>
 																</div>
-																<Input.TextArea
-																	rows={3}
-																	placeholder="Paste job description here to match roles…"
-																	value={pastedJd}
-																	onChange={(e) => {
-																		setPastedJd(e.target.value);
-																		if (jdResult) { setJdResult(''); setShowJdInput(true); }
+																<div className="doc-details">
+																	<div className="doc-details-head">
+																		<span className="doc-name">{uploadedFile.name}</span>
+																		<Button
+																			type="link"
+																			size="small"
+																			className="doc-view-link"
+																			onClick={() => setShowFullResume(true)}
+																		>
+																			View Full
+																		</Button>
+																	</div>
+																	<span className="doc-size">
+																		{(uploadedFile.size / 1024).toFixed(1)} KB • Ready
+																	</span>
+																</div>
+																<Button
+																	type="text"
+																	icon={<MdDelete size={18} />}
+																	onClick={() => {
+																		if (previewUrl) URL.revokeObjectURL(previewUrl);
+																		setUploadedFile(null);
+																		setPreviewUrl(null);
+																		setMatchLoading(false);
+																		setAiSteps([]);
+																		dispatch(resumeUploadReset());
 																	}}
-																	className="premium-textarea"
-																	style={{ width: '100%' }}
+																	className="analysis-remove-btn"
 																/>
 															</div>
-															<Button
-																type="primary"
-																block
-																loading={matchLoading}
-																onClick={handleMatchJd}
-																className="match-submit-btn"
-															>
-																{!matchLoading && <MdAutoAwesome size={12} style={{ marginRight: 5, verticalAlign: 'middle' }} />}
-																Find Matches
-															</Button>
-															</>
-														)}
 
-														{jdResult && (
-															<motion.div
-																initial={{ opacity: 0, y: 8 }}
-																animate={{ opacity: 1, y: 0 }}
-																transition={{ duration: 0.4 }}
-															>
-																<div className="jd-result-card">
-																	<div className="jd-result-header">
-																		<span className="jd-result-dot" />
-																		<span className="jd-result-dot jd-result-dot--2" />
-																		<span className="jd-result-dot jd-result-dot--3" />
-																		<span className="jd-result-header-label">
-																			<SiBookstack size={10} />
-																			JD Summary
-																		</span>
-																		<Tooltip placement="right" title="AI will use this to surface matching roles.">
-																			<InfoCircleTwoTone className="jd-result-info-icon" />
-																		</Tooltip>
+															{matchLoading && (
+																<div className="ai-thinking-area">
+																	<div className="thinking-dot-wrap">
+																		<div className="thinking-dot" />
+																		<div className="thinking-dot" />
+																		<div className="thinking-dot" />
 																	</div>
-																	<div className="jd-result-body">
-																		<Typewriter words={[jdResult]} typeSpeed={18} cursor cursorColor="#6366f1" />
+																	<div className="thinking-logs">
+																		{aiSteps.map((step, idx) => (
+																			<div key={idx} className="thinking-text thinking-text--done">{step}</div>
+																		))}
+																		{typingLine && (
+																			<div className="thinking-text thinking-text--typing">
+																				{typingLine}<span className="typing-cursor" />
+																			</div>
+																		)}
 																	</div>
 																</div>
-															</motion.div>
+															)}
+														</div>
+													)}
+												</motion.div>
+											</div>
+
+											{/* ── JD section toggle ── */}
+											<div className="me-jd-divider">
+												<button
+													type="button"
+													className={`me-jd-toggle${showJdSection ? ' me-jd-toggle--open' : ''}`}
+													onClick={() => {
+									jdOpenRef.current = !jdOpenRef.current;
+									const next = jdOpenRef.current;
+									// Toggle CSS class directly — no React re-render, paint happens immediately
+									jdSectionRef.current?.classList.toggle('me-jd-section--open', next);
+									// Update state only for button label/icon, deferred so it doesn't block paint
+									requestAnimationFrame(() => setShowJdSection(next));
+								}}
+												>
+													<span className="me-jd-toggle-icon">{showJdSection ? <MdRestartAlt size={12} /> : <MdAdd size={12} />}</span>
+													{showJdSection ? 'Remove Job Description' : 'Also add a Job Description'}
+													<span className="me-jd-optional">optional</span>
+												</button>
+											</div>
+
+											{/* ── JD textarea (collapsible) ── */}
+											<div ref={jdSectionRef} className="me-jd-section">
+												<div className="me-jd-section-inner">
+													<div className="me-section-head">
+														<span className="me-section-icon me-section-icon--jd"><MdContentPaste size={12} /></span>
+														<span className="me-section-label">Job Description</span>
+														{pastedJd.trim() && (
+															<button
+																type="button"
+																className="me-jd-clear"
+																onClick={() => { setPastedJd(''); setJdResult(''); }}
+															>
+																Clear
+															</button>
 														)}
-													</motion.div>
-												)}
+													</div>
+													<Input.TextArea
+														rows={4}
+														placeholder="Paste a job description to refine your matches and send it to the AI search…"
+														value={pastedJd}
+														onChange={(e) => setPastedJd(e.target.value)}
+														className="premium-textarea me-jd-textarea"
+														style={{ width: '100%' }}
+													/>
+													{pastedJd.trim() && (
+														<p className="me-jd-hint">
+															<MdAutoAwesome size={11} style={{ verticalAlign: 'middle', marginRight: 3 }} />
+															JD will be sent to AI search when you click Find AI Matches
+														</p>
+													)}
+												</div>
 											</div>
 
 										{detectedFilters && !matchLoading && (
@@ -1231,29 +1425,75 @@ function JobSearch() {
 														<span key={e} className="js-ai-chip js-ai-chip--emp">{e}</span>
 													))}
 												</div>
-												<button type="button" className="js-ai-apply-btn" onClick={applyDetectedFilters}>
-													<MdBolt size={12} />
-													Apply to filters
-												</button>
+												<div className="js-ai-banner-actions">
+													<button type="button" className="js-ai-apply-btn" onClick={applyDetectedFilters}>
+														<MdBolt size={12} />
+														Add to filters
+													</button>
+													<button type="button" className="js-ai-skip-btn" onClick={() => setDetectedFilters(null)}>
+														Skip
+													</button>
+												</div>
 											</div>
 										)}
+
+										{/* ── Primary Find AI Matches CTA ── */}
+										<div className="me-find-btn-wrap">
+											<div className="me-find-trigger">
+												<button
+													ref={findBtnRef}
+													type="button"
+													className={`me-find-btn${listLoading ? ' me-find-btn--loading' : (!hasResumeOrJd || activeFilterCount === 0) ? ' me-find-btn--disabled' : ''}${filtersJustApplied ? ' me-find-btn--glow' : ''}`}
+													disabled={listLoading || !hasResumeOrJd || activeFilterCount === 0}
+													onClick={() => { setShowFindTour(false); handleFindJobs(); }}
+												>
+													{listLoading ? (
+														<>
+															<span className="me-find-btn-spinner" />
+															<span>Searching…</span>
+														</>
+													) : (<>
+														{(!hasResumeOrJd || activeFilterCount === 0)
+															? <MdLockOutline size={15} className="me-find-btn-icon" />
+															: <MdAutoAwesome size={15} className="me-find-btn-icon" />
+														}
+														<span>Find AI Matches</span>
+														{activeFilterCount > 0 && (
+															<span className="me-find-badge">{activeFilterCount} filter{activeFilterCount > 1 ? 's' : ''}</span>
+														)}
+													</>)}
+												</button>
+												{(!hasResumeOrJd || activeFilterCount === 0) && (<>
+													<div className="me-find-tooltip" role="tooltip">
+														<div className="me-tt-header">
+															<span className="me-tt-lock-icon">🔐</span>
+															<span className="me-tt-title">Unlock AI Matching</span>
+														</div>
+														<p className="me-tt-sub">Complete both steps to activate</p>
+														<div className="me-tt-divider" />
+														<div className="me-tt-checks">
+															<div className={`me-tt-check${hasResumeOrJd ? ' me-tt-check--met' : ''}`}>
+																<span className="me-tt-dot" />
+																<span>Resume uploaded or JD pasted</span>
+															</div>
+															<div className={`me-tt-check${activeFilterCount > 0 ? ' me-tt-check--met' : ''}`}>
+																<span className="me-tt-dot" />
+																<span>At least 1 filter selected</span>
+															</div>
+														</div>
+													</div>
+													<div className="me-find-tooltip-arrow" />
+												</>)}
+											</div>
+											{(!hasResumeOrJd || activeFilterCount === 0) && (
+												<p className="me-find-hint">
+													{!hasResumeOrJd ? 'Upload a resume or paste a JD first' : 'Add at least one filter to search'}
+												</p>
+											)}
+										</div>
 									</div>
 									)}
 
-									<div className="job-search-toolbar">
-										<Input.Search
-											className="job-search-search-input"
-											placeholder="Search titles, companies, skills…"
-											allowClear
-											value={searchQuery}
-											onChange={(e) => setSearchQuery(e.target.value)}
-										/>
-										<Popover content={previewPanel} title="UI states" trigger="click" placement="bottomRight">
-											<Button size="small" type="link" className="job-search-preview-states-btn">
-												Preview states
-											</Button>
-										</Popover>
-									</div>
 									<div
 										key={activeView === 'applied' ? pipelineTab : activeView}
 										className="job-search-feed-head-copy feed-stage-reveal"
@@ -1289,7 +1529,33 @@ function JobSearch() {
 									</div>
 								) : null}
 
-								{showSkeleton ? (
+								{showSkeleton ? (<>
+									{/* ── AI search progress panel ── */}
+									<div ref={aiProgressRef} className="ai-search-progress">
+										<div className="ai-sp-header">
+											<span className="ai-sp-orb" />
+											<span className="ai-sp-title">AI is finding your matches</span>
+										</div>
+										{[
+											{ icon: '🧠', label: 'Scanning your profile & skills' },
+											{ icon: '🎯', label: 'Matching skills to open roles' },
+											{ icon: '🔍', label: 'Searching 10,000+ opportunities' },
+											{ icon: '✨', label: 'Ranking your best-fit matches' },
+										].map((s, i) => {
+											const done    = i < aiSearchStep;
+											const current = i === aiSearchStep;
+											return (
+												<div key={i} className={`ai-sp-step${done ? ' ai-sp-step--done' : current ? ' ai-sp-step--active' : ' ai-sp-step--pending'}`}>
+													<span className="ai-sp-step-icon">
+														{done ? '✓' : current ? <span className="ai-sp-pulse-dot" /> : <span className="ai-sp-idle-dot" />}
+													</span>
+													<span className="ai-sp-step-icon-emoji">{s.icon}</span>
+													<span className="ai-sp-step-label">{s.label}{current ? <span className="ai-sp-ellipsis"><span>.</span><span>.</span><span>.</span></span> : ''}</span>
+												</div>
+											);
+										})}
+									</div>
+
 									<ul className="job-search-skeleton-list" aria-hidden>
 										{[0, 1, 2, 3].map((k) => (
 											<li key={k} className="job-search-skeleton-row">
@@ -1300,7 +1566,7 @@ function JobSearch() {
 											</li>
 										))}
 									</ul>
-								) : null}
+								</>) : null}
 
 								{/* ── Applied pipeline cards — filtered by selected pipeline tab ── */}
 								{activeView === 'applied' && !showSkeleton && !showError ? (() => {
@@ -1347,7 +1613,8 @@ function JobSearch() {
 													<MdBusiness size={12} className="job-meta-icon" aria-hidden />{job.company}
 													<span className="job-search-job-dot"> · </span>
 													<MdLocationOn size={12} className="job-meta-icon" aria-hidden />{job.location}
-													<span className="job-search-job-dot"> · </span>
+												</p>
+												<p className="job-search-job-meta-line job-search-job-meta-line--tags">
 													<span className="job-search-job-kind">{EMPLOYMENT_OPTIONS.find((o) => o.value === job.employmentKind)?.label}</span>
 													<span className="job-search-job-dot"> · </span>
 													<span className="job-search-job-kind">{WORK_MODE_OPTIONS.find((o) => o.value === job.workMode)?.label}</span>
@@ -1459,16 +1726,35 @@ function JobSearch() {
 														) : null}
 													</div>
 													<p className="job-search-job-meta-line">
-														<MdBusiness size={12} className="job-meta-icon" aria-hidden />{job.company} <span className="job-search-job-dot">·</span> <MdLocationOn size={12} className="job-meta-icon" aria-hidden />{job.location}
+														<MdBusiness size={12} className="job-meta-icon" aria-hidden />{job.company}
 														<span className="job-search-job-dot"> · </span>
-														<span className="job-search-job-kind">
-															{EMPLOYMENT_OPTIONS.find((o) => o.value === job.employmentKind)?.label}
-														</span>
-														<span className="job-search-job-dot"> · </span>
-														<span className="job-search-job-kind">
-															{WORK_MODE_OPTIONS.find((o) => o.value === job.workMode)?.label}
-														</span>
+														<MdLocationOn size={12} className="job-meta-icon" aria-hidden />{job.location}
 													</p>
+													<p className="job-search-job-meta-line job-search-job-meta-line--tags">
+														<span className="job-search-job-kind">{EMPLOYMENT_OPTIONS.find((o) => o.value === job.employmentKind)?.label}</span>
+														<span className="job-search-job-dot"> · </span>
+														<span className="job-search-job-kind">{WORK_MODE_OPTIONS.find((o) => o.value === job.workMode)?.label}</span>
+														{job.detail.experience && <>
+															<span className="job-search-job-dot"> · </span>
+															<span className="job-search-job-kind">{job.detail.experience}</span>
+														</>}
+													</p>
+													{(job.detail.salary || job.detail.posted !== 'Recently') && (
+														<p className="job-search-job-meta-line job-search-job-meta-line--info">
+															{job.detail.salary && (
+																<span className="job-card-salary"><MdAttachMoney size={12} aria-hidden />{job.detail.salary}</span>
+															)}
+															{job.detail.salary && job.detail.posted !== 'Recently' && <span className="job-search-job-dot"> · </span>}
+															{job.detail.posted !== 'Recently' && (
+																<span className="job-card-posted"><MdAccessTime size={11} aria-hidden />{job.detail.posted}</span>
+															)}
+															{job.sourceKind && (
+																<span className="job-card-source-chip">
+																	{job.sourceKind === 'ats' ? '🏢 ATS' : job.sourceKind === 'direct' ? '✅ Direct' : job.sourceKind}
+																</span>
+															)}
+														</p>
+													)}
 													{activeView === 'matches' && job.matchReasons?.length ? (
 														<div className="job-search-match-reasons">
 															{job.matchReasons.map((r) => (
@@ -1658,6 +1944,14 @@ function JobSearch() {
 										{previewJob.detail.salary ? (
 											<span className="job-search-preview-chip job-search-preview-chip--accent"><MdAttachMoney size={10} style={{marginRight:1,verticalAlign:'middle'}}/>{previewJob.detail.salary}</span>
 										) : null}
+										{previewJob.detail.experience ? (
+											<span className="job-search-preview-chip job-search-preview-chip--muted"><MdBarChart size={10} style={{marginRight:3,verticalAlign:'middle'}}/>{previewJob.detail.experience}</span>
+										) : null}
+										{previewJob.sourceKind ? (
+											<span className="job-search-preview-chip job-search-preview-chip--muted">
+												{previewJob.sourceKind === 'ats' ? '🏢 ATS Listing' : previewJob.sourceKind === 'direct' ? '✅ Direct Apply' : previewJob.sourceKind}
+											</span>
+										) : null}
 										{previewJob.hiringStatus ? (
 											<span className="job-search-preview-chip jd-chip--hiring"><MdTrendingUp size={10} style={{marginRight:3,verticalAlign:'middle'}}/>{previewJob.hiringStatus}</span>
 										) : null}
@@ -1812,9 +2106,26 @@ function JobSearch() {
 
 						{/* ── 4-action footer ── */}
 						<footer className="jd-footer">
-							<button type="button" className="jd-action-btn jd-action-btn--apply" onClick={() => { setAppliedIds((prev) => new Set(prev).add(previewJob.id)); setAppStages((prev) => ({ ...prev, [previewJob.id]: 'applied' })); message.success('Application submitted!'); }} disabled={appliedIds.has(previewJob.id)}>
+							<button
+								type="button"
+								className="jd-action-btn jd-action-btn--apply"
+								disabled={appliedIds.has(previewJob.id)}
+								onClick={() => {
+									if (previewJob.detail.applyUrl) {
+										window.open(previewJob.detail.applyUrl, '_blank', 'noopener,noreferrer');
+										setPendingApplyJob(previewJob);
+									} else {
+										setAppliedIds((prev) => new Set(prev).add(previewJob.id));
+										setAppStages((prev) => ({ ...prev, [previewJob.id]: 'applied' }));
+										message.success('Marked as applied in your tracker!');
+									}
+								}}
+							>
 								<span className="jd-action-icon jd-action-icon--apply">{appliedIds.has(previewJob.id) ? <MdCheckCircle size={16}/> : <MdRocketLaunch size={16}/>}</span>
-								<span className="jd-action-text"><span className="jd-action-label">{appliedIds.has(previewJob.id) ? 'Applied ✓' : 'Apply now'}</span><span className="jd-action-sub">→ tracker</span></span>
+								<span className="jd-action-text">
+									<span className="jd-action-label">{appliedIds.has(previewJob.id) ? 'Applied ✓' : 'Apply now'}</span>
+									<span className="jd-action-sub">{previewJob.detail.applyUrl ? '→ company site' : '→ tracker'}</span>
+								</span>
 							</button>
 
 							<button type="button" className={`jd-action-btn jd-action-btn--save ${savedIds.has(previewJob.id) ? 'jd-action-btn--saved' : ''}`} onClick={() => toggleSave(previewJob.id)}>
@@ -1850,6 +2161,55 @@ function JobSearch() {
 				) : null}
 			</Modal>
 
+			{/* ── Did you apply? confirmation modal ── */}
+			<Modal
+				open={!!pendingApplyJob}
+				onCancel={() => setPendingApplyJob(null)}
+				footer={null}
+				centered
+				width={420}
+				className="apply-confirm-modal"
+				closable={false}
+			>
+				{pendingApplyJob && (
+					<div className="acm-wrap">
+						<div className="acm-icon-ring">
+							<MdRocketLaunch size={26} />
+						</div>
+						<h3 className="acm-title">Did you apply?</h3>
+						<p className="acm-sub">
+							We opened <strong>{pendingApplyJob.company}</strong>'s application page in a new tab.
+							Let us know so we can track it in your pipeline.
+						</p>
+						<div className="acm-job-pill">
+							<span className="acm-job-title">{pendingApplyJob.title}</span>
+							<span className="acm-job-company">{pendingApplyJob.company}</span>
+						</div>
+						<div className="acm-actions">
+							<button
+								type="button"
+								className="acm-btn acm-btn--yes"
+								onClick={() => {
+									setAppliedIds((prev) => new Set(prev).add(pendingApplyJob.id));
+									setAppStages((prev) => ({ ...prev, [pendingApplyJob.id]: 'applied' }));
+									setPendingApplyJob(null);
+									message.success('Added to your applied pipeline!');
+								}}
+							>
+								<MdCheckCircle size={15} /> Yes, I applied
+							</button>
+							<button
+								type="button"
+								className="acm-btn acm-btn--no"
+								onClick={() => setPendingApplyJob(null)}
+							>
+								Not yet
+							</button>
+						</div>
+					</div>
+				)}
+			</Modal>
+
 			{/* ── Tour spotlight ── */}
 			{showFindTour && tourCardRect && ReactDOM.createPortal(
 				<>
@@ -1872,37 +2232,77 @@ function JobSearch() {
 							<button type="button" className="js-tour-bubble-close" onClick={() => setShowFindTour(false)} aria-label="Dismiss tour">
 								<IoClose size={12} />
 							</button>
-							{tourStep === 1 ? (
-								<>
-									<p className="js-tour-bubble-eyebrow"><MdAutoAwesome size={11} />Step 1 of 2</p>
-									<p className="js-tour-bubble-text">
-										These filters have been <strong>pre-filled from your resume / JD</strong>. Feel free to tweak them to better match what you're looking for.
-									</p>
-									<div className="js-tour-bubble-footer">
-										<span className="js-tour-bubble-dots"><span className="js-tour-dot js-tour-dot--active" /><span className="js-tour-dot" /></span>
-										<button type="button" className="js-tour-bubble-cta" onClick={() => {
-											setTourCardRect(null);
-											setTourBubblePos(null);
-											setTourStep(2);
-											setTimeout(() => {
-												const btn = document.querySelector('.job-search-sidebar .js-find-btn') as HTMLElement | null;
-												btn?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-											}, 100);
-										}}>Next →</button>
-									</div>
-								</>
-							) : (
-								<>
-									<p className="js-tour-bubble-eyebrow"><MdAutoAwesome size={11} />Step 2 of 2</p>
-									<p className="js-tour-bubble-text">
-										Happy with your filters? Click <strong>Find AI Matches</strong> to run your personalised AI job search.
-									</p>
-									<div className="js-tour-bubble-footer">
-										<span className="js-tour-bubble-dots"><span className="js-tour-dot" /><span className="js-tour-dot js-tour-dot--active" /></span>
-										<button type="button" className="js-tour-bubble-cta" onClick={() => setShowFindTour(false)}>Got it ✓</button>
-									</div>
-								</>
-							)}
+							{(() => {
+								const goNext = (next: 1|2|3|4, extra?: () => void) => {
+									setTourCardRect(null);
+									setTourBubblePos(null);
+									setTourStep(next);
+									extra?.();
+								};
+								const dots = Array.from({ length: tourTotal }, (_, i) => (
+									<span key={i} className={`js-tour-dot${i + 1 === tourStep ? ' js-tour-dot--active' : ''}`} />
+								));
+								const jdStep  = uploadedFile ? 3 : null;
+								const btnStep = uploadedFile ? 4 : 3;
+
+								if (tourStep === 1) return (
+									<>
+										<p className="js-tour-bubble-eyebrow"><MdAutoAwesome size={11} />Step 1 of {tourTotal}</p>
+										<p className="js-tour-bubble-text">
+											These <strong>skills were pre-filled</strong> from your resume. Add or remove any to sharpen your search.
+										</p>
+										<div className="js-tour-bubble-footer">
+											<span className="js-tour-bubble-dots">{dots}</span>
+											<button type="button" className="js-tour-bubble-cta" onClick={() => goNext(2)}>Next →</button>
+										</div>
+									</>
+								);
+
+								if (tourStep === 2) return (
+									<>
+										<p className="js-tour-bubble-eyebrow"><MdAutoAwesome size={11} />Step 2 of {tourTotal}</p>
+										<p className="js-tour-bubble-text">
+											Tweak <strong>Employment type</strong> and <strong>Work Mode</strong> to filter for roles that fit your lifestyle — remote, hybrid, full-time, contract and more.
+										</p>
+										<div className="js-tour-bubble-footer">
+											<span className="js-tour-bubble-dots">{dots}</span>
+											<button type="button" className="js-tour-bubble-cta" onClick={() => goNext(3)}>Next →</button>
+										</div>
+									</>
+								);
+
+								if (tourStep === jdStep) return (
+									<>
+										<p className="js-tour-bubble-eyebrow"><MdAutoAwesome size={11} />Step 3 of {tourTotal}</p>
+										<p className="js-tour-bubble-text">
+											Got a job in mind? <strong>Paste the job description</strong> here — the AI will use it to find roles that closely match that specific role.
+										</p>
+										<div className="js-tour-bubble-footer">
+											<span className="js-tour-bubble-dots">{dots}</span>
+											<button type="button" className="js-tour-bubble-cta" onClick={() => goNext(4 as 4, () => {
+												// open JD section so it's visible when step targets it
+												jdOpenRef.current = true;
+												jdSectionRef.current?.classList.add('me-jd-section--open');
+												setShowJdSection(true);
+											})}>Next →</button>
+										</div>
+									</>
+								);
+
+								// final step — Find AI Matches button
+								return (
+									<>
+										<p className="js-tour-bubble-eyebrow"><MdAutoAwesome size={11} />Step {tourTotal} of {tourTotal}</p>
+										<p className="js-tour-bubble-text">
+											All set! Click <strong>Find AI Matches</strong> to run your personalised AI job search.
+										</p>
+										<div className="js-tour-bubble-footer">
+											<span className="js-tour-bubble-dots">{dots}</span>
+											<button type="button" className="js-tour-bubble-cta" onClick={() => setShowFindTour(false)}>Got it ✓</button>
+										</div>
+									</>
+								);
+							})()}
 						</div>
 					)}
 				</>,
@@ -1921,24 +2321,17 @@ function JobSearch() {
 			>
 				<div className="js-review-body">
 					<div className="js-review-hero">
-						<div className="js-review-hero-bg" aria-hidden />
-						<div className="js-review-hero-icon"><MdAutoAwesome size={22} /></div>
-						<div>
-							<p className="js-review-eyebrow">AI Match Engine</p>
-							<h2 className="js-review-title">Review your filters</h2>
-							<p className="js-review-sub">Make sure these look right before we run the search — each query uses AI matching.</p>
+						<div className="js-review-hero-icon"><MdAutoAwesome size={28} /></div>
+						<p className="js-review-eyebrow">AI Match Engine</p>
+						<h2 className="js-review-title">Review your filters</h2>
+						<p className="js-review-sub">Make sure these look right before we run the search — each query uses AI matching.</p>
+						<div className="js-review-count-badge">
+							<MdTune size={13} />
+							{activeFilterCount} filter{activeFilterCount !== 1 ? 's' : ''} active
 						</div>
 					</div>
 
 					<div className="js-review-filters">
-						{searchQuery.trim() && (
-							<div className="js-review-row">
-								<span className="js-review-row-label">Search</span>
-								<span className="js-review-chip js-review-chip--blue">
-									<MdSearch size={10} />{searchQuery}
-								</span>
-							</div>
-						)}
 						{empFilter.length > 0 && (
 							<div className="js-review-row">
 								<span className="js-review-row-label">Employment</span>
@@ -1992,6 +2385,15 @@ function JobSearch() {
 										</span>
 									))}
 								</div>
+							</div>
+						)}
+						{(locationFilter.city || locationFilter.country) && (
+							<div className="js-review-row">
+								<span className="js-review-row-label">Location</span>
+								<span className="js-review-chip js-review-chip--cyan">
+									<MdLocationOn size={10} />
+									{[locationFilter.city, locationFilter.country].filter(Boolean).join(', ')}
+								</span>
 							</div>
 						)}
 					</div>

@@ -1,14 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import { Input, Select } from 'antd';
-import { MapContainer, Marker, Popup, TileLayer, useMap, useMapEvents } from 'react-leaflet';
+import { MapContainer, Marker, TileLayer, useMap, useMapEvents } from 'react-leaflet';
 import {
 	MdGpsFixed, MdLocationOn, MdAdd, MdRemove,
 	MdLayers, MdFullscreen, MdFullscreenExit,
 } from 'react-icons/md';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { MOCK_JOBS } from './jobSearchMock';
-
 /* ── Fix Leaflet marker icons ── */
 delete (L.Icon.Default.prototype as any)._getIconUrl;
 L.Icon.Default.mergeOptions({
@@ -24,11 +22,6 @@ const DOT_MARKER = L.divIcon({
 	iconSize: [16, 16], iconAnchor: [8, 8],
 });
 
-const jobMarker = (hue: number) => L.divIcon({
-	className: '',
-	html: `<div style="width:20px;height:20px;border-radius:5px;background:hsl(${hue},65%,52%);border:2.5px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,0.25);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;color:#fff;font-family:sans-serif;">J</div>`,
-	iconSize: [20, 20], iconAnchor: [10, 10],
-});
 
 /* ── Tile layers ── */
 type TileStyle = 'street' | 'satellite' | 'dark';
@@ -39,27 +32,6 @@ const TILES: Record<TileStyle, { url: string; label: string; sub?: string }> = {
 };
 const TILE_ORDER: TileStyle[] = ['street', 'satellite', 'dark'];
 const TILE_ICONS: Record<TileStyle, string> = { street: '🗺', satellite: '🛰', dark: '🌙' };
-
-/* ── Known city coords for job pins ── */
-const CITY_COORDS: Record<string, [number, number]> = {
-	'Bengaluru':     [12.9716,  77.5946],
-	'Bangalore':     [12.9716,  77.5946],
-	'Dublin':        [53.3498,  -6.2603],
-	'San Francisco': [37.7749, -122.4194],
-	'New York':      [40.7128,  -74.0060],
-	'London':        [51.5074,   -0.1278],
-	'Mumbai':        [19.0760,  72.8777],
-	'Delhi':         [28.6139,  77.2090],
-	'Hyderabad':     [17.3850,  78.4867],
-	'Chennai':       [13.0827,  80.2707],
-	'Pune':          [18.5204,  73.8567],
-	'Singapore':     [ 1.3521, 103.8198],
-	'Sydney':        [-33.8688, 151.2093],
-	'Tokyo':         [35.6762, 139.6503],
-	'Berlin':        [52.5200,  13.4050],
-	'Paris':         [48.8566,   2.3522],
-	'Toronto':       [43.6532,  -79.3832],
-};
 
 /* ── Countries list ── */
 const COUNTRIES = [
@@ -124,12 +96,39 @@ function ZoomControls() {
 	);
 }
 
-/* ── Main component ── */
-interface Props { onChange?: (country: string, city: string) => void; }
+/* ── State abbreviation → country name ── */
+const STATE_TO_COUNTRY: Record<string, string> = {
+	// India states
+	KA:'India', MH:'India', DL:'India', TN:'India', UP:'India', GJ:'India',
+	WB:'India', RJ:'India', KL:'India', AP:'India', TS:'India', MP:'India',
+	PB:'India', HR:'India', BR:'India', OR:'India', AS:'India', JK:'India',
+	// US states
+	NY:'United States', CA:'United States', TX:'United States', FL:'United States',
+	WA:'United States', MA:'United States', IL:'United States', GA:'United States',
+	NC:'United States', NJ:'United States', VA:'United States', OH:'United States',
+	AZ:'United States', CO:'United States', MI:'United States', TN_US:'United States',
+	// UK
+	ENG:'United Kingdom', SCT:'United Kingdom', WLS:'United Kingdom',
+};
 
-export function LocationFilter({ onChange }: Props) {
-	const [country,    setCountry]    = useState('');
-	const [city,       setCity]       = useState('');
+/* ── Main component ── */
+interface Props {
+	onChange?: (country: string, city: string) => void;
+	initialCity?: string;
+	initialCountry?: string;
+}
+
+export function LocationFilter({ onChange, initialCity = '', initialCountry = '' }: Props) {
+	const [country,    setCountry]    = useState(initialCountry);
+	const [city,       setCity]       = useState(initialCity);
+
+	useEffect(() => {
+		if (initialCity || initialCountry) {
+			resolveView(initialCity, initialCountry);
+			onChange?.(initialCountry, initialCity);
+		}
+	// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [initialCity, initialCountry]);
 	const [view,       setView]       = useState<{ coords: [number, number]; zoom: number } | null>(null);
 	const [geoLoading, setGeoLoading] = useState(false);
 	const [geoError,   setGeoError]   = useState('');
@@ -200,9 +199,6 @@ const [pickLoading,  setPickLoading]  = useState(false);
 		setTileStyle(TILE_ORDER[(i + 1) % TILE_ORDER.length]);
 	};
 
-	/* Job pins — only for cities with known coords */
-	const jobPins = MOCK_JOBS.filter(j => j.location in CITY_COORDS);
-
 	const mapCenter: [number, number] = view?.coords ?? [22.5, 80.0];
 	const mapZoom   = view?.zoom ?? 4;
 	const tile      = TILES[tileStyle];
@@ -248,19 +244,6 @@ const [pickLoading,  setPickLoading]  = useState(false);
 					zoomControl={false} scrollWheelZoom dragging attributionControl={false}>
 
 					<TileLayer key={tileStyle} url={tile.url} subdomains={tile.sub ?? 'abc'} maxZoom={19} />
-
-					{/* Job pins */}
-					{jobPins.map(job => (
-						<Marker key={job.id} position={CITY_COORDS[job.location]} icon={jobMarker(job.logoHue)}>
-							<Popup className="loc-job-popup">
-								<div className="loc-job-popup-inner">
-									<strong>{job.title}</strong>
-									<span>{job.company}</span>
-									<span className="loc-job-popup-loc">📍 {job.location}</span>
-								</div>
-							</Popup>
-						</Marker>
-					))}
 
 					{/* User location marker */}
 					{view?.coords && <Marker position={view.coords} icon={DOT_MARKER} />}
