@@ -8297,4 +8297,38 @@ body.dark-theme .js-chip-group--cyan .js-chip--active {
 .aip-close-btn--out {
 	animation: aip-close-out 0.2s ease forwards !important;
 }
+
+/* ── Banner typing label ─────────────────────────────────────────────────── */
+/* "Built by AI · from your previously uploaded resume" = 50 chars           */
+/* px width avoids ch-unit variance across fallback monospace fonts           */
+.aip-banner-typing {
+	position: absolute;
+	top: 8px;
+	left: 14px;
+	font-size: 9px;
+	font-family: 'JetBrains Mono', 'Fira Code', ui-monospace, monospace;
+	color: rgba(74, 222, 128, 0.62);
+	letter-spacing: 0.01em;
+	white-space: nowrap;
+	overflow: hidden;
+	display: inline-block;
+	width: 0;
+	max-width: calc(100% - 28px);
+	border-right: 1.5px solid rgba(74, 222, 128, 0.7);
+	animation:
+		aip-banner-typing 2.9s steps(50, end) 0.5s forwards,
+		aip-banner-cursor 0.7s step-end infinite;
+	z-index: 2;
+	pointer-events: none;
+}
+
+@keyframes aip-banner-typing {
+	from { width: 0; }
+	to   { width: 300px; }
+}
+
+@keyframes aip-banner-cursor {
+	0%, 100% { border-right-color: rgba(74, 222, 128, 0.7); }
+	50%       { border-right-color: transparent; }
+}
 /* ═══════════════════════════════════════════════════════════ */

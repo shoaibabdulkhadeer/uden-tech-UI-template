@@ -1235,6 +1235,9 @@ function JobSearch() {
 							<section className="job-search-card job-search-profile-card">
 								<div className="job-search-profile-banner" aria-hidden>
 									<div className="job-search-profile-heatmap" />
+									{boostedProfile && (
+										<span className="aip-banner-typing">Built by AI · from your previously uploaded resume</span>
+									)}
 								</div>
 								<div className="job-search-profile-body">
 									{/* Boost button */}
@@ -2738,6 +2741,7 @@ function JobSearch() {
 									<div className="aip-banner" aria-hidden>
 										<div className="aip-banner-orb aip-banner-orb--1" />
 										<div className="aip-banner-orb aip-banner-orb--2" />
+										<span className="aip-banner-typing">Built by AI · from your previously uploaded resume</span>
 										<div className="aip-banner-badge">
 											<MdAutoAwesome size={11} /> AI Profile
 										</div>
