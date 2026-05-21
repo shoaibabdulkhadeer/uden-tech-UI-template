@@ -1,4 +1,4 @@
-﻿import { Alert, Avatar, Button, Checkbox, Drawer, Empty, Input, message, Modal, notification, Radio, Segmented, Select, Skeleton, Tabs, Tooltip, Upload } from 'antd';
+﻿import { Alert, Avatar, Button, Checkbox, Drawer, Empty, Input, message, Modal, notification, Radio, Segmented, Select, Skeleton, Spin, Tabs, Tooltip, Upload } from 'antd';
 import { CheckCircleFilled, InboxOutlined, InfoCircleTwoTone } from '@ant-design/icons';
 import { easeInOut, motion } from 'framer-motion';
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -59,6 +59,10 @@ import { AppDispatch } from '../../../redux/store';
 import { uploadResume, resumeUploadReset } from '../../../redux/features/profile/resumeUploadSlice';
 import { searchJobs, jobSearchReset } from '../../../redux/features/jobSearch/jobSearchSlice';
 import { saveJob, saveJobReset } from '../../../redux/features/jobSearch/saveJobSlice';
+import { getSavedJobs, getSavedJobsReset } from '../../../redux/features/jobSearch/getSavedJobsSlice';
+import { unsaveJob, unsaveJobReset } from '../../../redux/features/jobSearch/unsaveJobSlice';
+import { getJobById, getJobByIdReset } from '../../../redux/features/jobSearch/getJobByIdSlice';
+import { getProfile, getProfileReset } from '../../../redux/features/profile/getProfileSlice';
 import DashboardPageHeadArt from '../Dashboard/DashboardPageHeadArt';
 import DashboardShellNetwork from '../Dashboard/DashboardShellNetwork';
 import { LocationFilter } from './LocationFilter';
@@ -76,8 +80,6 @@ import './job-search.css';
 import '../../../styles/phase2-theme.css';
 import '../../../styles/dashboard-arena.css';
 
-const SAVED_STORAGE_KEY = 'jobSearch.savedIds';
-const APPLIED_STORAGE_KEY = 'jobSearch.appliedIds';
 
 /**
  * Maps whatever wording the API returns for experience level
@@ -154,27 +156,6 @@ const ROUND_ICONS: Record<string, React.ReactNode> = {
 	'Design Review':   <MdStar size={14}/>,
 };
 
-function loadSavedIds(): Set<string> {
-	try {
-		const raw = sessionStorage.getItem(SAVED_STORAGE_KEY);
-		if (!raw) return new Set();
-		const arr = JSON.parse(raw) as string[];
-		return new Set(arr.filter(Boolean));
-	} catch {
-		return new Set();
-	}
-}
-
-function loadAppliedIds(): Set<string> {
-	try {
-		const raw = sessionStorage.getItem(APPLIED_STORAGE_KEY);
-		if (!raw) return new Set();
-		const arr = JSON.parse(raw) as string[];
-		return new Set(arr.filter(Boolean));
-	} catch {
-		return new Set();
-	}
-}
 
 type ActiveView = 'matches' | 'saved' | 'applied';
 type UiPreview = 'normal' | 'loading' | 'error' | 'empty';
@@ -201,6 +182,14 @@ const EXP_META: Record<string, string> = {
 	executive:  'Executive',
 };
 
+// API-accepted sector values → display labels
+const SECTOR_META: Record<string, string> = {
+	private:    'Private (MNC / Startup / Corporate)',
+	public:     'Public Sector / PSU',
+	government: 'Government / Govt Bodies',
+	freelance:  'Freelance / Contract',
+};
+
 function JobSearch() {
 	const navigate = useNavigate();
 	const location = useLocation();
@@ -214,6 +203,18 @@ function JobSearch() {
 	const { saveJobData, status: saveJobStatus, error: saveJobError } = useSelector(
 		(state: any) => state.saveJobReducer
 	);
+	const { savedJobsData, status: savedJobsStatus, error: savedJobsError } = useSelector(
+		(state: any) => state.getSavedJobsReducer
+	);
+	const { unsaveJobData, status: unsaveJobStatus, error: unsaveJobError, pendingId: unsavePendingId } = useSelector(
+		(state: any) => state.unsaveJobReducer
+	);
+	const { jobByIdData, status: jobByIdStatus, error: jobByIdError } = useSelector(
+		(state: any) => state.getJobByIdReducer
+	);
+	const { profileData, status: profileStatus } = useSelector(
+		(state: any) => state.getProfileReducer
+	);
 
 	const [activeView, setActiveView] = useState<ActiveView>('matches');
 	const [empFilter, setEmpFilter] = useState<EmploymentKind[]>([]);
@@ -223,8 +224,13 @@ function JobSearch() {
 	const [skillsFilter, setSkillsFilter] = useState<string[]>([]);
 	const [skillInput, setSkillInput] = useState('');
 	const [locationResetKey, setLocationResetKey] = useState(0);
-	const [savedIds, setSavedIds] = useState<Set<string>>(loadSavedIds);
-	const [appliedIds, setAppliedIds] = useState<Set<string>>(loadAppliedIds);
+	const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
+	const [apiSavedJobs, setApiSavedJobs] = useState<JobItem[]>([]);
+	const [savedJobsTotal, setSavedJobsTotal] = useState(0);
+	const [savedJobsPage, setSavedJobsPage] = useState(1);
+	const SAVED_PAGE_LIMIT = 10;
+	const [boostedProfile, setBoostedProfile] = useState<any>(null);
+	const [appliedIds, setAppliedIds] = useState<Set<string>>(new Set());
 	const [appStages, setAppStages] = useState<Record<string, 'applied' | 'screening' | 'interview' | 'offer'>>({});
 	const [pipelineTab, setPipelineTab] = useState<'applied' | 'screening' | 'interview' | 'offer'>('applied');
 	const [dismissedIds, setDismissedIds] = useState<Set<string>>(() => new Set());
@@ -257,6 +263,13 @@ function JobSearch() {
 	const jdOpenRef = useRef(false);
 	const aiProgressRef = useRef<HTMLDivElement>(null);
 	const [showReviewModal, setShowReviewModal] = useState(false);
+	const [showProfileModal, setShowProfileModal] = useState(false);
+	const userId = useMemo(() => {
+		try {
+			const data: any = decodeToken(sessionStorage.getItem('accessToken') || '');
+			return data?.userid || data?.userId || data?.user_id || null;
+		} catch { return null; }
+	}, []);
 	const [apiMatchedJobs, setApiMatchedJobs] = useState<JobItem[]>([]);
 	const [locationFilter, setLocationFilter] = useState<{ city: string; country: string }>({ city: '', country: '' });
 	const [pendingApplyJob, setPendingApplyJob] = useState<JobItem | null>(null);
@@ -360,6 +373,10 @@ function JobSearch() {
 			});
 			const parsedLoc = parseLocationString(data?.location);
 			if (parsedLoc) setDetectedLocation(parsedLoc);
+			// Fetch fresh profile after resume upload (button will show spinner, then go green)
+			if (userId) {
+				dispatch(getProfile(userId));
+			}
 			dispatch(resumeUploadReset());
 		} else if (!resumeStatus && resumeData && resumeData?.statusCode === 400) {
 			message.warning(resumeData?.message || 'Bad Request');
@@ -458,6 +475,123 @@ function JobSearch() {
 	// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [saveJobData, saveJobStatus, saveJobError]);
 
+	// Handle get saved jobs API response
+	useEffect(() => {
+		if (savedJobsStatus) return;
+		if (!savedJobsData && !savedJobsError) return;
+
+		if (savedJobsError && !savedJobsData) {
+			message.error(savedJobsError || 'Failed to fetch saved jobs');
+			dispatch(getSavedJobsReset());
+			return;
+		}
+
+		const code = savedJobsData?.statusCode ?? savedJobsData?.status;
+
+		if (code === 200 || code === 201) {
+			// New response shape: { data: { saved_jobs: [...], total, pageId, pageLimit } }
+			const raw: any[]  = savedJobsData?.data?.saved_jobs ?? [];
+			const total: number = savedJobsData?.data?.total ?? 0;
+			const pageId: number = savedJobsData?.data?.pageId ?? 1;
+
+			setSavedJobsTotal(total);
+			setSavedJobsPage(pageId);
+
+			const offset = (pageId - 1) * SAVED_PAGE_LIMIT;
+			const mapped = raw.map((entry: any, idx: number) =>
+				mapApiJobToJobItem(entry.job, offset + idx)
+			);
+
+			if (pageId === 1) {
+				// First page — replace list and reset savedIds
+				setApiSavedJobs(mapped);
+				setSavedIds(new Set(mapped.map((j) => j.id)));
+			} else {
+				// Subsequent pages — append
+				setApiSavedJobs((prev) => [...prev, ...mapped]);
+				setSavedIds((prev) => {
+					const n = new Set(prev);
+					mapped.forEach((j) => n.add(j.id));
+					return n;
+				});
+			}
+		} else if (code === 400) {
+			message.warning(savedJobsData?.message || 'Bad request');
+		} else if (code === 500) {
+			message.error(savedJobsData?.message || 'Server error');
+		}
+
+		dispatch(getSavedJobsReset());
+	// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [savedJobsData, savedJobsStatus, savedJobsError]);
+
+	// Handle unsave job API response
+	useEffect(() => {
+		if (unsaveJobStatus) return;
+		if (!unsaveJobData && !unsaveJobError) return;
+
+		if (unsaveJobError && !unsaveJobData) {
+			message.error(unsaveJobError || 'Failed to remove saved job');
+			dispatch(unsaveJobReset());
+			return;
+		}
+
+		const code = unsaveJobData?.statusCode ?? unsaveJobData?.status;
+
+		if (code === 200 || code === 201) {
+			const removedId = unsaveJobData?.jobId;
+			setSavedIds((prev) => { const n = new Set(prev); n.delete(removedId); return n; });
+			setApiSavedJobs((prev) => prev.filter((j) => j.id !== removedId));
+			setSavedJobsTotal((prev) => Math.max(0, prev - 1));
+			message.success(unsaveJobData?.message || 'Job removed from saved list');
+		} else if (code === 400) {
+			message.warning(unsaveJobData?.message || 'Bad request');
+		} else if (code === 500) {
+			message.error(unsaveJobData?.message || 'Server error');
+		}
+
+		dispatch(unsaveJobReset());
+	// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [unsaveJobData, unsaveJobStatus, unsaveJobError]);
+
+	// Handle get job by ID — update preview modal with fresh API data
+	useEffect(() => {
+		if (jobByIdStatus) return;
+		if (!jobByIdData && !jobByIdError) return;
+
+		if (jobByIdError && !jobByIdData) {
+			// silently ignore — modal still shows cached data
+			dispatch(getJobByIdReset());
+			return;
+		}
+
+		const code = jobByIdData?.statusCode ?? jobByIdData?.status;
+
+		if (code === 200 || code === 201) {
+			const raw = jobByIdData?.data;
+			if (raw) {
+				setPreviewJob((prev) =>
+					prev ? mapApiJobToJobItem(raw, 0) : null
+				);
+			}
+		}
+
+		dispatch(getJobByIdReset());
+	// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [jobByIdData, jobByIdStatus, jobByIdError]);
+
+	// Handle get profile response
+	useEffect(() => {
+		if (profileStatus) return;
+		if (!profileData) return;
+		const code = profileData?.statusCode ?? profileData?.status;
+		if (code === 200 || code === 201) {
+			setBoostedProfile(profileData?.data ?? null);
+		}
+		dispatch(getProfileReset());
+	// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [profileData, profileStatus]);
+
 	const handleMatchJd = () => {
 		if (!pastedJd.trim()) {
 			message.warning('Please paste a job description first');
@@ -472,14 +606,6 @@ function JobSearch() {
 			setDetectedFilters({ skills: ['Python', 'Machine Learning', 'SQL', 'Data Analysis'], expLevel: 'senior', workMode: 'hybrid', employment: ['fulltime'], source: 'jd' });
 		}, 1500);
 	};
-
-	useEffect(() => {
-		sessionStorage.setItem(SAVED_STORAGE_KEY, JSON.stringify(Array.from(savedIds)));
-	}, [savedIds]);
-
-	useEffect(() => {
-		sessionStorage.setItem(APPLIED_STORAGE_KEY, JSON.stringify(Array.from(appliedIds)));
-	}, [appliedIds]);
 
 	// total tour steps: 3 without resume, 4 with resume (adds JD step)
 	const tourTotal = uploadedFile ? 4 : 3;
@@ -541,15 +667,30 @@ function JobSearch() {
 		return () => clearInterval(id);
 	}, [listLoading]);
 
+	/* Fetch saved jobs + profile on page load */
+	useEffect(() => {
+		dispatch(getSavedJobs());
+		if (userId) dispatch(getProfile(userId));
+	}, []);
+
 	/* Deep-link from Dashboard (e.g. /job-search?tab=matches) */
 	useEffect(() => {
 		const tab = new URLSearchParams(location.search).get('tab');
 		if (tab === 'matches' || tab === 'saved' || tab === 'applied') {
 			setActiveView(tab as ActiveView);
+			if (tab === 'saved') {
+				setSavedJobsPage(1);
+				setSavedJobsTotal(0);
+				dispatch(getSavedJobs({ pageId: 1, pageLimit: SAVED_PAGE_LIMIT }));
+			}
 		}
 	}, [location]);
 
-
+	/* One-time cleanup — remove any stale keys left by previous builds */
+	useEffect(() => {
+		sessionStorage.removeItem('jobSearch.appliedIds');
+		sessionStorage.removeItem('jobSearch.savedIds');
+	}, []);
 
 	const displayName = useMemo(() => {
 		try {
@@ -564,8 +705,8 @@ function JobSearch() {
 
 	const baseJobs = useMemo(() => {
 		if (activeView === 'saved') {
-			const pool = apiMatchedJobs.length > 0 ? [...MOCK_JOBS, ...apiMatchedJobs] : MOCK_JOBS;
-			return pool.filter((j) => savedIds.has(j.id));
+			// Always use API data — never fall back to local savedIds
+			return apiSavedJobs;
 		}
 		if (activeView === 'applied') {
 			const pool = apiMatchedJobs.length > 0 ? [...MOCK_JOBS, ...apiMatchedJobs] : MOCK_JOBS;
@@ -583,7 +724,7 @@ function JobSearch() {
 				.sort((a, b) => (b.matchScore ?? 0) - (a.matchScore ?? 0));
 		}
 		return MOCK_JOBS;
-	}, [activeView, savedIds, appliedIds, apiMatchedJobs, submittedFilters]);
+	}, [activeView, appliedIds, apiMatchedJobs, apiSavedJobs, submittedFilters]);
 
 	const filteredJobs = useMemo(() => {
 		let list = baseJobs;
@@ -599,17 +740,13 @@ function JobSearch() {
 
 	const toggleSave = useCallback((id: string, e?: React.MouseEvent) => {
 		e?.stopPropagation();
-		setSavedIds((prev) => {
-			const next = new Set(prev);
-			if (next.has(id)) {
-				next.delete(id);
-			} else {
-				next.add(id);
-				dispatch(saveJob(id));
-			}
-			return next;
-		});
-	}, []);
+		if (savedIds.has(id)) {
+			dispatch(unsaveJob(id));
+		} else {
+			setSavedIds((prev) => { const n = new Set(prev); n.add(id); return n; });
+			dispatch(saveJob(id));
+		}
+	}, [savedIds]);
 
 	const dismiss = useCallback(
 		(id: string) => {
@@ -633,12 +770,18 @@ function JobSearch() {
 		setShowReviewModal(true);
 	}, [activeFilterCount]);
 
+	// API accepts exactly: 'junior' | 'mid' | 'senior' | 'lead'
 	const mapExpLevel = (v: string | undefined): string | undefined => {
 		if (!v) return undefined;
-		if (v === 'entry')  return 'junior';
-		if (v === 'mid')    return 'mid-level';
-		if (v === 'senior') return 'senior';
-		return v;
+		const map: Record<string, string> = {
+			entry:      'junior',
+			internship: 'junior',   // closest API equivalent
+			mid:        'mid',
+			senior:     'senior',
+			lead:       'lead',
+			executive:  'lead',     // closest API equivalent
+		};
+		return map[v] ?? undefined;
 	};
 
 	const mapWorkMode = (modes: WorkMode[]): string | undefined => {
@@ -706,7 +849,9 @@ function JobSearch() {
 				experience:       item.experience || item.experience_level || undefined,
 				applyUrl:         item.apply_url || item.applyUrl || item.source_url || undefined,
 				description:      item.description_summary || item.description || item.job_description || '',
-				responsibilities: item.responsibilities || [],
+				responsibilities: item.what_youll_do || item.responsibilities || [],
+				requirements:     item.requirements || [],
+				niceToHave:       item.nice_to_have || [],
 				skills,
 				skillsMatched:    item.skills_matched || item.skillsMatched || [],
 				skillGaps:        item.skill_gaps || item.skillGaps || [],
@@ -714,8 +859,6 @@ function JobSearch() {
 			},
 		};
 	};
-
-	const VALID_SECTORS = new Set(['private', 'public', 'government', 'freelance']);
 
 	const handleConfirmSearch = () => {
 		setShowReviewModal(false);
@@ -728,27 +871,30 @@ function JobSearch() {
 		const jd = pastedJd.trim();
 		// Use 'description' mode when only JD is provided; otherwise 'title'
 		const mode = jd && !uploadedFile ? 'description' : 'title';
-		// mode='title' requires a query — fall back to first skill or generic term
+		// mode='title' requires a query — use first skill or generic fallback
 		const query = mode === 'title'
 			? (skillsFilter.length > 0 ? skillsFilter[0] : 'Software Engineer')
 			: undefined;
 
-		// sector must be one of the API's accepted values
-		const sector = sectorFilter && VALID_SECTORS.has(sectorFilter) ? sectorFilter : undefined;
+		// Build filters and strip any undefined/null keys before sending
+		const rawFilters: Record<string, any> = {
+			sector:           sectorFilter || undefined,
+			work_mode:        mapWorkMode(workFilter),
+			job_type:         mapJobType(empFilter),
+			experience_level: mapExpLevel(expFilter),
+			location:         locationStr,
+			skills:           skillsFilter.length ? skillsFilter : undefined,
+		};
+		const filters = Object.fromEntries(
+			Object.entries(rawFilters).filter(([, v]) => v !== undefined && v !== null)
+		);
 
 		dispatch(searchJobs({
 			mode,
 			query,
 			description: jd || undefined,
 			max_results: 20,
-			filters: {
-				sector,
-				work_mode:         mapWorkMode(workFilter),
-				job_type:          mapJobType(empFilter),
-				experience_level:  mapExpLevel(expFilter),
-				location:          locationStr,
-				skills:            skillsFilter.length ? skillsFilter : undefined,
-			},
+			...(Object.keys(filters).length > 0 && { filters }),
 		}));
 	};
 
@@ -806,10 +952,17 @@ function JobSearch() {
 		setUiPreview('normal');
 	}, [previewUrl]);
 
-	const openJobPreview = useCallback((job: JobItem) => setPreviewJob(job), []);
-	const closeJobPreview = useCallback(() => setPreviewJob(null), []);
+	const openJobPreview = useCallback((job: JobItem) => {
+		setPreviewJob(job);          // show modal immediately with existing data
+		dispatch(getJobById(job.id)); // fetch fresh details from API
+	}, []);
+	const closeJobPreview = useCallback(() => {
+		setPreviewJob(null);
+		dispatch(getJobByIdReset());
+	}, []);
 
 	const showSkeleton = uiPreview === 'loading' || (listLoading && uiPreview === 'normal');
+	const showSavedSkeleton = activeView === 'saved' && savedJobsStatus;
 	const showError = uiPreview === 'error';
 	const showForcedEmpty = uiPreview === 'empty';
 	const listToRender = showForcedEmpty ? [] : filteredJobs;
@@ -932,13 +1085,10 @@ function JobSearch() {
 				popupClassName="js-select-dropdown"
 				transitionName=""
 				options={[
-					{ value: 'private',      label: 'Private' },
-					{ value: 'psu',          label: 'Public Sector / PSU' },
-					{ value: 'government',   label: 'Government / Govt Bodies' },
-					{ value: 'freelance',    label: 'Freelance / Contract' },
-					{ value: 'startup',      label: 'Startup' },
-					{ value: 'ngo',          label: 'NGO / Non-profit' },
-					{ value: 'mnc',          label: 'MNC' },
+					{ value: 'private',    label: 'Private (MNC / Startup / Corporate)' },
+					{ value: 'public',     label: 'Public Sector / PSU' },
+					{ value: 'government', label: 'Government / Govt Bodies' },
+					{ value: 'freelance',  label: 'Freelance / Contract' },
 				]}
 			/>
 			</div>{/* end js-filter-top-group */}
@@ -1078,26 +1228,83 @@ function JobSearch() {
 									<div className="job-search-profile-heatmap" />
 								</div>
 								<div className="job-search-profile-body">
+									{/* Boost button */}
+									<Tooltip
+										placement="leftTop"
+										overlayClassName="boost-tt-overlay"
+										mouseEnterDelay={0.25}
+										title={
+											profileStatus ? (
+												<div className="boost-tt">
+													<span className="boost-tt-icon">⚡</span>
+													<div className="boost-tt-copy">
+														<p className="boost-tt-title">Building AI Profile…</p>
+														<p className="boost-tt-sub">Scanning your resume for skills &amp; experience</p>
+													</div>
+												</div>
+											) : boostedProfile ? (
+												<div className="boost-tt">
+													<span className="boost-tt-icon">✦</span>
+													<div className="boost-tt-copy">
+														<p className="boost-tt-title">AI Profile ready</p>
+														<p className="boost-tt-sub">Your profile was built from your resume — click to view skills, experience &amp; more</p>
+													</div>
+												</div>
+											) : (
+												<div className="boost-tt">
+													<span className="boost-tt-icon">🚀</span>
+													<div className="boost-tt-copy">
+														<p className="boost-tt-title">Build your AI Profile</p>
+														<p className="boost-tt-sub">Upload a resume to extract your skills and power up job matching</p>
+													</div>
+												</div>
+											)
+										}
+									>
+										<div className={`boost-btn-wrap${profileStatus ? ' boost-btn-wrap--loading' : boostedProfile ? ' boost-btn-wrap--active' : ''}`}>
+											<span className="boost-ring" aria-hidden />
+											<button
+												type="button"
+												className="boost-btn"
+												onClick={() => setShowProfileModal(true)}
+											>
+												{profileStatus ? (
+													<MdAutoAwesome size={16} className="boost-btn-icon" />
+												) : boostedProfile ? (
+													<><span className="boost-btn-star">✦</span><span className="boost-btn-label">AI</span></>
+												) : (
+													<><MdAutoAwesome size={14} className="boost-btn-icon" /><span className="boost-btn-label">AI</span></>
+												)}
+											</button>
+										</div>
+									</Tooltip>
+
 									<Avatar size={64} className="job-search-profile-avatar">
-										{displayName.charAt(0).toUpperCase()}
+										{(boostedProfile?.name || displayName).charAt(0).toUpperCase()}
 									</Avatar>
 									<div className="job-search-profile-name-row">
-										<h2 className="job-search-profile-name">{displayName}</h2>
+										<h2 className="job-search-profile-name">{boostedProfile?.name || displayName}</h2>
 										<Tooltip title="Profile verified">
 											<CheckCircleFilled className="job-search-profile-verified" aria-label="Verified" />
 										</Tooltip>
 									</div>
 									<p className="job-search-profile-headline">
-										Building skills with Uden Tech learning paths — React, system design, and product craft.
+										{boostedProfile?.current_role || 'Building skills with Uden Tech learning paths'}
 									</p>
 									<p className="job-search-profile-location">
 										<MdLocationOn size={13} className="profile-inline-icon profile-inline-icon--indigo" aria-hidden />
-										Bengaluru, Karnataka
+										{boostedProfile?.location || 'Bengaluru, Karnataka'}
 									</p>
-									<div className="job-search-profile-company">
-										<MdBusiness size={13} className="profile-inline-icon profile-inline-icon--cyan" aria-hidden />
-										<span>Uden Tech · Learning platform</span>
-									</div>
+									{boostedProfile?.skills?.length > 0 && (
+										<div className="boost-skills-preview">
+											{boostedProfile.skills.slice(0, 5).map((s: string) => (
+												<span key={s} className="boost-skill-chip">{s}</span>
+											))}
+											{boostedProfile.skills.length > 5 && (
+												<span className="boost-skill-chip boost-skill-chip--more">+{boostedProfile.skills.length - 5} more</span>
+											)}
+										</div>
+									)}
 									<div className="profile-stats-row">
 										<div className="profile-stat">
 											<MdSend size={12} className="profile-stat-icon profile-stat-icon--indigo" />
@@ -1106,7 +1313,7 @@ function JobSearch() {
 										</div>
 										<div className="profile-stat">
 											<MdBookmark size={12} className="profile-stat-icon profile-stat-icon--violet" />
-											<span className="profile-stat-num">{savedIds.size}</span>
+											<span className="profile-stat-num">{savedJobsTotal || apiSavedJobs.length}</span>
 											<span className="profile-stat-label">Saved</span>
 										</div>
 									</div>
@@ -1118,8 +1325,8 @@ function JobSearch() {
 								<div className="job-search-filters-card-head">
 									<span className="filters-head-icon"><MdTune size={14} /></span>
 									<h3 className="job-search-filters-card-title">Filters</h3>
-									{(empFilter.length + workFilter.length + (expFilter ? 1 : 0) + (sectorFilter ? 1 : 0) + skillsFilter.length) > 0 && (
-										<span className="filters-active-badge">{empFilter.length + workFilter.length + (expFilter ? 1 : 0) + (sectorFilter ? 1 : 0) + skillsFilter.length}</span>
+									{activeFilterCount > 0 && (
+										<span className="filters-active-badge">{activeFilterCount}</span>
 									)}
 								</div>
 								<div className="job-search-filters-card-body">{filtersBlock}</div>
@@ -1189,10 +1396,18 @@ function JobSearch() {
 										</button>
 										<button type="button"
 											className={`view-tab view-tab--amber${activeView === 'saved' ? ' view-tab--active' : ''}`}
-											onClick={() => setActiveView('saved')}>
+											onClick={() => {
+												setActiveView('saved');
+												// Fetch fresh from API — keep existing data visible while new data loads
+												setSavedJobsPage(1);
+												setSavedJobsTotal(0);
+												dispatch(getSavedJobs({ pageId: 1, pageLimit: SAVED_PAGE_LIMIT }));
+											}}>
 											<span className="view-tab-icon"><MdBookmark size={13} /></span>
 											<span className="view-tab-label">Saved</span>
-											{savedIds.size > 0 && <span className="view-tab-count">{savedIds.size}</span>}
+											{(savedJobsTotal > 0 || apiSavedJobs.length > 0) && (
+												<span className="view-tab-count">{savedJobsTotal || apiSavedJobs.length}</span>
+											)}
 										</button>
 										<span className="view-tabs-divider" />
 										<button type="button"
@@ -1568,6 +1783,19 @@ function JobSearch() {
 									</ul>
 								</>) : null}
 
+								{showSavedSkeleton ? (
+									<ul className="job-search-skeleton-list" aria-hidden>
+										{[0, 1, 2, 3].map((k) => (
+											<li key={k} className="job-search-skeleton-row">
+												<Skeleton.Avatar active size={48} shape="square" />
+												<div className="job-search-skeleton-lines">
+													<Skeleton active title={{ width: '55%' }} paragraph={{ rows: 2, width: ['100%', '80%'] }} />
+												</div>
+											</li>
+										))}
+									</ul>
+								) : null}
+
 								{/* ── Applied pipeline cards — filtered by selected pipeline tab ── */}
 								{activeView === 'applied' && !showSkeleton && !showError ? (() => {
 									const STAGES = ['applied', 'screening', 'interview', 'offer'] as const;
@@ -1588,10 +1816,15 @@ function JobSearch() {
 											onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openJobPreview(job); } }}>
 											<div className="job-search-job-actions">
 												<Tooltip title={savedIds.has(job.id) ? 'Remove from saved' : 'Save job'}>
-													<button type="button" className={`job-search-job-save ${savedIds.has(job.id) ? 'job-search-job-save--on' : ''}`}
-														aria-pressed={savedIds.has(job.id)} onClick={(e) => toggleSave(job.id, e)}>
-														<span className="job-search-job-save-icon" aria-hidden>{savedIds.has(job.id) ? <MdBookmark size={18} /> : <MdBookmarkBorder size={18} />}</span>
-														<span className="job-search-job-save-label">{savedIds.has(job.id) ? 'Saved' : 'Save'}</span>
+													<button type="button"
+														className={`job-search-job-save ${savedIds.has(job.id) ? 'job-search-job-save--on' : ''} ${unsavePendingId === job.id ? 'job-search-job-save--loading' : ''}`}
+														aria-pressed={savedIds.has(job.id)}
+														disabled={unsavePendingId === job.id}
+														onClick={(e) => toggleSave(job.id, e)}>
+														{unsavePendingId === job.id
+															? <Spin size="small" />
+															: <><span className="job-search-job-save-icon" aria-hidden>{savedIds.has(job.id) ? <MdBookmark size={18} /> : <MdBookmarkBorder size={18} />}</span><span className="job-search-job-save-label">{savedIds.has(job.id) ? 'Saved' : 'Save'}</span></>
+														}
 													</button>
 												</Tooltip>
 											</div>
@@ -1638,7 +1871,7 @@ function JobSearch() {
 								})() : null}
 
 								<div className={`job-list-reveal-wrap${isPristine ? ' job-list-reveal-wrap--pristine' : ''}`}>
-								{!showSkeleton && !showError && activeView !== 'applied' ? (
+								{!showSkeleton && !showSavedSkeleton && !showError && activeView !== 'applied' ? (
 									<ul className="job-search-job-list">
 										{listLoading ? (
 											Array.from({ length: 4 }).map((_, i) => (
@@ -1684,17 +1917,16 @@ function JobSearch() {
 													>
 														<button
 															type="button"
-															className={`job-search-job-save ${savedIds.has(job.id) ? 'job-search-job-save--on' : ''}`}
+															className={`job-search-job-save ${savedIds.has(job.id) ? 'job-search-job-save--on' : ''} ${unsavePendingId === job.id ? 'job-search-job-save--loading' : ''}`}
 															aria-pressed={savedIds.has(job.id)}
 															aria-label={savedIds.has(job.id) ? 'Remove from saved' : 'Save job'}
+															disabled={unsavePendingId === job.id}
 															onClick={(e) => toggleSave(job.id, e)}
 														>
-															<span className="job-search-job-save-icon" aria-hidden>
-																{savedIds.has(job.id) ? <MdBookmark size={18} /> : <MdBookmarkBorder size={18} />}
-															</span>
-															<span className="job-search-job-save-label">
-																{savedIds.has(job.id) ? 'Saved' : 'Save'}
-															</span>
+															{unsavePendingId === job.id
+																? <Spin size="small" />
+																: <><span className="job-search-job-save-icon" aria-hidden>{savedIds.has(job.id) ? <MdBookmark size={18} /> : <MdBookmarkBorder size={18} />}</span><span className="job-search-job-save-label">{savedIds.has(job.id) ? 'Saved' : 'Save'}</span></>
+															}
 														</button>
 													</Tooltip>
 												</div>
@@ -1835,11 +2067,29 @@ function JobSearch() {
 
 								<div className="job-search-feed-footer">
 									<span className="job-search-result-count">
-										{showSkeleton || showError ? '—' : (<><MdListAlt size={13} style={{ marginRight: 3, verticalAlign: 'middle', color: '#6366f1' }} aria-hidden />{listToRender.length} role{listToRender.length === 1 ? '' : 's'}</>) }
+										{showSkeleton || showError ? '—' : (
+											<><MdListAlt size={13} style={{ marginRight: 3, verticalAlign: 'middle', color: '#6366f1' }} aria-hidden />
+											{listToRender.length}
+											{activeView === 'saved' && savedJobsTotal > 0 ? ` / ${savedJobsTotal}` : ''}
+											{activeView === 'matches' && submittedFilters !== null && apiMatchedJobs.length > 0 ? ` of ${apiMatchedJobs.length}` : ''}
+											{' '}role{listToRender.length === 1 ? '' : 's'}</>
+										)}
 									</span>
-									<Button type="link" className="job-search-show-all" disabled>
-										Load more (API)
-									</Button>
+									{/* Load more — only for saved jobs (search uses max_results, no pagination) */}
+									{activeView === 'saved' && (
+										apiSavedJobs.length < savedJobsTotal ? (
+											<Button
+												type="link"
+												className="job-search-show-all"
+												loading={savedJobsStatus}
+												onClick={() => dispatch(getSavedJobs({ pageId: savedJobsPage + 1, pageLimit: SAVED_PAGE_LIMIT }))}
+											>
+												Load more
+											</Button>
+										) : savedJobsTotal > 0 ? (
+											<span className="job-search-all-loaded">All loaded</span>
+										) : null
+									)}
 								</div>
 							</section>
 						</main>
@@ -1902,6 +2152,13 @@ function JobSearch() {
 			>
 				{previewJob ? (
 					<div className="job-search-preview">
+
+						{/* ── API loading overlay ── */}
+						{jobByIdStatus && (
+							<div className="jd-loading-overlay">
+								<Spin size="large" />
+							</div>
+						)}
 
 						{/* ── Scrollable area: header + body ── */}
 						<div className="jd-scroll-area">
@@ -2128,9 +2385,15 @@ function JobSearch() {
 								</span>
 							</button>
 
-							<button type="button" className={`jd-action-btn jd-action-btn--save ${savedIds.has(previewJob.id) ? 'jd-action-btn--saved' : ''}`} onClick={() => toggleSave(previewJob.id)}>
-								<span className="jd-action-icon jd-action-icon--save">{savedIds.has(previewJob.id) ? <MdBookmark size={16}/> : <MdBookmarkBorder size={16}/>}</span>
-								<span className="jd-action-text"><span className="jd-action-label">{savedIds.has(previewJob.id) ? 'Saved' : 'Save for later'}</span><span className="jd-action-sub">→ saved list</span></span>
+							<button
+								type="button"
+								className={`jd-action-btn jd-action-btn--save ${savedIds.has(previewJob.id) ? 'jd-action-btn--saved' : ''} ${unsavePendingId === previewJob.id ? 'jd-action-btn--loading' : ''}`}
+								disabled={unsavePendingId === previewJob.id}
+								onClick={() => toggleSave(previewJob.id)}>
+								{unsavePendingId === previewJob.id
+									? <Spin size="small" />
+									: <><span className="jd-action-icon jd-action-icon--save">{savedIds.has(previewJob.id) ? <MdBookmark size={16}/> : <MdBookmarkBorder size={16}/>}</span><span className="jd-action-text"><span className="jd-action-label">{savedIds.has(previewJob.id) ? 'Saved' : 'Save for later'}</span><span className="jd-action-sub">→ saved list</span></span></>
+								}
 							</button>
 
 							<button
@@ -2371,7 +2634,7 @@ function JobSearch() {
 							<div className="js-review-row">
 								<span className="js-review-row-label">Sector</span>
 								<span className="js-review-chip js-review-chip--emerald">
-									<MdFactory size={10} />{sectorFilter}
+									<MdFactory size={10} />{SECTOR_META[sectorFilter] ?? sectorFilter}
 								</span>
 							</div>
 						)}
@@ -2423,6 +2686,171 @@ function JobSearch() {
 				</Tooltip>
 					</div>
 				</div>
+			</Modal>
+
+			{/* ── Boosted Profile Modal ── */}
+			<Modal
+				open={showProfileModal}
+				onCancel={() => setShowProfileModal(false)}
+				footer={null}
+				width={680}
+				centered
+				className="profile-boost-modal"
+				closeIcon={<IoClose size={18} />}
+				destroyOnClose
+			>
+				{profileStatus ? (
+					<div className="pbm-loading">
+						<Spin size="large" />
+						<p>Loading profile…</p>
+					</div>
+				) : boostedProfile ? (
+					<div className="pbm-wrap">
+						{/* ── Hero ── */}
+						<div className="pbm-hero">
+							<div className="pbm-hero-bg" />
+							<div className="pbm-hero-avatar">
+								{(boostedProfile.name || displayName).charAt(0).toUpperCase()}
+							</div>
+							<div className="pbm-hero-copy">
+								<h2 className="pbm-name">{boostedProfile.name || displayName}</h2>
+								{boostedProfile.current_role && (
+									<p className="pbm-role">{boostedProfile.current_role}</p>
+								)}
+								<div className="pbm-hero-meta">
+									{boostedProfile.location && (
+										<span className="pbm-meta-chip">
+											<MdLocationOn size={12} />{boostedProfile.location}
+										</span>
+									)}
+									{boostedProfile.career_level && (
+										<span className="pbm-meta-chip pbm-meta-chip--level">
+											<MdLeaderboard size={12} />{boostedProfile.career_level}
+										</span>
+									)}
+									{boostedProfile.total_experience_years != null && (
+										<span className="pbm-meta-chip">
+											<MdAccessTime size={12} />{boostedProfile.total_experience_years} yrs exp
+										</span>
+									)}
+								</div>
+							</div>
+							<div className="pbm-boost-badge">
+								<MdAutoAwesome size={14} /> AI Profile
+							</div>
+						</div>
+
+						{/* ── Body ── */}
+						<div className="pbm-body">
+							{/* Summary */}
+							{boostedProfile.summary && (
+								<div className="pbm-section">
+									<h4 className="pbm-section-title"><MdDescription size={13} /> Summary</h4>
+									<p className="pbm-summary-text">{boostedProfile.summary}</p>
+								</div>
+							)}
+
+							{/* Skills */}
+							{boostedProfile.skills?.length > 0 && (
+								<div className="pbm-section">
+									<h4 className="pbm-section-title"><MdCode size={13} /> Skills</h4>
+									<div className="pbm-chips">
+										{boostedProfile.skills.map((s: string) => (
+											<span key={s} className="pbm-chip pbm-chip--skill">{s}</span>
+										))}
+									</div>
+								</div>
+							)}
+
+							{/* Technologies */}
+							{boostedProfile.technologies?.length > 0 && (
+								<div className="pbm-section">
+									<h4 className="pbm-section-title"><MdLaptop size={13} /> Technologies</h4>
+									<div className="pbm-chips">
+										{boostedProfile.technologies.map((t: string) => (
+											<span key={t} className="pbm-chip pbm-chip--tech">{t}</span>
+										))}
+									</div>
+								</div>
+							)}
+
+							{/* Preferred Roles */}
+							{boostedProfile.preferred_roles?.length > 0 && (
+								<div className="pbm-section">
+									<h4 className="pbm-section-title"><MdWorkOutline size={13} /> Preferred Roles</h4>
+									<div className="pbm-chips">
+										{boostedProfile.preferred_roles.map((r: string) => (
+											<span key={r} className="pbm-chip pbm-chip--role">{r}</span>
+										))}
+									</div>
+								</div>
+							)}
+
+							{/* Industries */}
+							{boostedProfile.industries?.length > 0 && (
+								<div className="pbm-section">
+									<h4 className="pbm-section-title"><MdBusiness size={13} /> Industries</h4>
+									<div className="pbm-chips">
+										{boostedProfile.industries.map((ind: string) => (
+											<span key={ind} className="pbm-chip pbm-chip--industry">{ind}</span>
+										))}
+									</div>
+								</div>
+							)}
+
+							{/* Education + Certifications two-column */}
+							{(boostedProfile.education?.length > 0 || boostedProfile.certifications?.length > 0) && (
+								<div className="pbm-two-col">
+									{boostedProfile.education?.length > 0 && (
+										<div className="pbm-section pbm-section--col">
+											<h4 className="pbm-section-title"><MdSchool size={13} /> Education</h4>
+											<div className="pbm-edu-list">
+												{boostedProfile.education.map((edu: any, i: number) => (
+													<div key={i} className="pbm-edu-item">
+														<span className="pbm-edu-degree">{edu.degree}</span>
+														<span className="pbm-edu-school">{edu.school}</span>
+														{edu.year && <span className="pbm-edu-year">{edu.year}</span>}
+													</div>
+												))}
+											</div>
+										</div>
+									)}
+									{boostedProfile.certifications?.length > 0 && (
+										<div className="pbm-section pbm-section--col">
+											<h4 className="pbm-section-title"><MdWorkspacePremium size={13} /> Certifications</h4>
+											<div className="pbm-cert-list">
+												{boostedProfile.certifications.map((cert: string, i: number) => (
+													<div key={i} className="pbm-cert-item">
+														<MdCheckCircle size={12} className="pbm-cert-check" />
+														<span>{cert}</span>
+													</div>
+												))}
+											</div>
+										</div>
+									)}
+								</div>
+							)}
+						</div>
+					</div>
+				) : (
+					<div className="pbm-empty">
+						<div className="pbm-empty-icon"><MdRocketLaunch size={32} /></div>
+						<h3 className="pbm-empty-title">Build your AI Profile</h3>
+						<p className="pbm-empty-sub">
+							Upload your resume to let AI extract your skills and build an AI-powered profile that gets matched to the best roles.
+						</p>
+						<button
+							type="button"
+							className="pbm-empty-cta"
+							onClick={() => {
+								setShowProfileModal(false);
+								document.querySelector('.match-engine-container')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+							}}
+						>
+							<MdFileUpload size={14} /> Upload Resume
+						</button>
+					</div>
+				)}
 			</Modal>
 		</>
 	);

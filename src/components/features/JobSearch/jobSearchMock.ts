@@ -16,6 +16,8 @@ export type JobDetail = {
 	applyUrl?: string;
 	description: string;
 	responsibilities: string[];
+	requirements?: string[];
+	niceToHave?: string[];
 	skills: string[];
 	skillsMatched?: string[];
 	skillGaps?: string[];

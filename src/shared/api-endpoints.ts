@@ -34,8 +34,12 @@ export const API_ENDPOINTS = {
 
 	//#region Career Accelaration
 	RESUME_UPLOAD : '/v2/profile/resume',
+	GET_PROFILE   : '/v2/profile/{user_id}',
 	JOB_SEARCH    : '/v2/jobs/search',
 	JOB_SAVE      : '/v2/jobs/save/{job_id}',
+	JOB_UNSAVE    : '/v2/jobs/save/{job_id}',
+	JOB_GET_SAVED  : '/v2/jobs/saved',
+	JOB_GET_BY_ID  : '/v2/jobs/{job_id}',
 
 	//#endregion
 };
