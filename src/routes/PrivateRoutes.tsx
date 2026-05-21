@@ -6,7 +6,7 @@ const PrivateRoutes = ({ children }: { children: JSX.Element; }) => {
 	if (BYPASS_AUTH) {
 		return children;
 	}
-    
+
     const authenticationToken = sessionStorage.getItem('accessToken');
     if (!authenticationToken) {
         return <Navigate to="/401" />;

@@ -1,5 +1,6 @@
-﻿import { Alert, Avatar, Button, Checkbox, Drawer, Empty, Input, message, Modal, notification, Radio, Segmented, Select, Skeleton, Spin, Tabs, Tooltip, Upload } from 'antd';
+import { Alert, Avatar, Button, Checkbox, Drawer, Empty, Input, message, Modal, notification, Radio, Segmented, Select, Skeleton, Spin, Tabs, Tooltip, Upload } from 'antd';
 import { CheckCircleFilled, InboxOutlined, InfoCircleTwoTone } from '@ant-design/icons';
+import { FaRegSnowflake, FaFingerprint } from 'react-icons/fa';
 import { easeInOut, motion } from 'framer-motion';
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import ReactDOM from 'react-dom';
@@ -31,6 +32,7 @@ import {
 	MdRestartAlt,
 	MdSchool,
 	MdAdd,
+	MdSearch,
 	MdVerified,
 	MdAccessTime,
 	MdAttachMoney,
@@ -49,6 +51,8 @@ import {
 	MdSyncAlt,
 	MdFactory,
 	MdLockOutline,
+	MdSpaceDashboard,
+	MdAutoGraph,
 } from 'react-icons/md';
 import { IoClose } from 'react-icons/io5';
 import { SiBookstack } from 'react-icons/si';
@@ -215,6 +219,7 @@ function JobSearch() {
 	const { profileData, status: profileStatus } = useSelector(
 		(state: any) => state.getProfileReducer
 	);
+	const { tokenDetails } = useSelector((state: any) => state?.tokenReducer);
 
 	const [activeView, setActiveView] = useState<ActiveView>('matches');
 	const [empFilter, setEmpFilter] = useState<EmploymentKind[]>([]);
@@ -238,6 +243,7 @@ function JobSearch() {
 	const [listLoading, setListLoading] = useState(false);
 	const [uiPreview, setUiPreview] = useState<UiPreview>('normal');
 	const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
+	const [titleInput, setTitleInput] = useState('');
 	const [pastedJd, setPastedJd] = useState('');
 	const [jdResult, setJdResult] = useState('');
 	const [showJdInput, setShowJdInput] = useState(true);
@@ -626,7 +632,7 @@ function JobSearch() {
 		const selector =
 			tourStep === 1 ? '.job-search-sidebar .skill-filter' :
 			tourStep === 2 ? '#js-emp-work-filter' :
-			tourStep === jdStep ? '.me-jd-divider' :
+			tourStep === jdStep ? '.me-jd-row' :
 			tourStep === btnStep ? '.me-find-btn-wrap' : '.me-find-btn-wrap';
 
 		// Scroll target into view first, then measure after scroll settles
@@ -676,10 +682,9 @@ function JobSearch() {
 		return () => clearInterval(id);
 	}, [listLoading]);
 
-	/* Fetch saved jobs + profile on page load */
+	/* Fetch saved jobs on page load — profile is only fetched after resume upload */
 	useEffect(() => {
 		dispatch(getSavedJobs());
-		if (userId) dispatch(getProfile(userId));
 	}, []);
 
 	/* Deep-link from Dashboard (e.g. /job-search?tab=matches) */
@@ -711,6 +716,25 @@ function JobSearch() {
 			return 'Learner';
 		}
 	}, []);
+
+	const { userEmail, userRole } = useMemo(() => {
+		try {
+			const token = sessionStorage.getItem('accessToken');
+			if (!token) return { userEmail: '', userRole: 'Learner' };
+			const data: any = decodeToken(token);
+			return {
+				userEmail: data?.email || data?.Email || '',
+				userRole:  data?.RoleName || data?.role || 'Learner',
+			};
+		} catch {
+			return { userEmail: '', userRole: 'Learner' };
+		}
+	}, []);
+
+	const tokenAvailable = tokenDetails?.data?.availablePoints ?? 0;
+	const tokenConsumed  = tokenDetails?.data?.consumePoints  ?? 0;
+	const tokenTotal     = tokenAvailable + tokenConsumed;
+	const tokenUsedPct   = tokenTotal > 0 ? Math.round((tokenConsumed / tokenTotal) * 100) : 0;
 
 	const baseJobs = useMemo(() => {
 		if (activeView === 'saved') {
@@ -775,9 +799,13 @@ function JobSearch() {
 	].filter(Boolean).length, [empFilter, workFilter, expFilter, sectorFilter, skillsFilter, locationFilter]);
 
 	const handleFindJobs = useCallback(() => {
-		if (activeFilterCount === 0) return;
+		// Allow search when: title typed OR (resume/JD + at least one filter)
+		const titleOk = titleInput.trim().length > 0;
+		const inputOk = uploadedFile !== null || pastedJd.trim().length > 0 || titleOk;
+		const filterOk = activeFilterCount > 0 || titleOk;
+		if (!inputOk || !filterOk) return;
 		setShowReviewModal(true);
-	}, [activeFilterCount]);
+	}, [titleInput, uploadedFile, pastedJd, activeFilterCount]);
 
 	// API accepts exactly: 'junior' | 'mid' | 'senior' | 'lead'
 	const mapExpLevel = (v: string | undefined): string | undefined => {
@@ -817,9 +845,13 @@ function JobSearch() {
 		const skills: string[] = item.skills_required || item.skills || item.required_skills || [];
 
 		// Compute a basic match score from skills overlap if not provided by API
-		let matchScore: number | undefined = item.score != null
-			? Math.min(100, Math.round(Number(item.score) * 100))
-			: item.match_score ?? item.matchScore;
+		// Prefer fit_score (AI-computed) if available, then semantic score, then local overlap
+		const fitScore: number | undefined = item.fit_score ?? item.fitScore;
+		let matchScore: number | undefined = fitScore != null
+			? fitScore
+			: item.score != null
+				? Math.min(100, Math.round(Number(item.score) * 100))
+				: item.match_score ?? item.matchScore;
 		if (matchScore == null && skillsFilter.length > 0 && skills.length > 0) {
 			const lower = skillsFilter.map((s) => s.toLowerCase());
 			const matched = skills.filter((s) => lower.some((f) => s.toLowerCase().includes(f) || f.includes(s.toLowerCase())));
@@ -851,6 +883,10 @@ function JobSearch() {
 			})(),
 			matchScore,
 			matchReasons: item.match_reasons || item.matchReasons || [],
+			fitScore,
+			fitBucket:        item.fit_bucket || item.fitBucket,
+			fitExplanation:   item.explanation || item.fitExplanation,
+			skillCoveragePct: item.skill_coverage_pct ?? item.skillCoveragePct,
 			detail: {
 				employmentType:   item.job_type || item.employment_type || '',
 				posted:           item.posted_date || item.posted_at || item.postedAt || 'Recently',
@@ -862,9 +898,10 @@ function JobSearch() {
 				requirements:     item.requirements || [],
 				niceToHave:       item.nice_to_have || [],
 				skills,
-				skillsMatched:    item.skills_matched || item.skillsMatched || [],
-				skillGaps:        item.skill_gaps || item.skillGaps || [],
+				skillsMatched:    item.matched_skills || item.skills_matched || item.skillsMatched || [],
+				skillGaps:        item.missing_skills || item.skill_gaps || item.skillGaps || [],
 				interviewRounds:  item.interview_rounds || item.interviewRounds,
+				skillsBreakdown:  item.skills_breakdown || item.skillsBreakdown,
 			},
 		};
 	};
@@ -880,9 +917,9 @@ function JobSearch() {
 		const jd = pastedJd.trim();
 		// Use 'description' mode when only JD is provided; otherwise 'title'
 		const mode = jd && !uploadedFile ? 'description' : 'title';
-		// mode='title' requires a query — use first skill or generic fallback
+		// mode='title': prefer user-typed title, else first skill, else generic fallback
 		const query = mode === 'title'
-			? (skillsFilter.length > 0 ? skillsFilter[0] : 'Software Engineer')
+			? (titleInput.trim() || (skillsFilter.length > 0 ? skillsFilter[0] : 'Software Engineer'))
 			: undefined;
 
 		// Build filters and strip any undefined/null keys before sending
@@ -977,7 +1014,11 @@ function JobSearch() {
 	const listToRender = showForcedEmpty ? [] : filteredJobs;
 
 	const isPristine = activeView === 'matches' && submittedFilters === null && !showSkeleton && !showError;
-	const hasResumeOrJd = uploadedFile !== null || pastedJd.trim().length > 0;
+	const hasSearchInput = uploadedFile !== null || pastedJd.trim().length > 0 || titleInput.trim().length > 0;
+	const canSearch     = hasSearchInput && (activeFilterCount > 0 || titleInput.trim().length > 0);
+	// keep alias for backward compat with review-modal button
+	const hasResumeOrJd = hasSearchInput;
+
 
 	const PIPELINE_STAGE_META: Record<string, { title: string; sub: string }> = {
 		applied:    { title: 'Applied',    sub: 'Jobs you have submitted an application for.' },
@@ -1235,7 +1276,7 @@ function JobSearch() {
 							<section className="job-search-card job-search-profile-card">
 								<div className="job-search-profile-banner" aria-hidden>
 									<div className="job-search-profile-heatmap" />
-									{boostedProfile && (
+									{(uploadedFile && boostedProfile) && (
 										<span className="aip-banner-typing">Built by AI · from your previously uploaded resume</span>
 									)}
 								</div>
@@ -1273,7 +1314,7 @@ function JobSearch() {
 											)
 										}
 									>
-										<div className={`boost-btn-wrap${profileStatus ? ' boost-btn-wrap--loading' : boostedProfile ? ' boost-btn-wrap--active' : ''}`}>
+										<div className={`boost-btn-wrap${profileStatus ? ' boost-btn-wrap--loading' : (uploadedFile && boostedProfile) ? ' boost-btn-wrap--active' : ''}`}>
 											<span className="boost-ring" aria-hidden />
 											<button
 												type="button"
@@ -1307,7 +1348,7 @@ function JobSearch() {
 										<MdLocationOn size={13} className="profile-inline-icon profile-inline-icon--indigo" aria-hidden />
 										{boostedProfile?.location || 'Bengaluru, Karnataka'}
 									</p>
-									{boostedProfile?.skills?.length > 0 && (
+									{(uploadedFile && boostedProfile?.skills?.length > 0) && (
 										<div className="boost-skills-preview">
 											{boostedProfile.skills.slice(0, 5).map((s: string) => (
 												<span key={s} className="boost-skill-chip">{s}</span>
@@ -1574,17 +1615,27 @@ function JobSearch() {
 												</motion.div>
 											</div>
 
-											{/* ── JD section toggle ── */}
-											<div className="me-jd-divider">
+											{/* ── Title input + JD toggle row ── */}
+											<div className="me-jd-row">
+												<label className="me-title-input-wrap">
+													<MdSearch size={11} className="me-title-icon" aria-hidden />
+													<input
+														type="text"
+														className="me-title-input"
+														placeholder="Job title..."
+														value={titleInput}
+														onChange={(e) => setTitleInput(e.target.value)}
+													/>
+													<span className="me-jd-optional">optional</span>
+												</label>
+												<span className="me-jd-row-line" aria-hidden />
 												<button
 													type="button"
 													className={`me-jd-toggle${showJdSection ? ' me-jd-toggle--open' : ''}`}
 													onClick={() => {
 									jdOpenRef.current = !jdOpenRef.current;
 									const next = jdOpenRef.current;
-									// Toggle CSS class directly — no React re-render, paint happens immediately
 									jdSectionRef.current?.classList.toggle('me-jd-section--open', next);
-									// Update state only for button label/icon, deferred so it doesn't block paint
 									requestAnimationFrame(() => setShowJdSection(next));
 								}}
 												>
@@ -1670,8 +1721,8 @@ function JobSearch() {
 												<button
 													ref={findBtnRef}
 													type="button"
-													className={`me-find-btn${listLoading ? ' me-find-btn--loading' : (!hasResumeOrJd || activeFilterCount === 0) ? ' me-find-btn--disabled' : ''}${filtersJustApplied ? ' me-find-btn--glow' : ''}`}
-													disabled={listLoading || !hasResumeOrJd || activeFilterCount === 0}
+													className={`me-find-btn${listLoading ? ' me-find-btn--loading' : !canSearch ? ' me-find-btn--disabled' : ''}${filtersJustApplied ? ' me-find-btn--glow' : ''}`}
+													disabled={listLoading || !canSearch}
 													onClick={() => { setShowFindTour(false); handleFindJobs(); }}
 												>
 													{listLoading ? (
@@ -1680,7 +1731,7 @@ function JobSearch() {
 															<span>Searching…</span>
 														</>
 													) : (<>
-														{(!hasResumeOrJd || activeFilterCount === 0)
+														{!canSearch
 															? <MdLockOutline size={15} className="me-find-btn-icon" />
 															: <MdAutoAwesome size={15} className="me-find-btn-icon" />
 														}
@@ -1690,7 +1741,7 @@ function JobSearch() {
 														)}
 													</>)}
 												</button>
-												{(!hasResumeOrJd || activeFilterCount === 0) && (<>
+												{!canSearch && (<>
 													<div className="me-find-tooltip" role="tooltip">
 														<div className="me-tt-header">
 															<span className="me-tt-lock-icon">🔐</span>
@@ -1699,22 +1750,22 @@ function JobSearch() {
 														<p className="me-tt-sub">Complete both steps to activate</p>
 														<div className="me-tt-divider" />
 														<div className="me-tt-checks">
-															<div className={`me-tt-check${hasResumeOrJd ? ' me-tt-check--met' : ''}`}>
+															<div className={`me-tt-check${hasSearchInput ? ' me-tt-check--met' : ''}`}>
 																<span className="me-tt-dot" />
-																<span>Resume uploaded or JD pasted</span>
+																<span>Resume, JD, or job title entered</span>
 															</div>
-															<div className={`me-tt-check${activeFilterCount > 0 ? ' me-tt-check--met' : ''}`}>
+															<div className={`me-tt-check${(activeFilterCount > 0 || titleInput.trim().length > 0) ? ' me-tt-check--met' : ''}`}>
 																<span className="me-tt-dot" />
-																<span>At least 1 filter selected</span>
+																<span>At least 1 filter or job title entered</span>
 															</div>
 														</div>
 													</div>
 													<div className="me-find-tooltip-arrow" />
 												</>)}
 											</div>
-											{(!hasResumeOrJd || activeFilterCount === 0) && (
+											{!canSearch && (
 												<p className="me-find-hint">
-													{!hasResumeOrJd ? 'Upload a resume or paste a JD first' : 'Add at least one filter to search'}
+													{!hasSearchInput ? 'Upload a resume, paste a JD, or enter a job title' : 'Add at least one filter or enter a job title'}
 												</p>
 											)}
 										</div>
@@ -2196,7 +2247,13 @@ function JobSearch() {
 												<MdVerified size={20} className="jd-verified-icon" aria-label="Verified" />
 											</Tooltip>
 										) : null}
-										{previewJob.matchScore != null ? (
+										{previewJob.fitScore != null ? (
+											<span className="jd-match-badge">
+												<MdInsights size={12} style={{marginRight:3,verticalAlign:'middle'}}/>
+												{previewJob.fitScore}% fit
+												{previewJob.fitBucket ? ` · ${previewJob.fitBucket}` : ''}
+											</span>
+										) : previewJob.matchScore != null ? (
 											<span className="jd-match-badge"><MdInsights size={12} style={{marginRight:3,verticalAlign:'middle'}}/>{previewJob.matchScore}% match</span>
 										) : null}
 									</div>
@@ -2279,45 +2336,133 @@ function JobSearch() {
 										Your fit
 									</h3>
 
-									{previewJob.matchScore != null ? (
-										<div className="jd-fit-score-row">
-											<div className="jd-fit-score-ring" style={{'--score': previewJob.matchScore} as React.CSSProperties}>
-												<span className="jd-fit-score-num">{previewJob.matchScore}%</span>
+									{/* Score ring — prefer fitScore (AI), fall back to matchScore */}
+									{(previewJob.fitScore != null || previewJob.matchScore != null) ? (() => {
+										const displayScore = previewJob.fitScore ?? previewJob.matchScore ?? 0;
+										const bucketStr    = previewJob.fitBucket || '';
+										const bucketCls    = bucketStr.toLowerCase().includes('strong') ? 'strong'
+											: bucketStr.toLowerCase().includes('high')   ? 'high'
+											: bucketStr.toLowerCase().includes('medium') || bucketStr.toLowerCase().includes('moderate') ? 'medium'
+											: bucketStr ? 'low' : '';
+										return (
+											<div className="jd-fit-score-row">
+												<div className="jd-fit-score-ring" style={{'--score': displayScore} as React.CSSProperties}>
+													<span className="jd-fit-score-num">{displayScore}%</span>
+												</div>
+												<div className="jd-fit-score-copy">
+													<p className="jd-fit-score-title">
+														{previewJob.fitScore != null ? 'AI Fit Score' : 'Profile match score'}
+													</p>
+													{bucketCls && (
+														<span className={`jd-fit-bucket jd-fit-bucket--${bucketCls}`}>
+															{bucketStr}
+														</span>
+													)}
+													{previewJob.skillCoveragePct != null && (
+														<div className="jd-coverage-wrap">
+															<div className="jd-coverage-track">
+																<div className="jd-coverage-fill" style={{width: `${previewJob.skillCoveragePct}%`}} />
+															</div>
+															<span className="jd-coverage-label">{previewJob.skillCoveragePct}% skill coverage</span>
+														</div>
+													)}
+												</div>
 											</div>
-											<div className="jd-fit-score-copy">
-												<p className="jd-fit-score-title">Profile match score</p>
-												<p className="jd-fit-score-sub">Based on your skills &amp; learning path</p>
-											</div>
-										</div>
-									) : null}
+										);
+									})() : null}
 
-									{previewJob.detail.skillsMatched?.length ? (
+									{/* Skills breakdown — use skills_breakdown if available, else matched/gaps */}
+									{previewJob.detail.skillsBreakdown?.length ? (() => {
+										const matched  = previewJob.detail.skillsBreakdown!.filter(s => s.matched);
+										const gaps     = previewJob.detail.skillsBreakdown!.filter(s => !s.matched);
+										return (
+											<>
+												{matched.length > 0 && (
+													<div className="jd-fit-group">
+														<p className="jd-fit-label jd-fit-label--match">
+															<MdThumbUp size={12}/> Skills matched
+														</p>
+														<div className="jd-fit-pills">
+															{matched.map(({skill}) => (
+																<span key={skill} className="jd-fit-pill jd-fit-pill--match">
+																	<MdCheckCircle size={11}/>{skill}
+																</span>
+															))}
+														</div>
+													</div>
+												)}
+												{gaps.length > 0 && (
+													<div className="jd-fit-group">
+														<p className="jd-fit-label jd-fit-label--gap">
+															<MdWarning size={12}/> Skill gaps
+															<span className="jd-gap-count">{gaps.length}</span>
+														</p>
+														<div className="jd-fit-pills">
+															{gaps.map(({skill, explanation}) => (
+																<button
+																	key={skill}
+																	type="button"
+																	className="jd-fit-pill jd-fit-pill--gap-learn"
+																	onClick={() => {
+																		const text = explanation?.trim()
+																			? `I want to learn ${skill}. ${explanation.trim()}`
+																			: `I want to learn ${skill} to improve my career prospects and qualify for more roles.`;
+																		localStorage.setItem('lpPrefillJd', text);
+																		window.open('/learn', '_blank');
+																	}}
+																>
+																	<MdSchool size={11}/>
+																	{skill}
+																	<MdAutoGraph size={10} className="jd-gap-chip-learn-icon"/>
+																	<span className="jd-gap-chip-tooltip">
+																		<span className="jd-gap-chip-tooltip-icon">✦</span>
+																		Learn <strong>{skill}</strong> now
+																		<span className="jd-gap-chip-tooltip-arrow">→</span>
+																	</span>
+																</button>
+															))}
+														</div>
+													</div>
+												)}
+											</>
+										);
+									})() : (
+										<>
+											{previewJob.detail.skillsMatched?.length ? (
+												<div className="jd-fit-group">
+													<p className="jd-fit-label jd-fit-label--match">
+														<MdThumbUp size={12}/> Skills matched
+													</p>
+													<div className="jd-fit-pills">
+														{previewJob.detail.skillsMatched.map((s) => (
+															<span key={s} className="jd-fit-pill jd-fit-pill--match"><MdCheckCircle size={11}/>{s}</span>
+														))}
+													</div>
+												</div>
+											) : null}
+
+											{previewJob.detail.skillGaps?.length ? (
+												<div className="jd-fit-group">
+													<p className="jd-fit-label jd-fit-label--gap">
+														<MdWarning size={12}/> Gaps to bridge
+													</p>
+													<div className="jd-fit-pills">
+														{previewJob.detail.skillGaps.map((s) => (
+															<span key={s} className="jd-fit-pill jd-fit-pill--gap"><MdSchool size={11}/>{s}</span>
+														))}
+													</div>
+												</div>
+											) : null}
+										</>
+									)}
+
+									{/* AI analysis — single string (fitExplanation) or legacy list */}
+									{previewJob.fitExplanation ? (
 										<div className="jd-fit-group">
-											<p className="jd-fit-label jd-fit-label--match">
-												<MdThumbUp size={12}/> Skills matched
-											</p>
-											<div className="jd-fit-pills">
-												{previewJob.detail.skillsMatched.map((s) => (
-													<span key={s} className="jd-fit-pill jd-fit-pill--match"><MdCheckCircle size={11}/>{s}</span>
-												))}
-											</div>
+											<p className="jd-fit-label"><MdAutoAwesome size={12}/> AI analysis</p>
+											<p className="jd-fit-explanation">{previewJob.fitExplanation}</p>
 										</div>
-									) : null}
-
-									{previewJob.detail.skillGaps?.length ? (
-										<div className="jd-fit-group">
-											<p className="jd-fit-label jd-fit-label--gap">
-												<MdWarning size={12}/> Gaps to bridge
-											</p>
-											<div className="jd-fit-pills">
-												{previewJob.detail.skillGaps.map((s) => (
-													<span key={s} className="jd-fit-pill jd-fit-pill--gap"><MdSchool size={11}/>{s}</span>
-												))}
-											</div>
-										</div>
-									) : null}
-
-									{previewJob.matchReasons?.length ? (
+									) : previewJob.matchReasons?.length ? (
 										<div className="jd-fit-group">
 											<p className="jd-fit-label"><MdAutoAwesome size={12}/> AI explanation</p>
 											<ul className="jd-fit-reasons">
@@ -2598,15 +2743,39 @@ function JobSearch() {
 					<div className="js-review-hero">
 						<div className="js-review-hero-icon"><MdAutoAwesome size={28} /></div>
 						<p className="js-review-eyebrow">AI Match Engine</p>
-						<h2 className="js-review-title">Review your filters</h2>
+						<h2 className="js-review-title">Review your search</h2>
 						<p className="js-review-sub">Make sure these look right before we run the search — each query uses AI matching.</p>
 						<div className="js-review-count-badge">
 							<MdTune size={13} />
-							{activeFilterCount} filter{activeFilterCount !== 1 ? 's' : ''} active
+							{activeFilterCount > 0
+								? `${activeFilterCount} filter${activeFilterCount !== 1 ? 's' : ''} active`
+								: titleInput.trim() ? 'Title search · no filters' : '0 filters active'
+							}
 						</div>
 					</div>
 
 					<div className="js-review-filters">
+						{/* Always show title row if user typed one */}
+						{titleInput.trim() && (
+							<div className="js-review-row">
+								<span className="js-review-row-label">Job title</span>
+								<span className="js-review-chip js-review-chip--indigo">
+									<MdSearch size={10} />{titleInput.trim()}
+								</span>
+							</div>
+						)}
+
+						{/* No-filter notice — only when searching by title alone */}
+						{activeFilterCount === 0 && titleInput.trim() && (
+							<div className="js-review-no-filter">
+								<InfoCircleTwoTone twoToneColor="#6366f1" />
+								<div className="js-review-nf-copy">
+									<p className="js-review-nf-title">No filters applied</p>
+									<p className="js-review-nf-sub">Results will be broad — add filters to narrow your matches. You can still go ahead.</p>
+								</div>
+							</div>
+						)}
+
 						{empFilter.length > 0 && (
 							<div className="js-review-row">
 								<span className="js-review-row-label">Employment</span>
@@ -2734,7 +2903,7 @@ function JobSearch() {
 								<Spin size="large" />
 								<p>Loading AI Profile…</p>
 							</div>
-						) : boostedProfile ? (
+						) : (uploadedFile && boostedProfile) ? (
 							<>
 								{/* ── Sticky header: banner + avatar only ── */}
 								<div className="aip-panel-header">
@@ -2891,15 +3060,19 @@ function JobSearch() {
 								</div>{/* end aip-panel-body */}
 							</>
 						) : (
-							<div className="aip-empty">
-								<div className="aip-empty-icon"><MdRocketLaunch size={32} /></div>
-								<h3 className="aip-empty-title">Build your AI Profile</h3>
-								<p className="aip-empty-sub">
-									Upload your resume to let AI extract your skills and build a profile that gets matched to the best roles.
+							<div className="aip-locked">
+								<div className="aip-locked-icon-wrap" aria-hidden>
+									<span className="aip-locked-orb aip-locked-orb--1" />
+									<span className="aip-locked-orb aip-locked-orb--2" />
+									<MdLockOutline size={28} className="aip-locked-icon" />
+								</div>
+								<h3 className="aip-locked-title">Upload Resume to Unlock</h3>
+								<p className="aip-locked-sub">
+									Your AI profile extracts skills, experience &amp; certifications from your resume — powering smarter job matches.
 								</p>
 								<button
 									type="button"
-									className="aip-empty-cta"
+									className="aip-locked-cta"
 									onClick={() => {
 										setShowProfileModal(false);
 										document.querySelector('.match-engine-container')?.scrollIntoView({ behavior: 'smooth', block: 'center' });

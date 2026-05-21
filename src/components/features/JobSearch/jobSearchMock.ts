@@ -8,6 +8,12 @@ export type InterviewRound = {
 	subtitle?: string;
 };
 
+export type SkillBreakdown = {
+	skill: string;
+	matched: boolean;
+	explanation?: string;
+};
+
 export type JobDetail = {
 	employmentType: string;
 	posted: string;
@@ -23,6 +29,7 @@ export type JobDetail = {
 	skillGaps?: string[];
 	eligibility?: string[];
 	interviewRounds?: InterviewRound[];
+	skillsBreakdown?: SkillBreakdown[];
 };
 
 export type JobItem = {
@@ -40,6 +47,11 @@ export type JobItem = {
 	/** Present when this role appears in “Matched for you” (learning-path alignment). */
 	matchScore?: number;
 	matchReasons?: string[];
+	/** AI fit score fields from /v2/jobs/{job_id} */
+	fitScore?: number;
+	fitBucket?: string;
+	fitExplanation?: string;
+	skillCoveragePct?: number;
 	detail: JobDetail;
 };
 

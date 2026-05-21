@@ -409,11 +409,18 @@ const Learn = () => {
 	}, []);
 
 	useEffect(() => {
-		const prefill = sessionStorage.getItem('lpPrefillJd') || location.state?.jd;
+		// Prefill sources (in priority order):
+		// 1. sessionStorage — same-tab navigation (Career Acceleration)
+		// 2. localStorage   — cross-tab navigation (Job detail "Learn now" button)
+		// 3. router state   — programmatic navigate() with state
+		const prefill =
+			sessionStorage.getItem('lpPrefillJd') ||
+			localStorage.getItem('lpPrefillJd')   ||
+			location.state?.jd;
 		if (prefill) {
-			// Populate main compose textarea with the JD from Career Acceleration
 			form.setFieldsValue({ text: prefill });
 			sessionStorage.removeItem('lpPrefillJd');
+			localStorage.removeItem('lpPrefillJd');
 			if (charCountRef.current) {
 				const len = prefill.length;
 				charCountRef.current.textContent = `${len} / 100`;
