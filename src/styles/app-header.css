@@ -432,26 +432,26 @@ body.dark-theme .gx-app-layout > .ant-layout > .ant-layout-header.app-header-she
 .up-backdrop {
 	position: fixed;
 	inset: 0;
-	z-index: 1000;
-	backdrop-filter: blur(5px) saturate(0.8);
-	-webkit-backdrop-filter: blur(5px) saturate(0.8);
-	background: rgba(15, 23, 42, 0.3);
-	animation: up-backdrop-in 0.22s ease forwards;
+	z-index: 1200;
+	backdrop-filter: blur(5px);
+	-webkit-backdrop-filter: blur(5px);
+	background: rgba(2, 6, 23, 0.55);
+	animation: up-backdrop-in 0.28s ease forwards;
 }
 
 @keyframes up-backdrop-in {
 	from { opacity: 0; backdrop-filter: blur(0px); }
-	to   { opacity: 1; backdrop-filter: blur(5px) saturate(0.8); }
+	to   { opacity: 1; backdrop-filter: blur(5px); }
 }
 
 /* ─── Gaming / PlayStation close button ───────────────────────────────────── */
-/* Anchored to the left so it never overlaps the card (which opens bottom-right) */
+/* Left of the panel: right = panel-width(440) + panel-right(16) + gap(24) = 480px */
 .up-close-btn {
 	position: fixed;
-	bottom: 36px;
-	left: 36px;
-	transform: none;
-	z-index: 1002;
+	right: 480px;
+	top: 50%;
+	transform: translateY(-50%);
+	z-index: 1202;
 	display: flex;
 	flex-direction: column;
 	align-items: center;
@@ -460,102 +460,71 @@ body.dark-theme .gx-app-layout > .ant-layout > .ant-layout-header.app-header-she
 	border: none;
 	cursor: pointer;
 	padding: 0;
-	animation: up-close-btn-in 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+	animation: up-close-btn-in 0.35s cubic-bezier(0.22, 1, 0.36, 1) 0.08s both;
 }
 
-/* Wrapper holds the rings + face together in a single stacking context */
-.up-close-btn-wrap {
+/* Relative container — anchors the rings to the face centre */
+.up-close-orb {
 	position: relative;
-	width: 68px;
-	height: 68px;
+	width: 52px;
+	height: 52px;
 	display: flex;
 	align-items: center;
 	justify-content: center;
 }
 
-/* The glowing circular face */
-.up-close-btn-face {
+/* Dark-glass face (identical visual to aip-close-face) */
+.up-close-face {
 	position: relative;
-	z-index: 1;
-	width: 60px;
-	height: 60px;
+	z-index: 3;
+	width: 52px;
+	height: 52px;
 	border-radius: 50%;
-	background: radial-gradient(circle at 38% 32%, #3a3a3a, #111111 55%, #000000);
-	box-shadow:
-		0 0 0  1px rgba(255, 255, 255, 0.15),
-		0 0 16px rgba(0, 0, 0, 0.8),
-		0 0 36px rgba(0, 0, 0, 0.5),
-		0 0 60px rgba(255, 255, 255, 0.06),
-		inset 0 2px 0 rgba(255, 255, 255, 0.18),
-		inset 0 -2px 6px rgba(0, 0, 0, 0.6);
+	background: rgba(30, 20, 60, 0.85);
+	border: 2px solid rgba(255, 255, 255, 0.2);
+	backdrop-filter: blur(8px);
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1),
-	            box-shadow 0.18s ease;
+	transition: background 0.18s, border-color 0.18s, transform 0.18s;
+	box-shadow: 0 4px 22px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
-/* Specular highlight arc on the top of the button */
-.up-close-btn-face::before {
-	content: '';
+.up-close-btn:hover .up-close-face {
+	background: rgba(220, 38, 38, 0.78);
+	border-color: rgba(255, 100, 100, 0.55);
+	transform: scale(1.1);
+}
+
+/* Concentric pulse rings — absolute inside .up-close-orb */
+.up-close-ring {
 	position: absolute;
-	top: 8px;
-	left: 50%;
-	transform: translateX(-50%);
-	width: 36px;
-	height: 10px;
 	border-radius: 50%;
-	background: rgba(255, 255, 255, 0.18);
-	filter: blur(3px);
-	pointer-events: none;
-}
-
-.up-close-btn:hover .up-close-btn-face {
-	transform: scale(1.12);
-	box-shadow:
-		0 0 0  1px rgba(255, 255, 255, 0.28),
-		0 0 24px rgba(0, 0, 0, 0.9),
-		0 0 48px rgba(255, 255, 255, 0.1),
-		0 0 80px rgba(255, 255, 255, 0.05),
-		inset 0 2px 0 rgba(255, 255, 255, 0.25),
-		inset 0 -2px 6px rgba(0, 0, 0, 0.6);
-}
-
-/* Pulsing rings */
-.up-close-btn-ring {
-	position: absolute;
+	border: 1.5px solid rgba(255, 255, 255, 0.28);
 	top: 50%;
 	left: 50%;
-	border-radius: 50%;
-	border: 1.5px solid rgba(255, 255, 255, 0.45);
-	transform: translate(-50%, -50%) scale(0.75);
-	animation: up-ring-expand 2s ease-out infinite;
+	transform: translate(-50%, -50%) scale(1);
 	pointer-events: none;
 }
 
-.up-close-btn-ring--1 {
-	width: 68px;
-	height: 68px;
-	animation-delay: 0s;
+.up-close-ring--1 {
+	width: 68px;  height: 68px;
+	animation: up-ring-pulse 2.4s ease-in-out 0s infinite;
 }
 
-.up-close-btn-ring--2 {
-	width: 86px;
-	height: 86px;
-	border-color: rgba(255, 255, 255, 0.25);
-	animation-delay: 0.55s;
+.up-close-ring--2 {
+	width: 86px;  height: 86px;
+	animation: up-ring-pulse 2.4s ease-in-out 0.45s infinite;
 }
 
-.up-close-btn-ring--3 {
-	width: 106px;
-	height: 106px;
-	border-color: rgba(255, 255, 255, 0.12);
-	animation-delay: 1.1s;
+.up-close-ring--3 {
+	width: 104px; height: 104px;
+	animation: up-ring-pulse 2.4s ease-in-out 0.9s infinite;
 }
 
-@keyframes up-ring-expand {
-	0%   { opacity: 0.9; transform: translate(-50%, -50%) scale(0.75); }
-	100% { opacity: 0;   transform: translate(-50%, -50%) scale(1.55); }
+@keyframes up-ring-pulse {
+	0%, 100% { transform: translate(-50%, -50%) scale(1);    opacity: 0.55; }
+	50%       { transform: translate(-50%, -50%) scale(1.18); opacity: 0.2;  }
 }
 
 /* "CLOSE" label */
@@ -575,11 +544,10 @@ body.dark-theme .gx-app-layout > .ant-layout > .ant-layout-header.app-header-she
 	text-shadow: 0 0 16px rgba(255, 255, 255, 0.5), 0 1px 3px rgba(0, 0, 0, 0.6);
 }
 
-/* Entrance animation — slides up from slightly below with a spring bounce */
+/* Entrance animation — spring pop-in with vertical centering preserved */
 @keyframes up-close-btn-in {
-	0%   { opacity: 0; transform: translateY(24px) scale(0.7); }
-	60%  { opacity: 1; transform: translateY(-4px)  scale(1.05); }
-	100% { opacity: 1; transform: translateY(0)     scale(1); }
+	from { opacity: 0; transform: translateY(-50%) scale(0.6) rotate(45deg); }
+	to   { opacity: 1; transform: translateY(-50%) scale(1)   rotate(0deg); }
 }
 
 /* ─── Profile popup card ──────────────────────────────────────────────────── */
@@ -1459,33 +1427,28 @@ body.dark-theme .up-activity-item:hover { background: rgba(30,41,59,0.6); }
 		pointer-events: none;
 	}
 
-	/* ── Close button: top-right corner of the blurred backdrop ─────────── */
+	/* ── Close button: top-right corner on mobile ────────────────────────── */
 	.up-close-btn {
 		top:       18px   !important;
 		bottom:    auto   !important;
 		right:     16px   !important;
 		left:      auto   !important;
-		transform: none   !important;   /* cancel the desktop translateX(-50%) */
+		transform: none   !important;   /* cancel the desktop translateY(-50%) */
 		gap: 5px;
 		animation: up-close-btn-in-mobile 0.32s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 	}
 
-	.up-close-btn-wrap {
-		width:  50px;
-		height: 50px;
-	}
-
-	.up-close-btn-face {
+	.up-close-orb {
 		width:  44px;
 		height: 44px;
 	}
 
-	.up-close-btn-face::before {
-		width: 26px;
-		height: 8px;
+	.up-close-face {
+		width:  44px;
+		height: 44px;
 	}
 
-	.up-close-btn-face svg {
+	.up-close-face svg {
 		width:  17px;
 		height: 17px;
 	}
@@ -1496,9 +1459,9 @@ body.dark-theme .up-activity-item:hover { background: rgba(30,41,59,0.6); }
 	}
 
 	/* Shrink the pulse rings proportionally */
-	.up-close-btn-ring--1 { width: 52px;  height: 52px;  }
-	.up-close-btn-ring--2 { width: 66px;  height: 66px;  }
-	.up-close-btn-ring--3 { width: 80px;  height: 80px;  }
+	.up-close-ring--1 { width: 52px;  height: 52px;  }
+	.up-close-ring--2 { width: 66px;  height: 66px;  }
+	.up-close-ring--3 { width: 80px;  height: 80px;  }
 }
 
 /* Bottom-sheet slide-up — defined outside @media so it's always registered */
@@ -1512,4 +1475,99 @@ body.dark-theme .up-activity-item:hover { background: rgba(30,41,59,0.6); }
 	0%   { opacity: 0; transform: scale(0.5) rotate(-15deg); }
 	65%  { opacity: 1; transform: scale(1.08) rotate(3deg);  }
 	100% { opacity: 1; transform: scale(1) rotate(0deg);     }
+}
+
+/* ─── Profile portal panel (slides in from the right) ───────────────────── */
+@keyframes up-panel-in {
+	from { opacity: 0; transform: translateX(calc(100% + 24px)); }
+	to   { opacity: 1; transform: translateX(0); }
+}
+
+.up-panel {
+	position: fixed;
+	right: 16px;
+	top: 68px;
+	bottom: 16px;
+	width: 440px;
+	z-index: 1201;
+	background: #fff;
+	border-radius: 18px;
+	font-family: 'Outfit', sans-serif;
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+	box-shadow:
+		-4px 0 32px rgba(15, 23, 42, 0.18),
+		0 8px 40px rgba(15, 23, 42, 0.12),
+		0 0 0 1px rgba(148, 163, 184, 0.12);
+	animation: up-panel-in 0.32s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+/* Sticky top: banner + avatar, never scrolls */
+.up-panel-header {
+	flex-shrink: 0;
+	border-radius: 18px 18px 0 0;
+	overflow: hidden;
+}
+
+/* Scrollable body */
+.up-panel-body {
+	flex: 1;
+	overflow-y: auto;
+	overflow-x: hidden;
+	-webkit-overflow-scrolling: touch;
+}
+
+.up-panel-body::-webkit-scrollbar { width: 4px; }
+.up-panel-body::-webkit-scrollbar-track { background: transparent; }
+.up-panel-body::-webkit-scrollbar-thumb {
+	background: rgba(148, 163, 184, 0.35);
+	border-radius: 999px;
+}
+.up-panel-body::-webkit-scrollbar-thumb:hover { background: rgba(148, 163, 184, 0.6); }
+
+.up-panel-body > *:last-child { padding-bottom: 8px; }
+
+/* Dark mode */
+body.dark-theme .up-panel { background: #0f172a; }
+
+/* Mobile: panel spans most of the screen, banner visible from top */
+@media (max-width: 575px) {
+	.up-panel {
+		right: 0;
+		left: 0;
+		top: auto;
+		bottom: 0;
+		width: 100%;
+		border-radius: 24px 24px 0 0;
+		max-height: 85vh;
+	}
+}
+
+/* ─── Exit animations (slide-out to the right) ──────────────────────────── */
+@keyframes up-panel-out {
+	from { opacity: 1; transform: translateX(0); }
+	to   { opacity: 0; transform: translateX(calc(100% + 24px)); }
+}
+
+@keyframes up-backdrop-out {
+	from { opacity: 1; backdrop-filter: blur(5px); }
+	to   { opacity: 0; backdrop-filter: blur(0px); }
+}
+
+@keyframes up-close-btn-out {
+	from { opacity: 1; transform: translateY(-50%) scale(1)   rotate(0deg);  }
+	to   { opacity: 0; transform: translateY(-50%) scale(0.6) rotate(-45deg); }
+}
+
+.up-panel--out {
+	animation: up-panel-out 0.28s cubic-bezier(0.55, 0, 1, 0.45) forwards !important;
+}
+
+.up-backdrop--out {
+	animation: up-backdrop-out 0.28s ease forwards !important;
+}
+
+.up-close-btn--out {
+	animation: up-close-btn-out 0.2s ease forwards !important;
 }

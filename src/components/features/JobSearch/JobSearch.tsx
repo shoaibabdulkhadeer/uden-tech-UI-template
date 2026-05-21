@@ -264,6 +264,15 @@ function JobSearch() {
 	const aiProgressRef = useRef<HTMLDivElement>(null);
 	const [showReviewModal, setShowReviewModal] = useState(false);
 	const [showProfileModal, setShowProfileModal] = useState(false);
+	const [closingProfile, setClosingProfile] = useState(false);
+
+	const closeProfilePanel = useCallback(() => {
+		setClosingProfile(true);
+		setTimeout(() => {
+			setShowProfileModal(false);
+			setClosingProfile(false);
+		}, 300); // matches aip-panel-out duration
+	}, []);
 	const userId = useMemo(() => {
 		try {
 			const data: any = decodeToken(sessionStorage.getItem('accessToken') || '');
@@ -2688,170 +2697,218 @@ function JobSearch() {
 				</div>
 			</Modal>
 
-			{/* ── Boosted Profile Modal ── */}
-			<Modal
-				open={showProfileModal}
-				onCancel={() => setShowProfileModal(false)}
-				footer={null}
-				width={680}
-				centered
-				className="profile-boost-modal"
-				closeIcon={<IoClose size={18} />}
-				destroyOnClose
-			>
-				{profileStatus ? (
-					<div className="pbm-loading">
-						<Spin size="large" />
-						<p>Loading profile…</p>
-					</div>
-				) : boostedProfile ? (
-					<div className="pbm-wrap">
-						{/* ── Hero ── */}
-						<div className="pbm-hero">
-							<div className="pbm-hero-bg" />
-							<div className="pbm-hero-avatar">
-								{(boostedProfile.name || displayName).charAt(0).toUpperCase()}
+			{/* ── AI Profile Panel (UserInfo-style, left side) ── */}
+			{showProfileModal && ReactDOM.createPortal(
+				<>
+					{/* Backdrop */}
+					<div className={`aip-backdrop${closingProfile ? ' aip-backdrop--out' : ''}`} onClick={closeProfilePanel} />
+
+					{/* PS5-style close button — fixed, RIGHT of panel, outside */}
+					<button
+						type="button"
+						className={`aip-close-btn${closingProfile ? ' aip-close-btn--out' : ''}`}
+						onClick={closeProfilePanel}
+						aria-label="Close AI profile"
+					>
+						<span className="aip-close-orb" aria-hidden>
+							<span className="aip-close-ring aip-close-ring--3" />
+							<span className="aip-close-ring aip-close-ring--2" />
+							<span className="aip-close-ring aip-close-ring--1" />
+							<span className="aip-close-face">
+								<svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+									<line x1="4" y1="4" x2="16" y2="16" stroke="white" strokeWidth="2.6" strokeLinecap="round"/>
+									<line x1="16" y1="4" x2="4" y2="16" stroke="white" strokeWidth="2.6" strokeLinecap="round"/>
+								</svg>
+							</span>
+						</span>
+						<span className="aip-close-label" aria-hidden>CLOSE</span>
+					</button>
+
+					{/* Panel */}
+					<div className={`aip-panel${closingProfile ? ' aip-panel--out' : ''}`} onClick={(e) => e.stopPropagation()}>
+						{profileStatus ? (
+							<div className="aip-loading">
+								<Spin size="large" />
+								<p>Loading AI Profile…</p>
 							</div>
-							<div className="pbm-hero-copy">
-								<h2 className="pbm-name">{boostedProfile.name || displayName}</h2>
-								{boostedProfile.current_role && (
-									<p className="pbm-role">{boostedProfile.current_role}</p>
+						) : boostedProfile ? (
+							<>
+								{/* ── Sticky header: banner + avatar only ── */}
+								<div className="aip-panel-header">
+									<div className="aip-banner" aria-hidden>
+										<div className="aip-banner-orb aip-banner-orb--1" />
+										<div className="aip-banner-orb aip-banner-orb--2" />
+										<div className="aip-banner-badge">
+											<MdAutoAwesome size={11} /> AI Profile
+										</div>
+									</div>
+									<div className="aip-avatar-wrap">
+										<div className="aip-avatar">
+											{(boostedProfile.name || displayName).charAt(0).toUpperCase()}
+										</div>
+										<span className="aip-ai-dot" aria-label="AI Powered" />
+									</div>
+								</div>{/* end aip-panel-header */}
+
+								{/* ── Scrollable body (identity + all content) ── */}
+								<div className="aip-panel-body">
+
+								{/* Identity */}
+								<div className="aip-identity">
+									<div className="aip-name-row">
+										<span className="aip-name">{boostedProfile.name || displayName}</span>
+										<MdVerified className="aip-verified" />
+									</div>
+									{boostedProfile.current_role && (
+										<p className="aip-role">{boostedProfile.current_role}</p>
+									)}
+									{boostedProfile.summary && (
+										<p className="aip-bio">{boostedProfile.summary}</p>
+									)}
+									<div className="aip-pills">
+										{boostedProfile.career_level && (
+											<span className="aip-pill aip-pill--indigo">
+												<MdLeaderboard size={10} />{boostedProfile.career_level}
+											</span>
+										)}
+										{boostedProfile.location && (
+											<span className="aip-pill aip-pill--cyan">
+												<MdLocationOn size={10} />{boostedProfile.location}
+											</span>
+										)}
+										{boostedProfile.total_experience_years != null && (
+											<span className="aip-pill aip-pill--emerald">
+												<MdAccessTime size={10} />{boostedProfile.total_experience_years} yrs exp
+											</span>
+										)}
+									</div>
+								</div>
+
+								{/* Stats row */}
+								<div className="aip-stats-row">
+									<div className="aip-stat">
+										<span className="aip-stat-num">{boostedProfile.skills?.length ?? 0}</span>
+										<span className="aip-stat-label">Skills</span>
+									</div>
+									<div className="aip-stat-divider" />
+									<div className="aip-stat">
+										<span className="aip-stat-num">{boostedProfile.total_experience_years ?? '—'}</span>
+										<span className="aip-stat-label">Yrs Exp</span>
+									</div>
+									<div className="aip-stat-divider" />
+									<div className="aip-stat">
+										<span className="aip-stat-num">{boostedProfile.certifications?.length ?? 0}</span>
+										<span className="aip-stat-label">Certs</span>
+									</div>
+								</div>
+
+								{/* Skills */}
+								{boostedProfile.skills?.length > 0 && (
+									<div className="aip-section">
+										<h4 className="aip-section-title"><MdCode size={13} /> Skills</h4>
+										<div className="aip-chips">
+											{boostedProfile.skills.map((s: string) => (
+												<span key={s} className="aip-chip aip-chip--skill">{s}</span>
+											))}
+										</div>
+									</div>
 								)}
-								<div className="pbm-hero-meta">
-									{boostedProfile.location && (
-										<span className="pbm-meta-chip">
-											<MdLocationOn size={12} />{boostedProfile.location}
-										</span>
-									)}
-									{boostedProfile.career_level && (
-										<span className="pbm-meta-chip pbm-meta-chip--level">
-											<MdLeaderboard size={12} />{boostedProfile.career_level}
-										</span>
-									)}
-									{boostedProfile.total_experience_years != null && (
-										<span className="pbm-meta-chip">
-											<MdAccessTime size={12} />{boostedProfile.total_experience_years} yrs exp
-										</span>
-									)}
-								</div>
-							</div>
-							<div className="pbm-boost-badge">
-								<MdAutoAwesome size={14} /> AI Profile
-							</div>
-						</div>
 
-						{/* ── Body ── */}
-						<div className="pbm-body">
-							{/* Summary */}
-							{boostedProfile.summary && (
-								<div className="pbm-section">
-									<h4 className="pbm-section-title"><MdDescription size={13} /> Summary</h4>
-									<p className="pbm-summary-text">{boostedProfile.summary}</p>
-								</div>
-							)}
-
-							{/* Skills */}
-							{boostedProfile.skills?.length > 0 && (
-								<div className="pbm-section">
-									<h4 className="pbm-section-title"><MdCode size={13} /> Skills</h4>
-									<div className="pbm-chips">
-										{boostedProfile.skills.map((s: string) => (
-											<span key={s} className="pbm-chip pbm-chip--skill">{s}</span>
-										))}
-									</div>
-								</div>
-							)}
-
-							{/* Technologies */}
-							{boostedProfile.technologies?.length > 0 && (
-								<div className="pbm-section">
-									<h4 className="pbm-section-title"><MdLaptop size={13} /> Technologies</h4>
-									<div className="pbm-chips">
-										{boostedProfile.technologies.map((t: string) => (
-											<span key={t} className="pbm-chip pbm-chip--tech">{t}</span>
-										))}
-									</div>
-								</div>
-							)}
-
-							{/* Preferred Roles */}
-							{boostedProfile.preferred_roles?.length > 0 && (
-								<div className="pbm-section">
-									<h4 className="pbm-section-title"><MdWorkOutline size={13} /> Preferred Roles</h4>
-									<div className="pbm-chips">
-										{boostedProfile.preferred_roles.map((r: string) => (
-											<span key={r} className="pbm-chip pbm-chip--role">{r}</span>
-										))}
-									</div>
-								</div>
-							)}
-
-							{/* Industries */}
-							{boostedProfile.industries?.length > 0 && (
-								<div className="pbm-section">
-									<h4 className="pbm-section-title"><MdBusiness size={13} /> Industries</h4>
-									<div className="pbm-chips">
-										{boostedProfile.industries.map((ind: string) => (
-											<span key={ind} className="pbm-chip pbm-chip--industry">{ind}</span>
-										))}
-									</div>
-								</div>
-							)}
-
-							{/* Education + Certifications two-column */}
-							{(boostedProfile.education?.length > 0 || boostedProfile.certifications?.length > 0) && (
-								<div className="pbm-two-col">
-									{boostedProfile.education?.length > 0 && (
-										<div className="pbm-section pbm-section--col">
-											<h4 className="pbm-section-title"><MdSchool size={13} /> Education</h4>
-											<div className="pbm-edu-list">
-												{boostedProfile.education.map((edu: any, i: number) => (
-													<div key={i} className="pbm-edu-item">
-														<span className="pbm-edu-degree">{edu.degree}</span>
-														<span className="pbm-edu-school">{edu.school}</span>
-														{edu.year && <span className="pbm-edu-year">{edu.year}</span>}
-													</div>
-												))}
-											</div>
+								{/* Technologies */}
+								{boostedProfile.technologies?.length > 0 && (
+									<div className="aip-section">
+										<h4 className="aip-section-title"><MdLaptop size={13} /> Technologies</h4>
+										<div className="aip-chips">
+											{boostedProfile.technologies.map((t: string) => (
+												<span key={t} className="aip-chip aip-chip--tech">{t}</span>
+											))}
 										</div>
-									)}
-									{boostedProfile.certifications?.length > 0 && (
-										<div className="pbm-section pbm-section--col">
-											<h4 className="pbm-section-title"><MdWorkspacePremium size={13} /> Certifications</h4>
-											<div className="pbm-cert-list">
-												{boostedProfile.certifications.map((cert: string, i: number) => (
-													<div key={i} className="pbm-cert-item">
-														<MdCheckCircle size={12} className="pbm-cert-check" />
-														<span>{cert}</span>
-													</div>
-												))}
-											</div>
+									</div>
+								)}
+
+								{/* Preferred Roles */}
+								{boostedProfile.preferred_roles?.length > 0 && (
+									<div className="aip-section">
+										<h4 className="aip-section-title"><MdWorkOutline size={13} /> Preferred Roles</h4>
+										<div className="aip-chips">
+											{boostedProfile.preferred_roles.map((r: string) => (
+												<span key={r} className="aip-chip aip-chip--role">{r}</span>
+											))}
 										</div>
-									)}
-								</div>
-							)}
-						</div>
+									</div>
+								)}
+
+								{/* Industries */}
+								{boostedProfile.industries?.length > 0 && (
+									<div className="aip-section">
+										<h4 className="aip-section-title"><MdBusiness size={13} /> Industries</h4>
+										<div className="aip-chips">
+											{boostedProfile.industries.map((ind: string) => (
+												<span key={ind} className="aip-chip aip-chip--industry">{ind}</span>
+											))}
+										</div>
+									</div>
+								)}
+
+								{/* Education */}
+								{boostedProfile.education?.length > 0 && (
+									<div className="aip-section">
+										<h4 className="aip-section-title"><MdSchool size={13} /> Education</h4>
+										{boostedProfile.education.map((edu: any, i: number) => {
+											// API returns strings: "Degree | School, Location"
+											const isStr = typeof edu === 'string';
+											const [degree, school] = isStr
+												? edu.split('|').map((s: string) => s.trim())
+												: [edu.degree, edu.school];
+											return (
+												<div key={i} className="aip-edu-item">
+													<span className="aip-edu-degree">{degree}</span>
+													{school && <span className="aip-edu-school">{school}</span>}
+													{!isStr && edu.year && <span className="aip-edu-year">{edu.year}</span>}
+												</div>
+											);
+										})}
+									</div>
+								)}
+
+								{/* Certifications */}
+								{boostedProfile.certifications?.length > 0 && (
+									<div className="aip-section">
+										<h4 className="aip-section-title"><MdWorkspacePremium size={13} /> Certifications</h4>
+										{boostedProfile.certifications.map((cert: string, i: number) => (
+											<div key={i} className="aip-cert-item">
+												<MdCheckCircle size={11} className="aip-cert-check" />
+												<span>{cert}</span>
+											</div>
+										))}
+									</div>
+								)}
+
+								</div>{/* end aip-panel-body */}
+							</>
+						) : (
+							<div className="aip-empty">
+								<div className="aip-empty-icon"><MdRocketLaunch size={32} /></div>
+								<h3 className="aip-empty-title">Build your AI Profile</h3>
+								<p className="aip-empty-sub">
+									Upload your resume to let AI extract your skills and build a profile that gets matched to the best roles.
+								</p>
+								<button
+									type="button"
+									className="aip-empty-cta"
+									onClick={() => {
+										setShowProfileModal(false);
+										document.querySelector('.match-engine-container')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+									}}
+								>
+									<MdFileUpload size={14} /> Upload Resume
+								</button>
+							</div>
+						)}
 					</div>
-				) : (
-					<div className="pbm-empty">
-						<div className="pbm-empty-icon"><MdRocketLaunch size={32} /></div>
-						<h3 className="pbm-empty-title">Build your AI Profile</h3>
-						<p className="pbm-empty-sub">
-							Upload your resume to let AI extract your skills and build an AI-powered profile that gets matched to the best roles.
-						</p>
-						<button
-							type="button"
-							className="pbm-empty-cta"
-							onClick={() => {
-								setShowProfileModal(false);
-								document.querySelector('.match-engine-container')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-							}}
-						>
-							<MdFileUpload size={14} /> Upload Resume
-						</button>
-					</div>
-				)}
-			</Modal>
+				</>,
+				document.body
+			)}
 		</>
 	);
 }

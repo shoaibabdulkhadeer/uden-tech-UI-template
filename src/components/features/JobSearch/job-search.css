@@ -7754,3 +7754,547 @@ body.dark-theme .js-chip-group--cyan .js-chip--active {
 	transform: translateY(-1px);
 	box-shadow: 0 7px 22px rgba(99, 102, 241, 0.48);
 }
+
+/* ════════════════════════════════════════════════════════════
+   AI Profile Panel  (aip-*)  — UserInfo-style, left side
+   ════════════════════════════════════════════════════════════ */
+
+/* Keyframes */
+@keyframes aip-backdrop-in {
+	from { opacity: 0; backdrop-filter: blur(0px); }
+	to   { opacity: 1; backdrop-filter: blur(5px); }
+}
+
+@keyframes aip-panel-in {
+	from {
+		opacity: 0;
+		transform: translateX(calc(-100% - 24px));
+	}
+	to {
+		opacity: 1;
+		transform: translateX(0);
+	}
+}
+
+/* Backdrop */
+.aip-backdrop {
+	position: fixed;
+	inset: 0;
+	z-index: 1200;
+	background: rgba(2, 6, 23, 0.55);
+	backdrop-filter: blur(5px);
+	-webkit-backdrop-filter: blur(5px);
+	animation: aip-backdrop-in 0.28s ease forwards;
+}
+
+/* ── PS5 close button — fixed, right of panel ── */
+@keyframes aip-ring-pulse {
+	0%, 100% { transform: translate(-50%, -50%) scale(1);   opacity: 0.55; }
+	50%       { transform: translate(-50%, -50%) scale(1.18); opacity: 0.2;  }
+}
+
+@keyframes aip-close-in {
+	from { opacity: 0; transform: scale(0.6) rotate(-45deg); }
+	to   { opacity: 1; transform: scale(1)   rotate(0deg); }
+}
+
+.aip-close-btn {
+	position: fixed;
+	/* right of panel: panel left(16) + width(540) + gap(24) */
+	left: 592px;
+	top: 50%;
+	transform: translateY(-50%);
+	z-index: 1202;
+	background: none;
+	border: none;
+	padding: 0;
+	cursor: pointer;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 12px;
+	animation: aip-close-in 0.35s cubic-bezier(0.22, 1, 0.36, 1) 0.1s both;
+}
+
+/* Relative container that anchors the rings */
+.aip-close-orb {
+	position: relative;
+	width: 52px;
+	height: 52px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.aip-close-face {
+	position: relative;
+	z-index: 3;
+	width: 52px;
+	height: 52px;
+	border-radius: 50%;
+	background: rgba(30, 20, 60, 0.85);
+	border: 2px solid rgba(255,255,255,0.2);
+	backdrop-filter: blur(8px);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	transition: background 0.18s, border-color 0.18s, transform 0.18s;
+	box-shadow: 0 4px 22px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.1);
+}
+
+.aip-close-btn:hover .aip-close-face {
+	background: rgba(220, 38, 38, 0.78);
+	border-color: rgba(255, 100, 100, 0.55);
+	transform: scale(1.1);
+}
+
+/* Concentric pulse rings — absolute inside .aip-close-orb */
+.aip-close-ring {
+	position: absolute;
+	border-radius: 50%;
+	border: 1.5px solid rgba(255, 255, 255, 0.28);
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%) scale(1);
+	pointer-events: none;
+}
+
+.aip-close-ring--1 {
+	width: 68px;  height: 68px;
+	animation: aip-ring-pulse 2.4s ease-in-out 0s infinite;
+}
+
+.aip-close-ring--2 {
+	width: 86px;  height: 86px;
+	animation: aip-ring-pulse 2.4s ease-in-out 0.45s infinite;
+}
+
+.aip-close-ring--3 {
+	width: 104px; height: 104px;
+	animation: aip-ring-pulse 2.4s ease-in-out 0.9s infinite;
+}
+
+.aip-close-label {
+	font-size: 10px;
+	font-weight: 700;
+	letter-spacing: 0.16em;
+	color: rgba(255,255,255,0.6);
+	text-transform: uppercase;
+	user-select: none;
+}
+
+/* Panel card */
+.aip-panel {
+	position: fixed;
+	left: 16px;
+	top: 68px;
+	width: 540px;
+	max-height: calc(100vh - 88px);
+	overflow: hidden;              /* panel itself does NOT scroll */
+	display: flex;
+	flex-direction: column;
+	z-index: 1201;
+	background: #fff;
+	border-radius: 18px;
+	box-shadow: 0 24px 64px rgba(0, 0, 0, 0.28), 0 0 0 1px rgba(255,255,255,0.08);
+	animation: aip-panel-in 0.32s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+	scrollbar-width: thin;
+	scrollbar-color: rgba(148,163,184,0.35) transparent;
+}
+
+.aip-panel::-webkit-scrollbar { width: 4px; }
+.aip-panel::-webkit-scrollbar-track { background: transparent; }
+.aip-panel::-webkit-scrollbar-thumb { background: rgba(148,163,184,0.35); border-radius: 999px; }
+.aip-panel::-webkit-scrollbar-thumb:hover { background: rgba(148,163,184,0.6); }
+
+/* ── Sticky header: banner + avatar only ── */
+.aip-panel-header {
+	flex-shrink: 0;
+	border-radius: 18px 18px 0 0;
+	z-index: 2;
+	/* avatar overlaps into the body, so no bottom padding */
+}
+
+/* ── Scrollable body ── */
+.aip-panel-body {
+	flex: 1;
+	overflow-y: auto;
+	overflow-x: hidden;
+	scrollbar-width: thin;
+	scrollbar-color: rgba(148,163,184,0.35) transparent;
+	padding-bottom: 20px;
+}
+
+.aip-panel-body::-webkit-scrollbar { width: 4px; }
+.aip-panel-body::-webkit-scrollbar-track { background: transparent; }
+.aip-panel-body::-webkit-scrollbar-thumb { background: rgba(148,163,184,0.35); border-radius: 999px; }
+.aip-panel-body::-webkit-scrollbar-thumb:hover { background: rgba(148,163,184,0.6); }
+
+/* ── Banner ── */
+.aip-banner {
+	position: relative;
+	height: 82px;
+	background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #4c1d95 100%);
+	overflow: hidden;
+}
+
+.aip-banner::after {
+	content: '';
+	position: absolute;
+	inset: 0;
+	background: linear-gradient(90deg, transparent 0%, rgba(139,92,246,0.12) 50%, transparent 100%);
+	background-size: 200% 100%;
+	animation: aip-banner-shimmer 3s linear infinite;
+}
+
+@keyframes aip-banner-shimmer {
+	0%   { background-position: -200% 0; }
+	100% { background-position: 200% 0; }
+}
+
+.aip-banner-orb--1 {
+	position: absolute;
+	width: 110px; height: 110px;
+	border-radius: 50%;
+	background: radial-gradient(circle, rgba(139,92,246,0.45) 0%, transparent 70%);
+	top: -30px; right: -10px;
+}
+
+.aip-banner-orb--2 {
+	position: absolute;
+	width: 80px; height: 80px;
+	border-radius: 50%;
+	background: radial-gradient(circle, rgba(34,211,238,0.3) 0%, transparent 70%);
+	bottom: -20px; right: 80px;
+}
+
+.aip-banner-badge {
+	position: absolute;
+	top: 12px; right: 14px;
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	padding: 4px 10px;
+	border-radius: 20px;
+	background: rgba(255,255,255,0.12);
+	border: 1px solid rgba(255,255,255,0.18);
+	color: #e0d7ff;
+	font-size: 11px;
+	font-weight: 700;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+	backdrop-filter: blur(4px);
+	z-index: 2;
+}
+
+/* ── Avatar ── */
+.aip-avatar-wrap {
+	position: relative;
+	display: inline-flex;
+	margin: -28px 0 0 20px;
+	z-index: 10;
+}
+
+.aip-avatar {
+	width: 56px; height: 56px;
+	border-radius: 50%;
+	background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+	color: #fff;
+	font-size: 22px;
+	font-weight: 700;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	border: 3px solid #fff;
+	box-shadow: 0 4px 14px rgba(99,102,241,0.35);
+}
+
+.aip-ai-dot {
+	position: absolute;
+	bottom: 2px; right: 2px;
+	width: 12px; height: 12px;
+	border-radius: 50%;
+	background: #8b5cf6;
+	border: 2px solid #fff;
+	box-shadow: 0 0 0 3px rgba(139,92,246,0.25);
+}
+
+/* ── Identity ── */
+.aip-identity {
+	padding: 12px 20px 0;
+}
+
+.aip-name-row {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+}
+
+.aip-name {
+	font-size: 1.05rem;
+	font-weight: 700;
+	color: #0f172a;
+	letter-spacing: -0.02em;
+}
+
+.aip-verified {
+	color: #6366f1;
+	font-size: 16px;
+}
+
+.aip-role {
+	margin: 3px 0 0;
+	font-size: 12.5px;
+	color: #475569;
+	font-weight: 500;
+}
+
+.aip-bio {
+	margin: 6px 0 0;
+	font-size: 12px;
+	line-height: 1.55;
+	color: #64748b;
+	display: -webkit-box;
+	-webkit-line-clamp: 3;
+	-webkit-box-orient: vertical;
+	overflow: hidden;
+}
+
+.aip-pills {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	margin-top: 10px;
+}
+
+.aip-pill {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	padding: 3px 9px;
+	border-radius: 20px;
+	font-size: 11px;
+	font-weight: 600;
+}
+
+.aip-pill--indigo { background: rgba(99,102,241,0.1);  color: #6366f1; }
+.aip-pill--cyan   { background: rgba(6,182,212,0.1);   color: #0891b2; }
+.aip-pill--emerald{ background: rgba(16,185,129,0.1);  color: #059669; }
+
+/* ── Stats row ── */
+.aip-stats-row {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0;
+	margin: 14px 20px 0;
+	padding: 10px 0;
+	border-radius: 12px;
+	background: rgba(248,250,255,0.9);
+	border: 1px solid rgba(148,163,184,0.14);
+}
+
+.aip-stat {
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 2px;
+}
+
+.aip-stat-divider {
+	width: 1px;
+	height: 28px;
+	background: rgba(148,163,184,0.2);
+}
+
+.aip-stat-num {
+	font-size: 18px;
+	font-weight: 800;
+	color: #6366f1;
+	letter-spacing: -0.03em;
+	line-height: 1;
+}
+
+.aip-stat-label {
+	font-size: 10px;
+	font-weight: 600;
+	color: #94a3b8;
+	text-transform: uppercase;
+	letter-spacing: 0.06em;
+}
+
+/* ── Sections ── */
+.aip-section {
+	padding: 14px 20px 0;
+}
+
+.aip-section-title {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	font-size: 11.5px;
+	font-weight: 700;
+	color: #475569;
+	text-transform: uppercase;
+	letter-spacing: 0.06em;
+	margin: 0 0 8px;
+}
+
+.aip-chips {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 5px;
+}
+
+.aip-chip {
+	display: inline-flex;
+	align-items: center;
+	padding: 3px 9px;
+	border-radius: 20px;
+	font-size: 11.5px;
+	font-weight: 500;
+	white-space: nowrap;
+}
+
+.aip-chip--skill    { background: rgba(99,102,241,0.08);  color: #6366f1;  border: 1px solid rgba(99,102,241,0.18); }
+.aip-chip--tech     { background: rgba(6,182,212,0.08);   color: #0891b2;  border: 1px solid rgba(6,182,212,0.18); }
+.aip-chip--role     { background: rgba(139,92,246,0.08);  color: #7c3aed;  border: 1px solid rgba(139,92,246,0.18); }
+.aip-chip--industry { background: rgba(16,185,129,0.08);  color: #059669;  border: 1px solid rgba(16,185,129,0.18); }
+
+/* ── Two-col education/certs ── */
+.aip-two-col {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 0 12px;
+	padding-bottom: 8px;
+}
+
+.aip-edu-item {
+	display: flex;
+	flex-direction: column;
+	gap: 1px;
+	margin-bottom: 8px;
+}
+
+.aip-edu-degree { font-size: 12px; font-weight: 600; color: #1e293b; }
+.aip-edu-school { font-size: 11px; color: #64748b; }
+.aip-edu-year   { font-size: 10.5px; color: #94a3b8; }
+
+.aip-cert-item {
+	display: flex;
+	align-items: flex-start;
+	gap: 6px;
+	margin-bottom: 6px;
+	font-size: 12px;
+	color: #334155;
+}
+
+.aip-cert-check { color: #16a34a; flex-shrink: 0; margin-top: 2px; }
+
+/* ── Loading ── */
+.aip-loading {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 14px;
+	padding: 48px 20px;
+	color: #64748b;
+	font-size: 13px;
+}
+
+/* ── Empty state ── */
+.aip-empty {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	text-align: center;
+	padding: 48px 28px 36px;
+	gap: 10px;
+}
+
+.aip-empty-icon {
+	width: 64px; height: 64px;
+	border-radius: 18px;
+	background: linear-gradient(135deg, rgba(99,102,241,0.12), rgba(139,92,246,0.12));
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	color: #6366f1;
+	margin-bottom: 4px;
+}
+
+.aip-empty-title {
+	font-size: 15px;
+	font-weight: 700;
+	color: #1e293b;
+	margin: 0;
+}
+
+.aip-empty-sub {
+	font-size: 12.5px;
+	color: #64748b;
+	line-height: 1.55;
+	margin: 0;
+	max-width: 300px;
+}
+
+.aip-empty-cta {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 9px 20px;
+	border-radius: 10px;
+	border: none;
+	background: linear-gradient(135deg, #6366f1, #8b5cf6);
+	color: #fff;
+	font-size: 13px;
+	font-weight: 600;
+	cursor: pointer;
+	margin-top: 6px;
+	transition: transform 0.15s, box-shadow 0.15s;
+	box-shadow: 0 4px 14px rgba(99,102,241,0.35);
+}
+
+.aip-empty-cta:hover {
+	transform: translateY(-1px);
+	box-shadow: 0 7px 22px rgba(99,102,241,0.48);
+}
+
+/* Bottom padding for panel body last section */
+.aip-panel-body > *:last-child { padding-bottom: 8px; }
+
+/* ── Exit animations (slide-out to left) ── */
+@keyframes aip-panel-out {
+	from {
+		opacity: 1;
+		transform: translateX(0);
+	}
+	to {
+		opacity: 0;
+		transform: translateX(calc(-100% - 24px));
+	}
+}
+
+@keyframes aip-backdrop-out {
+	from { opacity: 1; backdrop-filter: blur(5px); }
+	to   { opacity: 0; backdrop-filter: blur(0px); }
+}
+
+@keyframes aip-close-out {
+	from { opacity: 1; transform: translateY(-50%) scale(1) rotate(0deg); }
+	to   { opacity: 0; transform: translateY(-50%) scale(0.6) rotate(45deg); }
+}
+
+.aip-panel--out {
+	animation: aip-panel-out 0.28s cubic-bezier(0.55, 0, 1, 0.45) forwards !important;
+}
+
+.aip-backdrop--out {
+	animation: aip-backdrop-out 0.28s ease forwards !important;
+}
+
+.aip-close-btn--out {
+	animation: aip-close-out 0.2s ease forwards !important;
+}
+/* ═══════════════════════════════════════════════════════════ */
