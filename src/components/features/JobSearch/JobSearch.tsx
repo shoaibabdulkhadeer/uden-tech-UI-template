@@ -2216,13 +2216,6 @@ function JobSearch() {
 				{previewJob ? (
 					<div className="job-search-preview">
 
-						{/* ── API loading overlay ── */}
-						{jobByIdStatus && (
-							<div className="jd-loading-overlay">
-								<Spin size="large" />
-							</div>
-						)}
-
 						{/* ── Scrollable area: header + body ── */}
 						<div className="jd-scroll-area">
 
@@ -2295,18 +2288,28 @@ function JobSearch() {
 
 							{/* Bottom row: About + What you'll do inside header */}
 							<div className="jd-head-desc">
-								<div className="jd-head-desc-col">
-									<p className="jd-head-desc-label"><MdDescription size={12}/> About the role</p>
-									<p className="jd-head-desc-text">{previewJob.detail.description}</p>
-								</div>
-								<div className="jd-head-desc-col">
-									<p className="jd-head-desc-label"><MdOutlineAssignment size={12}/> What you&apos;ll do</p>
-									<ul className="jd-head-resp-list">
-										{previewJob.detail.responsibilities.map((r) => (
-											<li key={r}>{r}</li>
-										))}
-									</ul>
-								</div>
+								<>
+									<div className="jd-head-desc-col">
+										<p className="jd-head-desc-label"><MdDescription size={12}/> About the role</p>
+										{jobByIdStatus ? (
+											<Skeleton active title={false} paragraph={{ rows: 3, width: ['100%', '100%', '82%'] }} />
+										) : (
+											<p className="jd-head-desc-text">{previewJob.detail.description}</p>
+										)}
+									</div>
+									<div className="jd-head-desc-col">
+										<p className="jd-head-desc-label"><MdOutlineAssignment size={12}/> What you&apos;ll do</p>
+										{jobByIdStatus ? (
+											<Skeleton active title={false} paragraph={{ rows: 5, width: ['240px', '290px', '260px', '310px', '255px'] }} className="jd-resp-skel" />
+										) : (
+											<ul className="jd-head-resp-list">
+												{previewJob.detail.responsibilities.map((r) => (
+													<li key={r}>{r}</li>
+												))}
+											</ul>
+										)}
+									</div>
+								</>
 							</div>
 						</header>
 
@@ -2319,11 +2322,19 @@ function JobSearch() {
 									<span className="jd-section-icon jd-section-icon--violet"><MdCode size={12}/></span>
 									Skills required
 								</h4>
-								<div className="jd-skills-row">
-									{previewJob.detail.skills.map((s) => (
-										<span key={s} className="job-search-preview-skill">{s}</span>
-									))}
-								</div>
+								{jobByIdStatus ? (
+									<div className="jd-skills-row">
+										{[80,65,90,55,75,70,60].map((w, i) => (
+											<Skeleton.Button key={i} active size="small" style={{ width: w, borderRadius: 8 }} />
+										))}
+									</div>
+								) : (
+									<div className="jd-skills-row">
+										{previewJob.detail.skills.map((s) => (
+											<span key={s} className="job-search-preview-skill">{s}</span>
+										))}
+									</div>
+								)}
 							</div>
 
 							{/* Two-panel: Your fit + Interview rounds */}
@@ -2336,6 +2347,7 @@ function JobSearch() {
 										Your fit
 									</h3>
 
+									{jobByIdStatus ? <Skeleton active paragraph={{ rows: 7 }} title={{ width: '55%' }} /> : <>
 									{/* Score ring — prefer fitScore (AI), fall back to matchScore */}
 									{(previewJob.fitScore != null || previewJob.matchScore != null) ? (() => {
 										const displayScore = previewJob.fitScore ?? previewJob.matchScore ?? 0;
@@ -2483,6 +2495,7 @@ function JobSearch() {
 											</ul>
 										</div>
 									) : null}
+								</>}
 								</div>
 
 								{/* Right: Interview rounds */}
@@ -2491,6 +2504,7 @@ function JobSearch() {
 										<MdEmojiEvents size={16} className="jd-panel-title-icon jd-panel-title-icon--indigo"/>
 										Interview rounds
 									</h3>
+									{jobByIdStatus ? <Skeleton active paragraph={{ rows: 5 }} title={{ width: '45%' }} /> : <>
 									<div className="jd-rounds-list">
 										{(previewJob.detail.interviewRounds ?? [
 											{ round: 1, name: 'HR Screening',    subtitle: 'Culture fit & role overview call' },
@@ -2511,6 +2525,7 @@ function JobSearch() {
 											))}
 									</div>
 									<p className="jd-rounds-hint"><MdMenuBook size={12} style={{marginRight:4,verticalAlign:'middle'}}/>Tap any round to prepare</p>
+								</>}
 								</div>
 							</div>
 

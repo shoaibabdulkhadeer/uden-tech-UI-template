@@ -4519,6 +4519,30 @@ body.dark-theme .job-meta-icon               { opacity: 0.4; }
 	gap: 6px;
 }
 
+/* ── What you'll do bullet-point skeleton ── */
+.jd-resp-skel { margin: 0 !important; }
+.jd-resp-skel .ant-skeleton-paragraph { margin: 0 !important; }
+.jd-resp-skel .ant-skeleton-paragraph li {
+	padding-left: 14px;
+	position: relative;
+	height: 11px !important;
+	border-radius: 6px !important;
+	margin-bottom: 9px !important;
+}
+.jd-resp-skel .ant-skeleton-paragraph li:last-child { margin-bottom: 0 !important; }
+.jd-resp-skel .ant-skeleton-paragraph li::before {
+	content: '';
+	position: absolute;
+	left: 0;
+	top: 50%;
+	transform: translateY(-50%);
+	width: 4px;
+	height: 4px;
+	border-radius: 50%;
+	background: rgba(255,255,255,0.35);
+	z-index: 1;
+}
+
 .jd-head-resp-list li {
 	font-size: 12.5px;
 	line-height: 1.55;
