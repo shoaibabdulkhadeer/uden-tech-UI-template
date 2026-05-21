@@ -1704,10 +1704,22 @@ function JobSearch() {
 													))}
 												</div>
 												<div className="js-ai-banner-actions">
-													<button type="button" className="js-ai-apply-btn" onClick={applyDetectedFilters}>
-														<MdBolt size={12} />
-														Add to filters
-													</button>
+												<button type="button" className="js-ai-apply-btn" onClick={applyDetectedFilters}>
+													<MdBolt size={12} />
+													Add to filters
+													<span className="js-ai-apply-tooltip" role="tooltip">
+														<span className="js-ai-apply-tooltip-title">
+															<span className="js-ai-apply-tooltip-icon"><MdBolt size={11} /></span>
+															Apply AI filters
+														</span>
+														<p className="js-ai-apply-tooltip-desc">
+															Instantly loads your detected skills, role type, and work mode into the search filters.
+														</p>
+														<span className="js-ai-apply-tooltip-hint">
+															<MdBolt size={10} /> One click to refine your results
+														</span>
+													</span>
+												</button>
 													<button type="button" className="js-ai-skip-btn" onClick={() => setDetectedFilters(null)}>
 														Skip
 													</button>

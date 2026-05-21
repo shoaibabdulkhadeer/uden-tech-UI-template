@@ -11,6 +11,7 @@ import { Link } from 'react-router-dom';
 import { toggleCollapsedSideNav } from '../../../appRedux/actions/Setting';
 import { TAB_SIZE } from '../../../constants/ThemeSetting';
 import SwitchRole from '../../Sidebar/SwitchRole';
+import RecommendationBell from '../../../components/layout/RecommendationBell';
 
 const { Header } = Layout;
 
@@ -78,6 +79,9 @@ const InsideHeader = () => {
 						)}
 
 						<ul className="gx-header-notifications gx-ml-auto">
+							<li className="gx-notify" style={{ display: 'flex', alignItems: 'center' }}>
+								<RecommendationBell />
+							</li>
 							<li className="gx-notify gx-notify-search">
 								<Popover
 									overlayClassName="gx-popover-horizantal"

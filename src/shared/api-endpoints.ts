@@ -40,6 +40,7 @@ export const API_ENDPOINTS = {
 	JOB_UNSAVE    : '/v2/jobs/save/{job_id}',
 	JOB_GET_SAVED  : '/v2/jobs/saved',
 	JOB_GET_BY_ID  : '/v2/jobs/{job_id}',
+	RECOMMENDATIONS: '/v2/match/recommendations',
 
 	//#endregion
 };

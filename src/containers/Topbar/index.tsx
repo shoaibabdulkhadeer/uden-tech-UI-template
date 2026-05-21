@@ -6,6 +6,7 @@ import AppHeaderLead from '../../components/layout/AppHeaderLead';
 import { NAV_STYLE_DRAWER, NAV_STYLE_FIXED, NAV_STYLE_MINI_SIDEBAR, TAB_SIZE } from '../../constants/ThemeSetting';
 import { useDispatch, useSelector } from 'react-redux';
 import SwitchRole from '../Sidebar/SwitchRole';
+import RecommendationBell from '../../components/layout/RecommendationBell';
 
 const { Header } = Layout;
 
@@ -29,8 +30,9 @@ const Topbar = () => {
 					<AppHeaderLead />
 				</div>
 
-				{/* Right — switch role · user profile */}
+				{/* Right — bell · switch role · user profile */}
 				<div className="app-header-shell__actions">
+					<RecommendationBell />
 					<SwitchRole />
 					<UserInfo />
 				</div>

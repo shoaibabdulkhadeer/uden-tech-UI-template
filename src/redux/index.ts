@@ -21,6 +21,7 @@ import { getJobDescriptionReducer } from './features/learningPath/getJobDescript
 import { resumeUploadReducer } from './features/profile/resumeUploadSlice';
 import { getProfileReducer } from './features/profile/getProfileSlice';
 import { jobSearchReducer } from './features/jobSearch/jobSearchSlice';
+import { recommendationsReducer } from './features/notifications/recommendationsSlice';
 import { saveJobReducer } from './features/jobSearch/saveJobSlice';
 import { getSavedJobsReducer } from './features/jobSearch/getSavedJobsSlice';
 import { unsaveJobReducer } from './features/jobSearch/unsaveJobSlice';
@@ -56,6 +57,7 @@ export default combineReducers({
 	getSavedJobsReducer:getSavedJobsReducer,
 	unsaveJobReducer:unsaveJobReducer,
 	getJobByIdReducer:getJobByIdReducer,
+	recommendationsReducer:recommendationsReducer,
 
 });
 
