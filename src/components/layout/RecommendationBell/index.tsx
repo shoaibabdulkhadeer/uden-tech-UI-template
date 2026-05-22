@@ -66,11 +66,11 @@ const RecommendationBell = () => {
   const wrapRef = useRef<HTMLDivElement>(null);
 
   // Fetch on mount if not already fetched
-  useEffect(() => {
-    if (!fetched) {
-      dispatch(fetchRecommendations());
-    }
-  }, [dispatch, fetched]);
+  // useEffect(() => {
+  //   if (!fetched) {
+  //     dispatch(fetchRecommendations());
+  //   }
+  // }, [dispatch, fetched]);
 
   // Play sound once when data first arrives
   useEffect(() => {
@@ -104,7 +104,10 @@ const RecommendationBell = () => {
   const toggle = () => setOpen((prev) => !prev);
   const close = () => setOpen(false);
 
-  return (
+  // Bell hidden — uncomment below (and re-enable fetch above) when ready
+  return null;
+
+  /* return (
     <div className="rec-bell-wrap" ref={wrapRef}>
       <button
         type="button"
@@ -121,7 +124,6 @@ const RecommendationBell = () => {
 
       {open && (
         <div className="rec-bell-panel" ref={panelRef}>
-          {/* Header */}
           <div className="rec-bell-panel-header">
             <div className="rec-bell-panel-header-text">
               <p className="rec-bell-panel-title">Job Matches</p>
@@ -137,7 +139,6 @@ const RecommendationBell = () => {
             </button>
           </div>
 
-          {/* Body */}
           {status ? (
             <div className="rec-notif-loading">
               <div className="rec-notif-skeleton" />
@@ -196,7 +197,7 @@ const RecommendationBell = () => {
         </div>
       )}
     </div>
-  );
+  ); */
 };
 
 export default RecommendationBell;

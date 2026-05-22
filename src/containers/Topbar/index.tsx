@@ -32,7 +32,7 @@ const Topbar = () => {
 
 				{/* Right — bell · switch role · user profile */}
 				<div className="app-header-shell__actions">
-					<RecommendationBell />
+					{/* <RecommendationBell /> */}
 					<SwitchRole />
 					<UserInfo />
 				</div>

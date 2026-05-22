@@ -1,6 +1,5 @@
-import { Modal, Tooltip } from 'antd';
+import { Tooltip } from 'antd';
 import React, { useCallback, useMemo } from 'react';
-import { CiLogout } from 'react-icons/ci';
 import {
 	MdSpaceDashboard,
 	MdAutoGraph,
@@ -8,9 +7,8 @@ import {
 	MdAdminPanelSettings,
 	MdManageAccounts,
 } from 'react-icons/md';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { logoutSession } from '../../redux/features/auth/logoutSessionSlice';
 import { AppDispatch } from '../../redux/store';
 import { toggleCollapsedSideNav } from '../../appRedux/actions';
 import {
@@ -39,7 +37,6 @@ const SidebarContent = ({
 	setSidebarCollapsed: (v: boolean) => void;
 }) => {
 	const dispatch = useDispatch<AppDispatch>();
-	const navigate = useNavigate();
 	const width = useSelector(({ common }: any) => common.width);
 	const { navStyle, themeType } = useSelector(({ settings }: any) => settings);
 
@@ -69,21 +66,7 @@ const SidebarContent = ({
 			: 'gx-sidebar-learn-shell--dark',
 	[themeType]);
 
-	const handleSidebarLogout = useCallback(() => {
-		Modal.confirm({
-			title: 'Are you sure you want to log out?',
-			okText: 'Yes',
-			okType: 'primary',
-			cancelText: 'No',
-			onOk() {
-				dispatch(logoutSession());
-				navigate('/sessionexpired');
-			},
-			onCancel() {},
-		});
-	}, [dispatch, navigate]);
-
-	// Only re-renders nav list when active route or collapsed state changes
+// Only re-renders nav list when active route or collapsed state changes
 	const navList = useMemo(() =>
 		NAV_ITEMS.map(({ id, url, Icon, color, label, tag }) => {
 			const isActive = selectedKey === id;
@@ -134,23 +117,6 @@ const SidebarContent = ({
 					</CustomScrollbars>
 				</div>
 
-				<div className="gx-sidebar-learn-foot">
-					<button
-						type="button"
-						className="gx-sidebar-learn-logout"
-						onClick={handleSidebarLogout}
-					>
-						<span className="gx-sidebar-learn-logout-icon" aria-hidden>
-							<CiLogout size={20} />
-						</span>
-						{!sidebarCollapsed && (
-							<span className="gx-sidebar-learn-logout-text">
-								<span className="gx-sidebar-learn-logout-title">Log out</span>
-								<span className="gx-sidebar-learn-logout-sub">End this session</span>
-							</span>
-						)}
-					</button>
-				</div>
 			</div>
 		</div>
 	);
