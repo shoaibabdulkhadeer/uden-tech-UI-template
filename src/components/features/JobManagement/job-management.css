@@ -1256,8 +1256,8 @@ body.dark-theme .view-tab--violet.view-tab--active { color: #fff; }
 	border-radius: 5px;
 	flex-shrink: 0;
 }
-.filter-label-icon--indigo { background: linear-gradient(135deg,#6366f1,#8b5cf6); color:#fff; }
-.filter-label-icon--violet { background: linear-gradient(135deg,#8b5cf6,#ec4899); color:#fff; }
+.filter-label-icon--indigo,
+.filter-label-icon--violet { background: rgba(100,116,139,0.12); color: #64748b; }
 
 /* ── Chip group ─────────────────────────────────────────── */
 .js-chip-group {
@@ -2040,9 +2040,8 @@ body.dark-theme .admin-action-chip:hover {
 	color: #fff;
 }
 
-/* filter-label-icon colors missing from this file */
-.filter-label-icon--cyan  { background: linear-gradient(135deg, #06b6d4, #0891b2); color: #fff; }
-.filter-label-icon--amber { background: linear-gradient(135deg, #f59e0b, #d97706); color: #fff; }
+.filter-label-icon--cyan,
+.filter-label-icon--amber { background: rgba(100,116,139,0.12); color: #64748b; }
 
 /* ── Dark mode ──────────────────────────────────────────────── */
 

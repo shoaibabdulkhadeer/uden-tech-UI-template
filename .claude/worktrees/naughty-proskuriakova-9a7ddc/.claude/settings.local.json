@@ -5,7 +5,9 @@
       "Bash(python -c ' *)",
       "Bash(npx tsc *)",
       "Bash(timeout 25)",
-      "Bash(node -e ' *)"
+      "Bash(node -e ' *)",
+      "Bash(xargs grep -l \"sidebar\\\\|Sidebar\\\\|SideBar\")",
+      "Bash(xargs grep -l \"sidebar\\\\|nav\")"
     ]
   }
 }

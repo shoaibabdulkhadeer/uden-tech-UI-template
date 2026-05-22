@@ -1578,28 +1578,28 @@ body.dark-theme .jd-reset-btn {
 
 /* ── Primary Find AI Matches button (in card) ── */
 .me-find-btn-wrap {
-	margin-top: 14px;
+	margin-top: 10px;
 	display: flex;
 	flex-direction: column;
 	align-items: stretch;
-	gap: 5px;
+	gap: 4px;
 }
 
 .me-find-btn {
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	gap: 7px;
+	gap: 6px;
 	width: 100%;
-	padding: 11px 18px;
-	border-radius: 12px;
+	padding: 8px 16px;
+	border-radius: 10px;
 	border: none;
 	background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 60%, #93c5fd 100%);
 	color: #fff;
-	font-size: 13.5px;
-	font-weight: 700;
+	font-size: 12.5px;
+	font-weight: 600;
 	cursor: pointer;
-	box-shadow: 0 4px 18px rgba(59,130,246,0.38);
+	box-shadow: 0 3px 12px rgba(59,130,246,0.32);
 	transition: opacity 0.15s, transform 0.1s, box-shadow 0.15s;
 }
 .me-find-btn:hover { opacity: 0.92; transform: translateY(-1px); box-shadow: 0 6px 22px rgba(59,130,246,0.48); }
@@ -1929,10 +1929,10 @@ body.dark-theme .jd-reset-btn {
 .job-search-filters-label {
 	margin: 0 0 8px;
 	font-size: 11px;
-	font-weight: 800;
-	letter-spacing: 0.08em;
-	text-transform: uppercase;
-	color: var(--dn-ink-muted, #64748b);
+	font-weight: 500;
+	letter-spacing: 0;
+	text-transform: none;
+	color: #94a3b8;
 }
 
 .job-search-filters-label:not(:first-child) {
@@ -3650,21 +3650,21 @@ body.dark-theme .jd-toggle-knob {
 .career-accel-feature-chip {
 	display: inline-flex;
 	align-items: center;
-	gap: 7px;
-	padding: 4px 12px 4px 4px;
+	gap: 6px;
+	padding: 5px 13px 5px 6px;
 	border-radius: 999px;
-	font-size: 12px;
-	font-weight: 700;
+	font-size: 11.5px;
+	font-weight: 600;
 	letter-spacing: 0.01em;
 	white-space: nowrap;
-	transition: transform 0.18s ease, box-shadow 0.18s ease;
+	transition: transform 0.18s ease, background 0.18s ease;
 	cursor: default;
 }
 .career-accel-feature-chip:hover {
 	transform: translateY(-1px);
 }
 
-/* Circular gradient icon inside each chip */
+/* Soft icon circle — tinted bg, colored icon (no heavy gradient fill) */
 .career-accel-chip-icon {
 	display: inline-flex;
 	align-items: center;
@@ -3673,75 +3673,86 @@ body.dark-theme .jd-toggle-knob {
 	height: 20px;
 	border-radius: 50%;
 	flex-shrink: 0;
-	color: #fff;
 }
 
-/* Color variants */
+/* Color variants — very light tints */
 .career-accel-feature-chip--indigo {
-	background: linear-gradient(135deg, rgba(99,102,241,0.1), rgba(139,92,246,0.07));
-	border: 1px solid rgba(99,102,241,0.22);
+	background: rgba(99,102,241,0.07);
+	border: 1px solid rgba(99,102,241,0.16);
 	color: #4f46e5;
-	box-shadow: 0 2px 8px -2px rgba(99,102,241,0.18);
 }
 .career-accel-feature-chip--indigo .career-accel-chip-icon {
-	background: linear-gradient(135deg, #6366f1, #8b5cf6);
-	box-shadow: 0 2px 6px rgba(99,102,241,0.4);
+	background: rgba(99,102,241,0.14);
+	color: #6366f1;
+}
+.career-accel-feature-chip--indigo:hover {
+	background: rgba(99,102,241,0.11);
 }
 
 .career-accel-feature-chip--cyan {
-	background: linear-gradient(135deg, rgba(14,165,233,0.1), rgba(6,182,212,0.07));
-	border: 1px solid rgba(14,165,233,0.22);
+	background: rgba(14,165,233,0.07);
+	border: 1px solid rgba(14,165,233,0.16);
 	color: #0369a1;
-	box-shadow: 0 2px 8px -2px rgba(14,165,233,0.18);
 }
 .career-accel-feature-chip--cyan .career-accel-chip-icon {
-	background: linear-gradient(135deg, #0ea5e9, #06b6d4);
-	box-shadow: 0 2px 6px rgba(14,165,233,0.4);
+	background: rgba(14,165,233,0.14);
+	color: #0ea5e9;
+}
+.career-accel-feature-chip--cyan:hover {
+	background: rgba(14,165,233,0.11);
 }
 
 .career-accel-feature-chip--amber {
-	background: linear-gradient(135deg, rgba(245,158,11,0.1), rgba(249,115,22,0.07));
-	border: 1px solid rgba(245,158,11,0.22);
+	background: rgba(245,158,11,0.07);
+	border: 1px solid rgba(245,158,11,0.18);
 	color: #b45309;
-	box-shadow: 0 2px 8px -2px rgba(245,158,11,0.18);
 }
 .career-accel-feature-chip--amber .career-accel-chip-icon {
-	background: linear-gradient(135deg, #f59e0b, #f97316);
-	box-shadow: 0 2px 6px rgba(245,158,11,0.4);
+	background: rgba(245,158,11,0.14);
+	color: #f59e0b;
+}
+.career-accel-feature-chip--amber:hover {
+	background: rgba(245,158,11,0.11);
 }
 
 .career-accel-feature-chip--emerald {
-	background: linear-gradient(135deg, rgba(16,185,129,0.1), rgba(20,184,166,0.07));
-	border: 1px solid rgba(16,185,129,0.22);
+	background: rgba(16,185,129,0.07);
+	border: 1px solid rgba(16,185,129,0.16);
 	color: #047857;
-	box-shadow: 0 2px 8px -2px rgba(16,185,129,0.18);
 }
 .career-accel-feature-chip--emerald .career-accel-chip-icon {
-	background: linear-gradient(135deg, #10b981, #14b8a6);
-	box-shadow: 0 2px 6px rgba(16,185,129,0.4);
+	background: rgba(16,185,129,0.14);
+	color: #10b981;
+}
+.career-accel-feature-chip--emerald:hover {
+	background: rgba(16,185,129,0.11);
 }
 
 /* Dark theme */
 body.dark-theme .career-accel-feature-chip--indigo {
-	background: rgba(99,102,241,0.14);
-	border-color: rgba(129,140,248,0.3);
+	background: rgba(99,102,241,0.12);
+	border-color: rgba(129,140,248,0.22);
 	color: #a5b4fc;
 }
+body.dark-theme .career-accel-feature-chip--indigo .career-accel-chip-icon { color: #a5b4fc; background: rgba(99,102,241,0.2); }
 body.dark-theme .career-accel-feature-chip--cyan {
-	background: rgba(14,165,233,0.12);
-	border-color: rgba(56,189,248,0.3);
+	background: rgba(14,165,233,0.1);
+	border-color: rgba(56,189,248,0.22);
 	color: #7dd3fc;
 }
+body.dark-theme .career-accel-feature-chip--cyan .career-accel-chip-icon { color: #7dd3fc; background: rgba(14,165,233,0.18); }
 body.dark-theme .career-accel-feature-chip--amber {
-	background: rgba(245,158,11,0.12);
-	border-color: rgba(251,191,36,0.3);
+	background: rgba(245,158,11,0.1);
+	border-color: rgba(251,191,36,0.22);
 	color: #fcd34d;
 }
+body.dark-theme .career-accel-feature-chip--amber .career-accel-chip-icon { color: #fcd34d; background: rgba(245,158,11,0.18); }
 body.dark-theme .career-accel-feature-chip--emerald {
-	background: rgba(16,185,129,0.12);
-	border-color: rgba(52,211,153,0.3);
+	background: rgba(16,185,129,0.1);
+	border-color: rgba(52,211,153,0.22);
 	color: #6ee7b7;
 }
+body.dark-theme .career-accel-feature-chip--emerald .career-accel-chip-icon { color: #6ee7b7; background: rgba(16,185,129,0.18); }
 
 
 /* ── Filters divider ── */
@@ -3764,15 +3775,15 @@ body.dark-theme .career-accel-feature-chip--emerald {
 	align-items: center;
 	gap: 5px;
 	font-size: 11px;
-	font-weight: 700;
-	letter-spacing: 0.06em;
-	text-transform: uppercase;
-	color: #64748b;
+	font-weight: 500;
+	letter-spacing: 0;
+	text-transform: none;
+	color: #94a3b8;
 	margin-bottom: 8px;
 }
 
 .loc-filter-head-icon {
-	color: #64748b;
+	color: #94a3b8;
 	flex-shrink: 0;
 }
 
