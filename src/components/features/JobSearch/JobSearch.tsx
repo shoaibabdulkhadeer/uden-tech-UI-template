@@ -80,6 +80,9 @@ import {
 	type JobItem,
 	type WorkMode
 } from './jobSearchMock';
+
+// IDs that only exist in the local mock dataset — never send these to the API
+const MOCK_JOB_IDS = new Set(MOCK_JOBS.map((j) => j.id));
 import './job-search.css';
 import '../../../styles/phase2-theme.css';
 import '../../../styles/dashboard-arena.css';
@@ -470,20 +473,20 @@ function JobSearch() {
 		if (saveJobStatus) return;
 		if (!saveJobData && !saveJobError) return;
 
-		if (saveJobError && !saveJobData) {
-			message.error(saveJobError || 'Failed to save job');
-			dispatch(saveJobReset());
-			return;
-		}
-
 		const code = saveJobData?.statusCode ?? saveJobData?.status;
 
 		if (code === 200 || code === 201) {
 			message.success(saveJobData?.message || 'Job saved successfully');
+			// Refresh saved jobs so the tab count updates instantly
+			dispatch(getSavedJobs({ pageId: 1, pageLimit: SAVED_PAGE_LIMIT }));
+		} else if (code === 404) {
+			message.error(saveJobData?.message || 'Job not found — it may have been removed');
 		} else if (code === 400) {
 			message.warning(saveJobData?.message || 'Bad request');
 		} else if (code === 500) {
 			message.error(saveJobData?.message || 'Server error');
+		} else if (saveJobError) {
+			message.error(saveJobError || 'Failed to save job');
 		}
 
 		dispatch(saveJobReset());
@@ -545,12 +548,6 @@ function JobSearch() {
 		if (unsaveJobStatus) return;
 		if (!unsaveJobData && !unsaveJobError) return;
 
-		if (unsaveJobError && !unsaveJobData) {
-			message.error(unsaveJobError || 'Failed to remove saved job');
-			dispatch(unsaveJobReset());
-			return;
-		}
-
 		const code = unsaveJobData?.statusCode ?? unsaveJobData?.status;
 
 		if (code === 200 || code === 201) {
@@ -559,10 +556,14 @@ function JobSearch() {
 			setApiSavedJobs((prev) => prev.filter((j) => j.id !== removedId));
 			setSavedJobsTotal((prev) => Math.max(0, prev - 1));
 			message.success(unsaveJobData?.message || 'Job removed from saved list');
+		} else if (code === 404) {
+			message.error(unsaveJobData?.message || 'Job not found — it may have already been removed');
 		} else if (code === 400) {
 			message.warning(unsaveJobData?.message || 'Bad request');
 		} else if (code === 500) {
 			message.error(unsaveJobData?.message || 'Server error');
+		} else if (unsaveJobError) {
+			message.error(unsaveJobError || 'Failed to remove saved job');
 		}
 
 		dispatch(unsaveJobReset());
@@ -773,6 +774,11 @@ function JobSearch() {
 
 	const toggleSave = useCallback((id: string, e?: React.MouseEvent) => {
 		e?.stopPropagation();
+		// Mock jobs don't exist in the backend — saving them would always 404
+		if (MOCK_JOB_IDS.has(id)) {
+			message.info('Search for real jobs first to save them');
+			return;
+		}
 		if (savedIds.has(id)) {
 			dispatch(unsaveJob(id));
 		} else {
@@ -997,6 +1003,39 @@ function JobSearch() {
 		setApiMatchedJobs([]);
 		setUiPreview('normal');
 	}, [previewUrl]);
+
+	const handleFullReset = useCallback(() => {
+		Modal.confirm({
+			title: 'Reset workspace?',
+			icon: <MdRestartAlt size={22} style={{ color: '#ef4444', marginRight: 8, flexShrink: 0 }} />,
+			content: (
+				<div style={{ paddingTop: 4 }}>
+					<p style={{ margin: '0 0 10px', color: '#475569', fontSize: 13 }}>
+						This will clear all of the following:
+					</p>
+					<ul style={{ margin: 0, padding: '0 0 0 18px', color: '#64748b', fontSize: 12.5, lineHeight: 1.8 }}>
+						<li>Uploaded resume &amp; detected skills</li>
+						<li>Job title &amp; job description inputs</li>
+						<li>All active filters (employment, work mode, experience, sector, skills)</li>
+						<li>Location filter</li>
+						<li>All matched job results</li>
+					</ul>
+					<p style={{ margin: '10px 0 0', fontSize: 12, color: '#94a3b8' }}>
+						Your saved jobs and application tracker will not be affected.
+					</p>
+				</div>
+			),
+			okText: 'Yes, reset all',
+			okButtonProps: { danger: true },
+			cancelText: 'Cancel',
+			onOk: () => {
+				resetFilters();
+				setTitleInput('');
+				dispatch(resumeUploadReset());
+				message.success('All prefilled data has been reset');
+			},
+		});
+	}, [resetFilters, previewUrl]);
 
 	const openJobPreview = useCallback((job: JobItem) => {
 		setPreviewJob(job);          // show modal immediately with existing data
@@ -1471,14 +1510,25 @@ function JobSearch() {
 											{appliedIds.size > 0 && <span className="view-tab-count">{appliedIds.size}</span>}
 										</button>
 									</div>
-									<Button
-										type="default"
-										className="job-search-filters-mobile-trigger"
-										onClick={() => setFilterDrawerOpen(true)}
-									>
-										<MdTune size={18} style={{ marginRight: 6 }} aria-hidden />
-										Filters
-									</Button>
+									<div className="job-search-feed-head-actions">
+										<button
+											type="button"
+											className="job-search-reset-btn"
+											onClick={handleFullReset}
+											aria-label="Clear all filters and results"
+										>
+											<MdRestartAlt size={13} className="job-search-reset-btn-icon" />
+											<span>Clear all</span>
+										</button>
+										<Button
+											type="default"
+											className="job-search-filters-mobile-trigger"
+											onClick={() => setFilterDrawerOpen(true)}
+										>
+											<MdTune size={18} style={{ marginRight: 6 }} aria-hidden />
+											Filters
+										</Button>
+									</div>
 								</div>
 								{activeView === 'applied' && (
 									<div className="pipeline-stage-strip">
@@ -1585,6 +1635,8 @@ function JobSearch() {
 																		setPreviewUrl(null);
 																		setMatchLoading(false);
 																		setAiSteps([]);
+																		setBoostedProfile(null);
+																		setDetectedFilters(null);
 																		dispatch(resumeUploadReset());
 																	}}
 																	className="analysis-remove-btn"
@@ -1890,11 +1942,11 @@ function JobSearch() {
 											onClick={() => openJobPreview(job)}
 											onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openJobPreview(job); } }}>
 											<div className="job-search-job-actions">
-												<Tooltip title={savedIds.has(job.id) ? 'Remove from saved' : 'Save job'}>
+												<Tooltip title={MOCK_JOB_IDS.has(job.id) ? 'Search for real jobs to save them' : savedIds.has(job.id) ? 'Remove from saved' : 'Save job'}>
 													<button type="button"
-														className={`job-search-job-save ${savedIds.has(job.id) ? 'job-search-job-save--on' : ''} ${unsavePendingId === job.id ? 'job-search-job-save--loading' : ''}`}
+														className={`job-search-job-save ${savedIds.has(job.id) ? 'job-search-job-save--on' : ''} ${unsavePendingId === job.id ? 'job-search-job-save--loading' : ''} ${MOCK_JOB_IDS.has(job.id) ? 'job-search-job-save--mock' : ''}`}
 														aria-pressed={savedIds.has(job.id)}
-														disabled={unsavePendingId === job.id}
+														disabled={unsavePendingId === job.id || MOCK_JOB_IDS.has(job.id)}
 														onClick={(e) => toggleSave(job.id, e)}>
 														{unsavePendingId === job.id
 															? <Spin size="small" />
@@ -1992,10 +2044,10 @@ function JobSearch() {
 													>
 														<button
 															type="button"
-															className={`job-search-job-save ${savedIds.has(job.id) ? 'job-search-job-save--on' : ''} ${unsavePendingId === job.id ? 'job-search-job-save--loading' : ''}`}
+															className={`job-search-job-save ${savedIds.has(job.id) ? 'job-search-job-save--on' : ''} ${unsavePendingId === job.id ? 'job-search-job-save--loading' : ''} ${MOCK_JOB_IDS.has(job.id) ? 'job-search-job-save--mock' : ''}`}
 															aria-pressed={savedIds.has(job.id)}
-															aria-label={savedIds.has(job.id) ? 'Remove from saved' : 'Save job'}
-															disabled={unsavePendingId === job.id}
+															aria-label={MOCK_JOB_IDS.has(job.id) ? 'Search for real jobs to save them' : savedIds.has(job.id) ? 'Remove from saved' : 'Save job'}
+															disabled={unsavePendingId === job.id || MOCK_JOB_IDS.has(job.id)}
 															onClick={(e) => toggleSave(job.id, e)}
 														>
 															{unsavePendingId === job.id
@@ -2571,8 +2623,8 @@ function JobSearch() {
 
 							<button
 								type="button"
-								className={`jd-action-btn jd-action-btn--save ${savedIds.has(previewJob.id) ? 'jd-action-btn--saved' : ''} ${unsavePendingId === previewJob.id ? 'jd-action-btn--loading' : ''}`}
-								disabled={unsavePendingId === previewJob.id}
+								className={`jd-action-btn jd-action-btn--save ${savedIds.has(previewJob.id) ? 'jd-action-btn--saved' : ''} ${unsavePendingId === previewJob.id ? 'jd-action-btn--loading' : ''} ${MOCK_JOB_IDS.has(previewJob.id) ? 'jd-action-btn--mock' : ''}`}
+								disabled={unsavePendingId === previewJob.id || MOCK_JOB_IDS.has(previewJob.id)}
 								onClick={() => toggleSave(previewJob.id)}>
 								{unsavePendingId === previewJob.id
 									? <Spin size="small" />
@@ -2617,6 +2669,7 @@ function JobSearch() {
 				width={420}
 				className="apply-confirm-modal"
 				closable={false}
+				zIndex={1200}
 			>
 				{pendingApplyJob && (
 					<div className="acm-wrap">
