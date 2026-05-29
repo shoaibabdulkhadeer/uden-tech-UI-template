@@ -41,6 +41,11 @@ export const API_ENDPOINTS = {
 	JOB_GET_SAVED  : '/v2/jobs/saved',
 	JOB_GET_BY_ID  : '/v2/jobs/{job_id}',
 	RECOMMENDATIONS: '/v2/match/recommendations',
+	GET_INTERVIEW_ROUNDS: '/v2/interview',
+	GET_TRACKER:     '/v2/tracker',
+	ADD_TRACKER:     '/v2/tracker',
+	DELETE_TRACKER:  '/v2/tracker/{tracker_id}',
+	UPDATE_TRACKER:  '/v2/tracker/{tracker_id}',
 
 	//#endregion
 };

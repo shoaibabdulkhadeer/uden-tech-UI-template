@@ -821,6 +821,7 @@ const Dashboard = () => {
 				</Col>
 			</Row>
 
+				{false && (
 			<Row className="gx-m-0 dash-next-career-constellation-row" gutter={[16, 12]}>
 				<Col xs={24} className="gx-m-0">
 					<motion.div
@@ -1024,6 +1025,7 @@ const Dashboard = () => {
 					</motion.div>
 				</Col>
 			</Row>
+				)}
 
 			{/* </div> */}
 

@@ -22,11 +22,11 @@ import '../../styles/dashboard-nextgen.css';
 import './SidebarContent.css';
 
 const NAV_ITEMS = [
-	{ id: 'dashboard',       url: '/dashboard',       Icon: MdSpaceDashboard,    color: 'indigo',  label: 'Dashboard',            tag: 'Live'  },
-	{ id: 'generate',        url: '/learn',           Icon: MdAutoGraph,         color: 'cyan',    label: 'Learning Path',        tag: 'AI'    },
-	{ id: 'job-search',      url: '/job-search',      Icon: MdRocketLaunch,      color: 'violet',  label: 'Career Acceleration',  tag: 'AI'    },
-	{ id: 'job-management',  url: '/job-management',  Icon: MdAdminPanelSettings,color: 'amber',   label: 'Admin Nexus',          tag: 'Admin' },
-	{ id: 'user-management', url: '/user-management', Icon: MdManageAccounts,    color: 'emerald', label: 'User Management',      tag: 'Team'  },
+	{ id: 'dashboard',       url: '/dashboard',       Icon: MdSpaceDashboard,    color: 'indigo',  label: 'Dashboard',            tag: 'Live',  tagColor: 'live',  sub: 'Analytics, activity & live stats'  },
+	{ id: 'generate',        url: '/learn',           Icon: MdAutoGraph,         color: 'cyan',    label: 'Learning Path',        tag: 'AI',    tagColor: 'ai',    sub: 'AI-generated skill roadmaps'       },
+	{ id: 'job-search',      url: '/job-search',      Icon: MdRocketLaunch,      color: 'violet',  label: 'Career Acceleration',  tag: 'AI',    tagColor: 'ai',    sub: 'AI-matched jobs & applications'    },
+	{ id: 'job-management',  url: '/job-management',  Icon: MdAdminPanelSettings,color: 'amber',   label: 'Admin Nexus',          tag: 'Admin', tagColor: 'admin', sub: 'Post, review & manage roles'       },
+	{ id: 'user-management', url: '/user-management', Icon: MdManageAccounts,    color: 'emerald', label: 'User Management',      tag: 'Team',  tagColor: 'team',  sub: 'Roles, access & team accounts'     },
 ] as const;
 
 const SidebarContent = ({
@@ -68,7 +68,7 @@ const SidebarContent = ({
 
 // Only re-renders nav list when active route or collapsed state changes
 	const navList = useMemo(() =>
-		NAV_ITEMS.map(({ id, url, Icon, color, label, tag }) => {
+		NAV_ITEMS.map(({ id, url, Icon, color, label, tag, tagColor, sub }) => {
 			const isActive = selectedKey === id;
 			return (
 				<Tooltip key={id} title={sidebarCollapsed ? label : ''} placement="right">
@@ -78,14 +78,15 @@ const SidebarContent = ({
 						onClick={closeOverlayDrawer}
 					>
 						<span className="sidebar-nav-icon">
-							<Icon size={15} />
+							<Icon size={20} />
 						</span>
 						{!sidebarCollapsed && (
 							<span className="sidebar-nav-text">
 								<span className="sidebar-nav-label-row">
 									<span className="sidebar-nav-label">{label}</span>
-									<span className={`sidebar-nav-tag sidebar-nav-tag--${color}`}>{tag}</span>
+									<span className={`sidebar-nav-tag sidebar-nav-tag--${tagColor}`}>{tag}</span>
 								</span>
+								<span className="sidebar-nav-sub">{sub}</span>
 							</span>
 						)}
 					</Link>

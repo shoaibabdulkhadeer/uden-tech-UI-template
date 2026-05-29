@@ -66,6 +66,11 @@ import { saveJob, saveJobReset } from '../../../redux/features/jobSearch/saveJob
 import { getSavedJobs, getSavedJobsReset } from '../../../redux/features/jobSearch/getSavedJobsSlice';
 import { unsaveJob, unsaveJobReset } from '../../../redux/features/jobSearch/unsaveJobSlice';
 import { getJobById, getJobByIdReset } from '../../../redux/features/jobSearch/getJobByIdSlice';
+import { getTrackerApplications, trackerReset } from '../../../redux/features/jobSearch/trackerSlice';
+import { addToTracker, addToTrackerReset } from '../../../redux/features/jobSearch/addToTrackerSlice';
+import { deleteTracker, deleteTrackerReset } from '../../../redux/features/jobSearch/deleteTrackerSlice';
+import { updateTracker, updateTrackerReset } from '../../../redux/features/jobSearch/updateTrackerSlice';
+import { getInterviewRounds, getInterviewRoundsReset } from '../../../redux/features/jobSearch/getInterviewRoundsSlice';
 import { getProfile, getProfileReset } from '../../../redux/features/profile/getProfileSlice';
 import DashboardPageHeadArt from '../Dashboard/DashboardPageHeadArt';
 import DashboardShellNetwork from '../Dashboard/DashboardShellNetwork';
@@ -222,6 +227,21 @@ function JobSearch() {
 	const { profileData, status: profileStatus } = useSelector(
 		(state: any) => state.getProfileReducer
 	);
+	const { trackerData, status: trackerStatus, error: trackerError } = useSelector(
+		(state: any) => state.trackerReducer
+	);
+	const { addToTrackerData, status: addToTrackerStatus, error: addToTrackerError } = useSelector(
+		(state: any) => state.addToTrackerReducer
+	);
+	const { deleteTrackerData, status: deleteTrackerStatus, error: deleteTrackerError, pendingTrackerId: deleteTrackerPendingId } = useSelector(
+		(state: any) => state.deleteTrackerReducer
+	);
+	const { updateTrackerData, status: updateTrackerStatus, error: updateTrackerError } = useSelector(
+		(state: any) => state.updateTrackerReducer
+	);
+	const { interviewRoundsData, status: interviewRoundsStatus, error: interviewRoundsError } = useSelector(
+		(state: any) => state.getInterviewRoundsReducer
+	);
 	const { tokenDetails } = useSelector((state: any) => state?.tokenReducer);
 
 	const [activeView, setActiveView] = useState<ActiveView>('matches');
@@ -241,8 +261,18 @@ function JobSearch() {
 	const [appliedIds, setAppliedIds] = useState<Set<string>>(new Set());
 	const [appStages, setAppStages] = useState<Record<string, 'applied' | 'screening' | 'interview' | 'offer'>>({});
 	const [pipelineTab, setPipelineTab] = useState<'applied' | 'screening' | 'interview' | 'offer'>('applied');
+	const [trackerJobs, setTrackerJobs] = useState<JobItem[]>([]);
+	const [trackerIdMap, setTrackerIdMap] = useState<Record<string, string>>({});
+	const [trackerTotal, setTrackerTotal] = useState(0);
+	const [trackerPage, setTrackerPage] = useState(1);
+	const TRACKER_PAGE_LIMIT = 10;
 	const [dismissedIds, setDismissedIds] = useState<Set<string>>(() => new Set());
 	const [previewJob, setPreviewJob] = useState<JobItem | null>(null);
+	const [liveInterviewRounds, setLiveInterviewRounds] = useState<any[]>([]);
+	const [interviewDataAvailable, setInterviewDataAvailable] = useState<boolean | null>(null);
+	const [interviewNotFoundMsg, setInterviewNotFoundMsg] = useState<string | null>(null);
+	const [interviewDisclaimer, setInterviewDisclaimer] = useState<string | null>(null);
+	const [quickViewJobId, setQuickViewJobId] = useState<string | null>(null);
 	const [listLoading, setListLoading] = useState(false);
 	const [uiPreview, setUiPreview] = useState<UiPreview>('normal');
 	const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
@@ -271,6 +301,7 @@ function JobSearch() {
 	const jdSectionRef = useRef<HTMLDivElement>(null);
 	const jdOpenRef = useRef(false);
 	const aiProgressRef = useRef<HTMLDivElement>(null);
+	const quickHoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 	const [showReviewModal, setShowReviewModal] = useState(false);
 	const [showProfileModal, setShowProfileModal] = useState(false);
 	const [closingProfile, setClosingProfile] = useState(false);
@@ -360,6 +391,16 @@ function JobSearch() {
 			setMatchLoading(false);
 		}
 	};
+
+
+	// Hover open/close for quick-view panel
+	const onQuickEnter = useCallback((id: string) => {
+		if (quickHoverTimer.current) clearTimeout(quickHoverTimer.current);
+		setQuickViewJobId(id);
+	}, []);
+	const onQuickLeave = useCallback(() => {
+		quickHoverTimer.current = setTimeout(() => setQuickViewJobId(null), 150);
+	}, []);
 
 	// Handle resume upload API response
 	useEffect(() => {
@@ -542,6 +583,223 @@ function JobSearch() {
 		dispatch(getSavedJobsReset());
 	// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [savedJobsData, savedJobsStatus, savedJobsError]);
+
+	// Fetch tracker applications whenever the applied tab is opened
+	useEffect(() => {
+		if (activeView !== 'applied') return;
+		dispatch(getTrackerApplications({ pageId: 1, pageLimit: TRACKER_PAGE_LIMIT }));
+	// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [activeView]);
+
+	// Handle tracker applications API response
+	useEffect(() => {
+		if (trackerStatus) return;
+		if (!trackerData && !trackerError) return;
+
+		if (trackerError && !trackerData) {
+			message.error(trackerError || 'Failed to fetch applications');
+			dispatch(trackerReset());
+			return;
+		}
+
+		const code = trackerData?.statusCode ?? trackerData?.status;
+
+		if (code === 200 || code === 201) {
+			const raw: any[]    = trackerData?.data?.entries  ?? [];
+			const total: number = trackerData?.data?.total    ?? 0;
+			const pageId: number = trackerData?.data?.pageId  ?? 1;
+
+			setTrackerTotal(total);
+			setTrackerPage(pageId);
+
+			// Map API status values to UI pipeline stages
+			const STAGE_MAP: Record<string, 'applied' | 'screening' | 'interview' | 'offer'> = {
+				applied:      'applied',
+				shortlisted:  'screening',
+				interviewing: 'interview',
+				offer:        'offer',
+				rejected:     'applied',
+				withdrawn:    'applied',
+			};
+
+			const offset = (pageId - 1) * TRACKER_PAGE_LIMIT;
+
+			// Fix "unknown" display — merge top-level tracker fields into job snapshot
+			const mapped = raw.map((entry: any, idx: number) => {
+				const snap = entry.job_snapshot ?? entry.job ?? {};
+				const jobData = {
+					...snap,
+					// Ensure id is always resolvable
+					job_id:  entry.job_id ?? snap.job_id ?? snap.id ?? snap._id,
+					title:   snap.title   || snap.job_title   || entry.title   || 'Untitled Role',
+					company: snap.company || snap.company_name || entry.company || 'Unknown Company',
+					location: snap.location || snap.city || entry.location || '',
+				};
+				return mapApiJobToJobItem(jobData, offset + idx);
+			});
+
+			const newStages: Record<string, 'applied' | 'screening' | 'interview' | 'offer'> = {};
+			const newIdMap: Record<string, string> = {};
+			raw.forEach((entry: any) => {
+				const jobId = entry.job_id ?? entry.job_snapshot?.job_id ?? entry.job_snapshot?.id ?? entry.job?.id ?? entry.job?._id;
+				if (jobId) {
+					newStages[jobId] = STAGE_MAP[entry.status] ?? 'applied';
+					if (entry.tracker_id) newIdMap[jobId] = entry.tracker_id;
+				}
+			});
+
+			if (pageId === 1) {
+				setTrackerJobs(mapped);
+				setAppliedIds(new Set(mapped.map((j) => j.id)));
+				setAppStages(newStages);
+				setTrackerIdMap(newIdMap);
+			} else {
+				setTrackerJobs((prev) => [...prev, ...mapped]);
+				setAppliedIds((prev) => {
+					const n = new Set(prev);
+					mapped.forEach((j) => n.add(j.id));
+					return n;
+				});
+				setAppStages((prev) => ({ ...prev, ...newStages }));
+				setTrackerIdMap((prev) => ({ ...prev, ...newIdMap }));
+			}
+		} else if (code === 400) {
+			message.warning(trackerData?.message || 'Bad request');
+		} else if (code === 500) {
+			message.error(trackerData?.message || 'Server error');
+		}
+
+		dispatch(trackerReset());
+	// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [trackerData, trackerStatus, trackerError]);
+
+	// Handle add-to-tracker (Apply) API response
+	useEffect(() => {
+		if (addToTrackerStatus) return;
+		if (!addToTrackerData && !addToTrackerError) return;
+
+		const jobId = pendingApplyJob?.id;
+
+		if (addToTrackerError && !addToTrackerData) {
+			message.error(addToTrackerError || 'Failed to track application');
+			dispatch(addToTrackerReset());
+			setPendingApplyJob(null);
+			return;
+		}
+
+		const code = addToTrackerData?.statusCode ?? addToTrackerData?.status;
+
+		if (code === 200 || code === 201) {
+			if (jobId) {
+				setAppliedIds((prev) => new Set(prev).add(jobId));
+				setAppStages((prev) => ({ ...prev, [jobId]: 'applied' }));
+			}
+			message.success(addToTrackerData?.message || 'Added to your application tracker!');
+		} else if (code === 409) {
+			// Already tracked — still reflect in UI
+			if (jobId) setAppliedIds((prev) => new Set(prev).add(jobId));
+			message.info(addToTrackerData?.message || 'Already in your tracker');
+		} else if (code === 400) {
+			message.warning(addToTrackerData?.message || 'Bad request');
+		} else if (code === 500) {
+			message.error(addToTrackerData?.message || 'Server error');
+		}
+
+		dispatch(addToTrackerReset());
+		setPendingApplyJob(null);
+	// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [addToTrackerData, addToTrackerStatus, addToTrackerError]);
+
+	// Handle delete tracker entry response
+	useEffect(() => {
+		if (deleteTrackerStatus) return;
+		if (!deleteTrackerData && !deleteTrackerError) return;
+
+		if (deleteTrackerError && !deleteTrackerData) {
+			message.error(deleteTrackerError || 'Failed to remove from tracker');
+			dispatch(deleteTrackerReset());
+			return;
+		}
+
+		const code = deleteTrackerData?.statusCode ?? deleteTrackerData?.status;
+		const removedTrackerId: string = deleteTrackerData?.trackerId;
+
+		if (code === 200 || code === 201) {
+			const jobId = Object.keys(trackerIdMap).find(k => trackerIdMap[k] === removedTrackerId);
+			if (jobId) {
+				setTrackerJobs((prev) => prev.filter((j) => j.id !== jobId));
+				setAppliedIds((prev) => { const n = new Set(prev); n.delete(jobId); return n; });
+				setAppStages((prev) => { const s = { ...prev }; delete s[jobId]; return s; });
+				setTrackerIdMap((prev) => { const m = { ...prev }; delete m[jobId]; return m; });
+			}
+			message.success(deleteTrackerData?.message || 'Removed from tracker');
+		} else if (code === 404) {
+			message.warning(deleteTrackerData?.message || 'Entry not found');
+		} else if (code === 400) {
+			message.warning(deleteTrackerData?.message || 'Bad request');
+		} else if (code === 500) {
+			message.error(deleteTrackerData?.message || 'Server error');
+		}
+
+		dispatch(deleteTrackerReset());
+	// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [deleteTrackerData, deleteTrackerStatus, deleteTrackerError]);
+
+	// Handle update tracker entry (stage advance) response
+	useEffect(() => {
+		if (updateTrackerStatus) return;
+		if (!updateTrackerData && !updateTrackerError) return;
+
+		if (updateTrackerError && !updateTrackerData) {
+			message.error(updateTrackerError || 'Failed to update application status');
+			dispatch(updateTrackerReset());
+			return;
+		}
+
+		const code = updateTrackerData?.statusCode ?? updateTrackerData?.status;
+
+		if (code === 200 || code === 201) {
+			// Stage already updated optimistically in UI
+		} else if (code === 400) {
+			message.warning(updateTrackerData?.message || 'Bad request');
+		} else if (code === 500) {
+			message.error(updateTrackerData?.message || 'Server error');
+		}
+
+		dispatch(updateTrackerReset());
+	// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [updateTrackerData, updateTrackerStatus, updateTrackerError]);
+
+	// Handle interview rounds API response
+	useEffect(() => {
+		if (interviewRoundsStatus) return;
+		if (!interviewRoundsData && !interviewRoundsError) return;
+
+		if (interviewRoundsError && !interviewRoundsData) {
+			// Silently fall back — no toast needed
+			setInterviewDataAvailable(false);
+			dispatch(getInterviewRoundsReset());
+			return;
+		}
+
+		const code = interviewRoundsData?.statusCode ?? interviewRoundsData?.status;
+
+		if (code === 200 || code === 201) {
+			const d = interviewRoundsData?.data ?? {};
+			const rounds: any[] = d.rounds ?? d.interview_rounds ?? interviewRoundsData?.rounds ?? [];
+			const dataAvailable: boolean = d.data_available ?? rounds.length > 0;
+			const notFoundMsg: string | null = d.not_found_message ?? interviewRoundsData?.message ?? null;
+			const disclaimer: string | null = d.disclaimer ?? null;
+
+			setLiveInterviewRounds(rounds);
+			setInterviewDataAvailable(dataAvailable);
+			setInterviewNotFoundMsg(notFoundMsg);
+			setInterviewDisclaimer(disclaimer);
+		}
+
+		dispatch(getInterviewRoundsReset());
+	// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [interviewRoundsData, interviewRoundsStatus, interviewRoundsError]);
 
 	// Handle unsave job API response
 	useEffect(() => {
@@ -871,7 +1129,7 @@ function JobSearch() {
 			location:       item.location || item.city || '',
 			logoHue:        (idx * 47 + 180) % 360,
 			verified:       item.url_status === 'valid' || item.verified || false,
-			badges:         item.source === 'ai_discovered' ? ['AI Match'] : (item.badges || []),
+			badges:         item.badges || [],
 			hiringStatus:   item.hiringStatus || item.hiring_status || 'Actively Recruiting',
 			sourceKind:     item.source_kind || item.sourceKind,
 			employmentKind: (() => {
@@ -1038,12 +1296,24 @@ function JobSearch() {
 	}, [resetFilters, previewUrl]);
 
 	const openJobPreview = useCallback((job: JobItem) => {
-		setPreviewJob(job);          // show modal immediately with existing data
-		dispatch(getJobById(job.id)); // fetch fresh details from API
+		setPreviewJob(job);
+		setLiveInterviewRounds([]);
+		setInterviewDataAvailable(null);
+		setInterviewNotFoundMsg(null);
+		setInterviewDisclaimer(null);
+		dispatch(getJobById(job.id));
+		if (job.company && job.title) {
+			dispatch(getInterviewRounds({ company: job.company, role: job.title }));
+		}
 	}, []);
 	const closeJobPreview = useCallback(() => {
 		setPreviewJob(null);
+		setLiveInterviewRounds([]);
+		setInterviewDataAvailable(null);
+		setInterviewNotFoundMsg(null);
+		setInterviewDisclaimer(null);
 		dispatch(getJobByIdReset());
+		dispatch(getInterviewRoundsReset());
 	}, []);
 
 	const showSkeleton = uiPreview === 'loading' || (listLoading && uiPreview === 'normal');
@@ -1484,7 +1754,9 @@ function JobSearch() {
 											onClick={() => setActiveView('matches')}>
 											<span className="view-tab-icon"><MdAutoAwesome size={13} /></span>
 											<span className="view-tab-label">Matched</span>
-											<span className="view-tab-count">{MOCK_JOBS.filter(j => j.matchScore).length}</span>
+											{submittedFilters !== null && apiMatchedJobs.length > 0 && (
+												<span className="view-tab-count">{apiMatchedJobs.length}</span>
+											)}
 										</button>
 										<button type="button"
 											className={`view-tab view-tab--amber${activeView === 'saved' ? ' view-tab--active' : ''}`}
@@ -1926,19 +2198,22 @@ function JobSearch() {
 								{/* ── Applied pipeline cards — filtered by selected pipeline tab ── */}
 								{activeView === 'applied' && !showSkeleton && !showError ? (() => {
 									const STAGES = ['applied', 'screening', 'interview', 'offer'] as const;
-									const stageJobs = listToRender.filter(j => (appStages[j.id] || 'applied') === pipelineTab);
+									const stageJobs = trackerJobs.filter(j => (appStages[j.id] || 'applied') === pipelineTab);
 									if (stageJobs.length === 0) return (
 										<div className="job-search-empty-wrap">
-											<Empty description={listToRender.length === 0 ? 'No applications yet — apply to roles and they will appear here' : `No jobs in ${pipelineTab} stage`} image={Empty.PRESENTED_IMAGE_SIMPLE} />
+											{trackerStatus
+												? <Spin size="large" />
+												: <Empty description={trackerJobs.length === 0 ? 'No applications yet — apply to roles and they will appear here' : `No jobs in the ${pipelineTab} stage`} image={Empty.PRESENTED_IMAGE_SIMPLE} />
+											}
 										</div>
 									);
 									return (
-										<ul className="job-search-job-list">
+										<ul className={`job-search-job-list${quickViewJobId ? ' job-search-job-list--panel-open' : ''}`}>
 											{stageJobs.map((job) => {
 												const currentIdx = STAGES.indexOf(appStages[job.id] || 'applied');
 												const canAdvance = currentIdx < STAGES.length - 1;
 												return (
-										<li key={job.id} className="job-search-job-row lineCard job-search-job-row--clickable" role="button" tabIndex={0}
+										<li key={job.id} className={`job-search-job-row lineCard job-search-job-row--clickable${quickViewJobId === job.id ? ' job-search-job-row--quick-open' : ''}`} role="button" tabIndex={0}
 											onClick={() => openJobPreview(job)}
 											onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openJobPreview(job); } }}>
 											<div className="job-search-job-actions">
@@ -1952,6 +2227,17 @@ function JobSearch() {
 															? <Spin size="small" />
 															: <><span className="job-search-job-save-icon" aria-hidden>{savedIds.has(job.id) ? <MdBookmark size={18} /> : <MdBookmarkBorder size={18} />}</span><span className="job-search-job-save-label">{savedIds.has(job.id) ? 'Saved' : 'Save'}</span></>
 														}
+													</button>
+												</Tooltip>
+											
+												<Tooltip title="Remove from tracker">
+													<button
+														type="button"
+														className={`tracker-remove-btn${deleteTrackerStatus && trackerIdMap[job.id] === deleteTrackerPendingId ? ' tracker-remove-btn--loading' : ''}`}
+														disabled={!!(deleteTrackerStatus && trackerIdMap[job.id] === deleteTrackerPendingId)}
+														onClick={(e) => { e.stopPropagation(); const tid = trackerIdMap[job.id]; if (tid) dispatch(deleteTracker(tid)); }}
+													>
+														{deleteTrackerStatus && trackerIdMap[job.id] === deleteTrackerPendingId ? <Spin size="small" /> : <MdDelete size={16} />}
 													</button>
 												</Tooltip>
 											</div>
@@ -1982,7 +2268,14 @@ function JobSearch() {
 												<div className="pipeline-card-advance" onClick={(e) => e.stopPropagation()}>
 													{canAdvance ? (
 														<button type="button" className="pipeline-advance-inline-btn"
-															onClick={(e) => { e.stopPropagation(); setAppStages(prev => ({ ...prev, [job.id]: STAGES[currentIdx + 1] })); setPipelineTab(STAGES[currentIdx + 1]); }}>
+															onClick={(e) => {
+																e.stopPropagation();
+																const nextStage = STAGES[currentIdx + 1];
+																setAppStages(prev => ({ ...prev, [job.id]: nextStage }));
+																setPipelineTab(nextStage);
+																const tid = trackerIdMap[job.id];
+																if (tid) { const S: Record<string,string> = { applied:'applied', screening:'shortlisted', interview:'interviewing', offer:'offer' }; dispatch(updateTracker({ trackerId: tid, status: S[nextStage] as any })); }
+															}}>
 															<MdCheckCircle size={12} /> Move to {STAGES[currentIdx + 1].charAt(0).toUpperCase() + STAGES[currentIdx + 1].slice(1)}
 														</button>
 													) : (
@@ -1999,7 +2292,7 @@ function JobSearch() {
 
 								<div className={`job-list-reveal-wrap${isPristine ? ' job-list-reveal-wrap--pristine' : ''}`}>
 								{!showSkeleton && !showSavedSkeleton && !showError && activeView !== 'applied' ? (
-									<ul className="job-search-job-list">
+									<ul className={`job-search-job-list${quickViewJobId ? ' job-search-job-list--panel-open' : ''}`}>
 										{listLoading ? (
 											Array.from({ length: 4 }).map((_, i) => (
 												<li key={`skeleton-${i}`} className="job-search-job-row lineCard">
@@ -2010,7 +2303,7 @@ function JobSearch() {
 											listToRender.map((job) => (
 											<li
 												key={job.id}
-												className="job-search-job-row lineCard job-search-job-row--clickable"
+												className={`job-search-job-row lineCard job-search-job-row--clickable${quickViewJobId === job.id ? ' job-search-job-row--quick-open' : ''}`}
 												role="button"
 												tabIndex={0}
 												onClick={() => openJobPreview(job)}
@@ -2160,6 +2453,162 @@ function JobSearch() {
 															<MdSchool size={12} />
 															Learning Path
 														</button>
+
+														{/* ── Quick view hover panel + View details ── */}
+														<div
+															className="jc-quick-wrap"
+															onMouseEnter={() => onQuickEnter(job.id)}
+															onMouseLeave={onQuickLeave}
+														>
+															{/* Hover trigger */}
+															<button
+																type="button"
+																className={`jc-quick-btn${quickViewJobId === job.id ? ' jc-quick-btn--active' : ''}`}
+															>
+																<MdBolt size={11} />
+																Quick view
+															</button>
+
+															{/* Click to open full detail */}
+															<button
+																type="button"
+																className="jc-vd-btn"
+																onClick={(e) => { e.stopPropagation(); openJobPreview(job); }}
+															>
+																<MdDescription size={11} />
+																View details
+															</button>
+
+															{/* Hover panel */}
+															<div
+																className={`jc-quick-panel${quickViewJobId === job.id ? ' jc-quick-panel--open' : ''}`}
+																onMouseEnter={() => onQuickEnter(job.id)}
+																onMouseLeave={onQuickLeave}
+																onClick={(e) => e.stopPropagation()}
+															>
+																<div className="jc-quick-header">
+																	<p className="jc-quick-title">
+																		<MdBolt size={12} />
+																		Skills snapshot
+																	</p>
+																</div>
+
+																{/* AI Fit Score */}
+																{(job.fitScore != null || job.matchScore != null) && (() => {
+																	const displayScore = job.fitScore ?? job.matchScore ?? 0;
+																	const bucketStr    = job.fitBucket || '';
+																	const bucketCls    = bucketStr.toLowerCase().includes('strong') ? 'strong'
+																		: bucketStr.toLowerCase().includes('high')   ? 'high'
+																		: (bucketStr.toLowerCase().includes('medium') || bucketStr.toLowerCase().includes('moderate')) ? 'medium'
+																		: bucketStr.toLowerCase().includes('good')   ? 'good'
+																		: bucketStr ? 'low' : '';
+																	const coveragePct  = job.skillCoveragePct ?? displayScore;
+																	return (
+																		<div className="jc-fit-row">
+																			<div className="jc-fit-ring" style={{'--score': displayScore} as React.CSSProperties}>
+																				<span className="jc-fit-num">{displayScore}%</span>
+																			</div>
+																			<div className="jc-fit-copy">
+																				<p className="jc-fit-title">
+																					<MdInsights size={10} />
+																					{job.fitScore != null ? 'AI Fit Score' : 'Profile Match'}
+																				</p>
+																				{bucketCls && (
+																					<span className={`jc-fit-bucket jc-fit-bucket--${bucketCls}`}>{bucketStr}</span>
+																				)}
+																				<div className="jc-coverage-wrap">
+																					<div className="jc-coverage-track">
+																						<div className="jc-coverage-fill" style={{width: `${coveragePct}%`}} />
+																					</div>
+																					<span className="jc-coverage-label">{coveragePct}% skill coverage</span>
+																				</div>
+																			</div>
+																		</div>
+																	);
+																})()}
+
+																{/* Required skills */}
+																{(job.detail.skills?.length ?? 0) > 0 && (
+																	<div className="jc-quick-section">
+																		<p className="jc-quick-lbl jc-quick-lbl--required">Required skills</p>
+																		<div className="jc-quick-pills">
+																			{(job.detail.skills ?? []).slice(0, 5).map((s: string) => (
+																				<span key={s} className="jc-quick-pill jc-quick-pill--required">{s}</span>
+																			))}
+																			{(job.detail.skills?.length ?? 0) > 5 && (
+																				<span className="jc-quick-pill jc-quick-pill--more">+{(job.detail.skills?.length ?? 0) - 5}</span>
+																			)}
+																		</div>
+																	</div>
+																)}
+
+																{((job.detail.skillsMatched?.length ?? 0) > 0 || (job.detail.skillGaps?.length ?? 0) > 0) ? (
+																	<>
+																		{(job.detail.skillsMatched?.length ?? 0) > 0 && (
+																			<div className="jc-quick-section">
+																				<p className="jc-quick-lbl jc-quick-lbl--match"><MdCheckCircle size={10} /> Matched</p>
+																				<div className="jc-quick-pills">
+																					{(job.detail.skillsMatched ?? []).slice(0, 5).map((s: string) => (
+																						<span key={s} className="jc-quick-pill jc-quick-pill--match">{s}</span>
+																					))}
+																					{(job.detail.skillsMatched?.length ?? 0) > 5 && (
+																						<span className="jc-quick-pill jc-quick-pill--more">+{(job.detail.skillsMatched?.length ?? 0) - 5}</span>
+																					)}
+																				</div>
+																			</div>
+																		)}
+																		{(job.detail.skillGaps?.length ?? 0) > 0 && (
+																			<div className="jc-quick-section">
+																				<p className="jc-quick-lbl jc-quick-lbl--gap">
+																					<MdTrendingUp size={10} /> Skill gaps
+																					<span className="jc-quick-lbl-hint">tap to learn</span>
+																				</p>
+																				<div className="jc-quick-pills">
+																					{(job.detail.skillGaps ?? []).slice(0, 5).map((s: string) => (
+																						<button
+																						key={s}
+																						type="button"
+																						className="jc-quick-pill jc-quick-pill--gap"
+																						onClick={(e) => {
+																							e.stopPropagation();
+																							sessionStorage.setItem('lpPrefillSkill', s);
+																							window.open('/learn', '_blank');
+																						}}
+																					>
+																						{s}<MdSchool size={9} />
+																					</button>
+																				))}
+																				{(job.detail.skillGaps?.length ?? 0) > 5 && (
+																					<span className="jc-quick-pill jc-quick-pill--more">+{(job.detail.skillGaps?.length ?? 0) - 5}</span>
+																				)}
+																			</div>
+																			</div>
+																		)}
+																	</>
+																) : (
+																	<p className="jc-quick-empty">Run AI match to see skill insights for this role</p>
+																)}
+
+																<div className="jc-quick-actions">
+																	<button type="button" className="jc-quick-act jc-quick-act--apply"
+																		onClick={(e) => {
+																			e.stopPropagation();
+																			if (job.detail.applyUrl) window.open(job.detail.applyUrl, '_blank', 'noopener,noreferrer');
+																			setPendingApplyJob(job);
+																		}}>
+																			<MdSend size={11} />{job.detail.applyUrl ? 'Apply →' : 'Apply'}
+																	</button>
+																	<button type="button" className="jc-quick-act jc-quick-act--learn"
+																		onClick={(e) => {
+																			e.stopPropagation();
+																			sessionStorage.setItem('lpPrefillJd', job.detail.description ?? '');
+																			window.open('/learn', '_blank');
+																		}}>
+																			<MdSchool size={11} />Build skills
+																	</button>
+																</div>
+															</div>
+														</div>
 													</div>
 												</div>
 											</li>
@@ -2401,11 +2850,11 @@ function JobSearch() {
 								)}
 							</div>
 
-							{/* Two-panel: Your fit + Interview rounds */}
-							<div className="jd-panels">
+							{/* Fit + Interview — stacked full-width */}
+							<div className="jd-panels-stack">
 
-								{/* Left: Your fit */}
-								<div className="jd-panel jd-panel--fit">
+							{/* Your fit — full row */}
+							<div className="jd-panel jd-panel--fit jd-panel--full">
 									<h3 className="jd-panel-title">
 										<MdWorkspacePremium size={16} className="jd-panel-title-icon jd-panel-title-icon--gold"/>
 										Your fit
@@ -2562,36 +3011,138 @@ function JobSearch() {
 								</>}
 								</div>
 
-								{/* Right: Interview rounds */}
-								<div className="jd-panel jd-panel--rounds">
+							{/* Interview rounds — full row below fit */}
+							<div className="jd-panel jd-panel--rounds jd-panel--full">
 									<h3 className="jd-panel-title">
 										<MdEmojiEvents size={16} className="jd-panel-title-icon jd-panel-title-icon--indigo"/>
 										Interview rounds
 									</h3>
-									{jobByIdStatus ? <Skeleton active paragraph={{ rows: 5 }} title={{ width: '45%' }} /> : <>
-									<div className="jd-rounds-list">
-										{(previewJob.detail.interviewRounds ?? [
-											{ round: 1, name: 'HR Screening',    subtitle: 'Culture fit & role overview call' },
-											{ round: 2, name: 'Aptitude Test',   subtitle: 'Logic, problem-solving & verbal reasoning' },
-											{ round: 3, name: 'Technical',       subtitle: 'Live coding & system design questions' },
-											{ round: 4, name: 'Skill Assessment',subtitle: 'Take-home project or pair programming task' },
-											{ round: 5, name: 'Final / CTO',     subtitle: 'Leadership discussion & offer negotiation' },
-										]).map((rd) => (
-												<div key={rd.round} className="jd-round-item">
-													<span className="jd-round-icon">{ROUND_ICONS[rd.name] ?? <MdListAlt size={14}/>}</span>
-													<span className="jd-round-num">Rd {rd.round}</span>
-													<span className="jd-round-copy">
-														<span className="jd-round-name">{rd.name}</span>
-														{rd.subtitle && <span className="jd-round-sub">{rd.subtitle}</span>}
-													</span>
-													<span className="jd-round-arrow">→</span>
+
+									{/* Loading — skeleton while API is in-flight */}
+									{interviewRoundsStatus ? (
+										<div className="jd-rounds-loading">
+											<Skeleton active paragraph={{ rows: 4 }} title={{ width: '55%' }} />
+											<p className="jd-rounds-loading-hint">
+												<Spin size="small" style={{ marginRight: 6 }} />
+												Fetching interview process for <strong>{previewJob.company}</strong>…
+											</p>
+										</div>
+
+									/* API returned: no data available */
+									) : interviewDataAvailable === false ? (
+										<div className="jd-rounds-not-found">
+											<div className="jd-rounds-nf-icon" aria-hidden>🔍</div>
+											<p className="jd-rounds-nf-title">No verified rounds found</p>
+											{interviewNotFoundMsg && (
+												<p className="jd-rounds-nf-msg">{interviewNotFoundMsg}</p>
+											)}
+											{interviewDisclaimer && (
+												<div className="jd-rounds-nf-disclaimer">
+													<MdMenuBook size={12} style={{ flexShrink: 0, marginTop: 2 }} />
+													<span>{interviewDisclaimer}</span>
 												</div>
-											))}
-									</div>
-									<p className="jd-rounds-hint"><MdMenuBook size={12} style={{marginRight:4,verticalAlign:'middle'}}/>Tap any round to prepare</p>
-								</>}
-								</div>
+											)}
+										</div>
+
+									/* Rounds available */
+									) : (() => {
+										const rounds =
+											liveInterviewRounds.length > 0
+												? liveInterviewRounds
+												: previewJob.detail.interviewRounds ?? [];
+
+										if (rounds.length === 0 && interviewDataAvailable === null) return null;
+
+										// Type → accent colour map
+										const TYPE_COLOR: Record<string, string> = {
+											hr:         '#06b6d4',
+											technical:  '#6366f1',
+											case:       '#f59e0b',
+											behavioral: '#10b981',
+											onsite:     '#8b5cf6',
+											assignment: '#f97316',
+											screening:  '#06b6d4',
+										};
+
+										return (
+											<>
+												{liveInterviewRounds.length > 0 && (
+													<p className="jd-rounds-source-badge">
+														<MdVerified size={12} style={{ marginRight: 4, verticalAlign: 'middle', color: '#6366f1' }} />
+														Live data · <strong>{previewJob.company}</strong>
+													</p>
+												)}
+
+												<div className="jd-ivc-list">
+													{rounds.map((rd: any, i: number) => {
+														const accent = TYPE_COLOR[(rd.type ?? '').toLowerCase()] ?? '#6366f1';
+														const learnText = [rd.name, rd.description, rd.tips].filter(Boolean).join('\n\n');
+														return (
+															<div key={rd.round ?? i} className="jd-ivc-card" style={{ '--ivc-accent': accent } as React.CSSProperties}>
+																<div className="jd-ivc-card-left">
+																	<span className="jd-ivc-badge" style={{ background: accent }}>
+																		{rd.round ?? i + 1}
+																	</span>
+																	<div className="jd-ivc-connector" aria-hidden />
+																</div>
+																<div className="jd-ivc-card-body">
+																	<div className="jd-ivc-header">
+																		<span className="jd-ivc-name">{rd.name}</span>
+																		{rd.type && (
+																			<span className="jd-ivc-type-chip" style={{ color: accent, borderColor: accent, background: `${accent}18` }}>
+																				{rd.type}
+																			</span>
+																		)}
+																	</div>
+
+																	{rd.duration && (
+																		<span className="jd-ivc-duration">
+																			<MdAccessTime size={11} style={{ marginRight: 4, verticalAlign: 'middle' }} />
+																			{rd.duration}
+																		</span>
+																	)}
+
+																	{rd.description && (
+																		<p className="jd-ivc-desc">{rd.description}</p>
+																	)}
+
+																	{rd.tips && (
+																		<div className="jd-ivc-tips">
+																			<span className="jd-ivc-tips-label">💡 Tip</span>
+																			<p className="jd-ivc-tips-text">{rd.tips}</p>
+																		</div>
+																	)}
+
+																	<button
+																		type="button"
+																		className="jd-ivc-learn-btn"
+																		style={{ '--ivc-accent': accent } as React.CSSProperties}
+																		onClick={() => {
+																			sessionStorage.setItem('lpPrefillJd', learnText);
+																			window.open('/learn', '_blank', 'noopener,noreferrer');
+																		}}
+																	>
+																		<MdSchool size={13} style={{ marginRight: 5 }} />
+																		Learn this round now →
+																	</button>
+																</div>
+															</div>
+														);
+													})}
+												</div>
+
+												{interviewDisclaimer && (
+													<div className="jd-rounds-nf-disclaimer" style={{ marginTop: 10 }}>
+														<MdMenuBook size={12} style={{ flexShrink: 0, marginTop: 2 }} />
+														<span>{interviewDisclaimer}</span>
+													</div>
+												)}
+											</>
+										);
+									})()}
 							</div>
+
+							</div>{/* end jd-panels-stack */}
 
 						</div>{/* end jd-body */}
 
@@ -2606,12 +3157,8 @@ function JobSearch() {
 								onClick={() => {
 									if (previewJob.detail.applyUrl) {
 										window.open(previewJob.detail.applyUrl, '_blank', 'noopener,noreferrer');
-										setPendingApplyJob(previewJob);
-									} else {
-										setAppliedIds((prev) => new Set(prev).add(previewJob.id));
-										setAppStages((prev) => ({ ...prev, [previewJob.id]: 'applied' }));
-										message.success('Marked as applied in your tracker!');
 									}
+									setPendingApplyJob(previewJob);
 								}}
 							>
 								<span className="jd-action-icon jd-action-icon--apply">{appliedIds.has(previewJob.id) ? <MdCheckCircle size={16}/> : <MdRocketLaunch size={16}/>}</span>
@@ -2660,57 +3207,6 @@ function JobSearch() {
 				) : null}
 			</Modal>
 
-			{/* ── Did you apply? confirmation modal ── */}
-			<Modal
-				open={!!pendingApplyJob}
-				onCancel={() => setPendingApplyJob(null)}
-				footer={null}
-				centered
-				width={420}
-				className="apply-confirm-modal"
-				closable={false}
-				zIndex={1200}
-			>
-				{pendingApplyJob && (
-					<div className="acm-wrap">
-						<div className="acm-icon-ring">
-							<MdRocketLaunch size={26} />
-						</div>
-						<h3 className="acm-title">Did you apply?</h3>
-						<p className="acm-sub">
-							We opened <strong>{pendingApplyJob.company}</strong>'s application page in a new tab.
-							Let us know so we can track it in your pipeline.
-						</p>
-						<div className="acm-job-pill">
-							<span className="acm-job-title">{pendingApplyJob.title}</span>
-							<span className="acm-job-company">{pendingApplyJob.company}</span>
-						</div>
-						<div className="acm-actions">
-							<button
-								type="button"
-								className="acm-btn acm-btn--yes"
-								onClick={() => {
-									setAppliedIds((prev) => new Set(prev).add(pendingApplyJob.id));
-									setAppStages((prev) => ({ ...prev, [pendingApplyJob.id]: 'applied' }));
-									setPendingApplyJob(null);
-									message.success('Added to your applied pipeline!');
-								}}
-							>
-								<MdCheckCircle size={15} /> Yes, I applied
-							</button>
-							<button
-								type="button"
-								className="acm-btn acm-btn--no"
-								onClick={() => setPendingApplyJob(null)}
-							>
-								Not yet
-							</button>
-						</div>
-					</div>
-				)}
-			</Modal>
-
-			{/* ── Tour spotlight ── */}
 			{showFindTour && tourCardRect && ReactDOM.createPortal(
 				<>
 					{/* Click outside to dismiss */}
@@ -2808,6 +3304,53 @@ function JobSearch() {
 				</>,
 				document.body
 			)}
+
+			{/* ── "Did you apply?" confirmation modal ── */}
+			<Modal
+				open={!!pendingApplyJob}
+				onCancel={() => setPendingApplyJob(null)}
+				footer={null}
+				width={400}
+				centered
+				closable
+				className="apply-confirm-modal"
+			>
+				{pendingApplyJob && (
+					<div className="acm-wrap">
+						<div className="acm-icon-ring">
+							<MdRocketLaunch size={24} />
+						</div>
+						<h3 className="acm-title">Did you apply?</h3>
+						<p className="acm-sub">Confirm your application and we'll track it in your pipeline.</p>
+						<div className="acm-job-pill">
+							<span className="acm-job-title">{pendingApplyJob.title}</span>
+							<span className="acm-job-company">{pendingApplyJob.company}</span>
+						</div>
+						<div className="acm-actions">
+							<button
+								type="button"
+								className="acm-btn acm-btn--yes"
+								disabled={addToTrackerStatus}
+								onClick={() => {
+									dispatch(addToTracker({ job_id: pendingApplyJob.id, status: 'applied' }));
+								}}
+							>
+								{addToTrackerStatus
+									? <Spin size="small" />
+									: <><MdCheckCircle size={15} /> Yes, I Applied</>
+								}
+							</button>
+							<button
+								type="button"
+								className="acm-btn acm-btn--no"
+								onClick={() => setPendingApplyJob(null)}
+							>
+								Not yet
+							</button>
+						</div>
+					</div>
+				)}
+			</Modal>
 
 			{/* ── AI Filter Review Modal ── */}
 			<Modal

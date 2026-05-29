@@ -7,7 +7,10 @@
       "Bash(timeout 25)",
       "Bash(node -e ' *)",
       "Bash(xargs grep -l \"sidebar\\\\|Sidebar\\\\|SideBar\")",
-      "Bash(xargs grep -l \"sidebar\\\\|nav\")"
+      "Bash(xargs grep -l \"sidebar\\\\|nav\")",
+      "Bash(node /tmp/fix_tabs.js)",
+      "Bash(cat)",
+      "Bash(node /tmp/update_card2.js)"
     ]
   }
 }

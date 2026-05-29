@@ -26,6 +26,11 @@ import { saveJobReducer } from './features/jobSearch/saveJobSlice';
 import { getSavedJobsReducer } from './features/jobSearch/getSavedJobsSlice';
 import { unsaveJobReducer } from './features/jobSearch/unsaveJobSlice';
 import { getJobByIdReducer } from './features/jobSearch/getJobByIdSlice';
+import { trackerReducer } from './features/jobSearch/trackerSlice';
+import { addToTrackerReducer } from './features/jobSearch/addToTrackerSlice';
+import { deleteTrackerReducer } from './features/jobSearch/deleteTrackerSlice';
+import { updateTrackerReducer } from './features/jobSearch/updateTrackerSlice';
+import { getInterviewRoundsReducer } from './features/jobSearch/getInterviewRoundsSlice';
 
 export default combineReducers({
 	settings: Settings,
@@ -57,7 +62,12 @@ export default combineReducers({
 	getSavedJobsReducer:getSavedJobsReducer,
 	unsaveJobReducer:unsaveJobReducer,
 	getJobByIdReducer:getJobByIdReducer,
+	trackerReducer:trackerReducer,
+	addToTrackerReducer:addToTrackerReducer,
+	deleteTrackerReducer:deleteTrackerReducer,
+	updateTrackerReducer:updateTrackerReducer,
 	recommendationsReducer:recommendationsReducer,
+	getInterviewRoundsReducer:getInterviewRoundsReducer,
 
 });
 
