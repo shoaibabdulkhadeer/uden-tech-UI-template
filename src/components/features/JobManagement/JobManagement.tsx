@@ -1,11 +1,13 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { debounce } from 'lodash';
 import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch } from '../../../redux/store';
 import { getAdminJobs, getAdminJobsReset } from '../../../redux/features/admin/getAdminJobsSlice';
 import { editAdminJob, editAdminJobReset } from '../../../redux/features/admin/editAdminJobSlice';
 import { postAdminJob, postAdminJobReset } from '../../../redux/features/admin/postAdminJobSlice';
 import { deleteAdminJob, deleteAdminJobReset } from '../../../redux/features/admin/deleteAdminJobSlice';
+import { getBrokenLinks, getBrokenLinksReset } from '../../../redux/features/admin/getBrokenLinksSlice';
+import { fixBrokenUrl, fixBrokenUrlReset } from '../../../redux/features/admin/fixBrokenUrlSlice';
+import { checkUrl, checkUrlReset } from '../../../redux/features/admin/checkUrlSlice';
 import {
 	Button,
 	Switch,
@@ -60,6 +62,9 @@ import {
 	MdWork,
 	MdSchool,
 	MdAttachMoney,
+	MdLinkOff,
+	MdEditNote,
+	MdOpenInNew as MdOpenInNewIcon,
 } from 'react-icons/md';
 import { motion, easeInOut } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
@@ -266,7 +271,30 @@ const JobManagement = () => {
 		(state: any) => state.deleteAdminJobReducer
 	);
 
+
+	const { brokenLinksData, status: brokenLinksStatus, error: brokenLinksError } = useSelector(
+		(state: any) => state.getBrokenLinksReducer
+	);
+	const [brokenLinks, setBrokenLinks] = useState<any[]>([]);
+	const [brokenLinksTotal, setBrokenLinksTotal] = useState(0);
+	const [brokenLinksPage, setBrokenLinksPage] = useState(1);
+	const BROKEN_PAGE_LIMIT = 10;
 	const PAGE_LIMIT = 10;
+
+	const { fixBrokenUrlData, status: fixBrokenUrlStatus, error: fixBrokenUrlError, pendingJobId: fixPendingJobId } = useSelector(
+		(state: any) => state.fixBrokenUrlReducer
+	);
+	const [fixUrlInputs, setFixUrlInputs] = useState<Record<string, string>>({});
+	const { checkUrlData, status: checkUrlStatus, error: checkUrlError } = useSelector(
+		(state: any) => state.checkUrlReducer
+	);
+	// Per-job check results: { [job_id]: { live, status_code, message, checkingJobId } }
+	const [checkResults, setCheckResults] = useState<Record<string, any>>({});
+	const [checkingJobId, setCheckingJobId] = useState<string | null>(null);
+	const [fixModalJob, setFixModalJob] = useState<any | null>(null);
+	const [fixModalUrl, setFixModalUrl] = useState('');
+	const [fixModalCheckResult, setFixModalCheckResult] = useState<any | null>(null);
+
 	const [jobs, setJobs] = useState<JobEntry[]>([]);
 	const [adminPage, setAdminPage] = useState(1);
 	const [adminTotal, setAdminTotal] = useState(0);
@@ -303,15 +331,15 @@ const JobManagement = () => {
 		};
 	};
 
-	// Lodash-debounced search — fires 500ms after the user stops typing
-	const debouncedTitleSearch = useMemo(
-		() => debounce((title: string) => {
+	// Debounce ref for search input (no lodash dependency)
+	const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+	const debouncedTitleSearch = (title: string) => {
+		if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+		searchTimerRef.current = setTimeout(() => {
 			setAdminPage(1);
 			dispatch(getAdminJobs(buildParams(1, title)));
-		}, 500),
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-		[]
-	);
+		}, 500);
+	};
 
 	// Initial fetch on mount
 	useEffect(() => {
@@ -466,8 +494,99 @@ const JobManagement = () => {
 		dispatch(deleteAdminJobReset());
 	// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [deleteAdminJobData, deleteAdminJobStatus, deleteAdminJobError]);
+
+	// Fetch broken links when tab 3 is active
+	useEffect(() => {
+		if (activeTab !== '3') return;
+		dispatch(getBrokenLinks({ pageId: brokenLinksPage, pageLimit: BROKEN_PAGE_LIMIT }));
+	// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [activeTab, brokenLinksPage]);
+
+	// Handle broken links response
+	useEffect(() => {
+		if (brokenLinksStatus) return;
+		if (!brokenLinksData && !brokenLinksError) return;
+
+		if (brokenLinksError && !brokenLinksData) {
+			message.error(brokenLinksError || 'Failed to fetch broken links');
+			dispatch(getBrokenLinksReset());
+			return;
+		}
+
+		const code = brokenLinksData?.statusCode ?? brokenLinksData?.status;
+		if (code === 200 || code === 201) {
+			const urls: any[] = brokenLinksData?.data?.urls ?? [];
+			const total: number = brokenLinksData?.data?.total ?? urls.length;
+			setBrokenLinks(urls);
+			setBrokenLinksTotal(total);
+		} else if (code === 400) {
+			message.warning(brokenLinksData?.message || 'Bad request');
+		} else if (code === 500) {
+			message.error(brokenLinksData?.message || 'Server error');
+		}
+		dispatch(getBrokenLinksReset());
+	// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [brokenLinksData, brokenLinksStatus, brokenLinksError]);
+		const now = new Date();
+
+	// Handle fix broken URL response
+	useEffect(() => {
+		if (fixBrokenUrlStatus) return;
+		if (!fixBrokenUrlData && !fixBrokenUrlError) return;
+
+		if (fixBrokenUrlError && !fixBrokenUrlData) {
+			message.error(fixBrokenUrlError || 'Failed to fix URL');
+			dispatch(fixBrokenUrlReset());
+			return;
+		}
+
+		const code = fixBrokenUrlData?.statusCode ?? fixBrokenUrlData?.status;
+		if (code === 200 || code === 201) {
+			message.success('URL updated — refreshing list…');
+			// Clear this job's input and re-fetch latest broken links
+			const fixedId = fixBrokenUrlData?.jobId;
+			setFixModalJob(null); setFixModalUrl('');
+			setFixModalCheckResult(null);
+			dispatch(getBrokenLinks({ pageId: brokenLinksPage, pageLimit: BROKEN_PAGE_LIMIT }));
+		} else if (code === 400) {
+			message.warning(fixBrokenUrlData?.message || 'Invalid URL');
+		} else if (code === 404) {
+			message.warning('Job not found');
+		} else if (code === 500) {
+			message.error(fixBrokenUrlData?.message || 'Server error');
+		}
+		dispatch(fixBrokenUrlReset());
+	// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [fixBrokenUrlData, fixBrokenUrlStatus, fixBrokenUrlError]);
+
+
+	// Handle check URL response
+	useEffect(() => {
+		if (checkUrlStatus) return;
+		if (!checkUrlData && !checkUrlError) return;
+
+		if (checkUrlError && !checkUrlData) {
+			setFixModalCheckResult({ error: true, note: checkUrlError });
+			dispatch(checkUrlReset()); setCheckingJobId(null); return;
+		}
+
+		const code = checkUrlData?.statusCode ?? checkUrlData?.status;
+		const d = checkUrlData?.data ?? checkUrlData;
+		if (code === 200 || code === 201) {
+			setFixModalCheckResult({
+				live:       d?.reachable ?? d?.is_live ?? false,
+				statusCode: d?.status_code ?? d?.statusCode ?? null,
+				allowed:    d?.robots_allowed ?? true,
+				note:       d?.note ?? checkUrlData?.message ?? null,
+			});
+		}
+		dispatch(checkUrlReset());
+		setCheckingJobId(null);
+	// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [checkUrlData, checkUrlStatus, checkUrlError]);
 	const filteredJobs = useMemo(() => {
 		const now = new Date();
+
 		return jobs.filter((j) => {
 			const matchSearch =
 				j.title.toLowerCase().includes(searchText.toLowerCase()) ||
@@ -705,6 +824,14 @@ const JobManagement = () => {
 									<span className="view-tab-icon"><MdHistory size={13} /></span>
 									<span className="view-tab-label">Activity Monitor</span>
 								</button>
+								<button type="button"
+									className={`view-tab view-tab--rose${activeTab === '3' ? ' view-tab--active' : ''}`}
+									onClick={() => setActiveTab('3')}
+								>
+									<span className="view-tab-icon"><MdLinkOff size={13} /></span>
+									<span className="view-tab-label">Broken Links</span>
+									{brokenLinksTotal > 0 && <span className="view-tab-count view-tab-count--red">{brokenLinksTotal}</span>}
+								</button>
 							</div>
 							{activeTab === '1' && (
 								<div className="admin-nexus-tab-actions">
@@ -718,7 +845,7 @@ const JobManagement = () => {
 											setSearchText(val);
 											if (!val.trim()) {
 												// Cleared — cancel pending debounce and fetch immediately
-												debouncedTitleSearch.cancel();
+												if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
 												setAdminPage(1);
 												dispatch(getAdminJobs(buildParams(1, '')));
 											} else {
@@ -767,7 +894,7 @@ const JobManagement = () => {
 															type="button"
 															className="afc-reset-btn"
 															onClick={() => {
-																debouncedTitleSearch.cancel();
+																if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
 																setSearchText('');
 																setStatusFilter([]);
 																setVisibilityFilter([]);
@@ -1189,6 +1316,106 @@ const JobManagement = () => {
 									</div>
 								</motion.div>
 							)}
+
+						{activeTab === '3' && (
+							<motion.div
+								key="broken"
+								initial={{ opacity: 0, y: 10 }}
+								animate={{ opacity: 1, y: 0 }}
+								exit={{ opacity: 0, y: -10 }}
+								transition={{ duration: 0.3 }}
+							>
+								<div className="broken-links-content">
+									{/* Header */}
+									<div className="broken-links-header">
+										<div className="broken-links-title">
+											<MdLinkOff size={18} style={{ color: '#ef4444' }} />
+											<div>
+												<h3 className="bl-heading">Broken / Unverified Links</h3>
+												<p className="bl-sub">{brokenLinksData?.message || 'Jobs with broken or unverified apply URLs'}</p>
+											</div>
+										</div>
+									</div>
+
+									{/* Table */}
+									{brokenLinksStatus ? (
+										<div className="bl-skeleton-list">
+											{[0,1,2,3].map(k => (
+												<Skeleton key={k} active paragraph={{ rows: 2 }} title={{ width: '40%' }} />
+											))}
+										</div>
+									) : brokenLinks.length === 0 ? (
+										<Empty description="No broken or unverified links found" image={Empty.PRESENTED_IMAGE_SIMPLE} style={{ marginTop: 40 }} />
+									) : (
+										<div className="bl-list">
+											{brokenLinks.map((item, i) => (
+												<div key={item.job_id || i} className="bl-card">
+													{/* Logo */}
+													<div className="bl-card-left">
+												<div className="bl-logo" style={{ background: `linear-gradient(145deg, hsl(${(i * 47 + 180) % 360},68%,54%), hsl(${(i * 47 + 215) % 360},62%,40%))` }}>
+															{item.company?.charAt(0) ?? '?'}
+														</div>
+													</div>
+											
+													{/* Body */}
+													<div className="bl-card-body">
+											
+														{/* Row 1: title + badge */}
+														<div className="bl-card-top">
+															<div className="bl-card-info">
+																<span className="bl-title">{item.title}</span>
+																<span className="bl-company"><MdBusiness size={11} />{item.company}</span>
+															</div>
+															<Tag color={item.url_status === 'verified' || item.url_note?.toLowerCase().includes('updated') ? 'green' : item.url_status === 'unverified' ? 'orange' : 'red'} style={{ margin: 0, fontSize: 11, flexShrink: 0 }}>
+																{item.url_note?.toLowerCase().includes('updated') ? 'URL Updated ✓' : item.url_status}
+															</Tag>
+														</div>
+											
+														{/* Row 2: current broken URL */}
+														<div className="bl-url-row">
+															<MdLinkOff size={12} style={{ color: '#ef4444', flexShrink: 0 }} />
+															<span className="bl-url">{item.apply_url || '—'}</span>
+															<a href={item.apply_url} target="_blank" rel="noreferrer" className="bl-open-btn" onClick={e => e.stopPropagation()}>
+																<MdOpenInNew size={13} />
+															</a>
+														</div>
+
+													{/* Row 3: meta + fix button */}
+													<div className="bl-meta">
+														<span className="bl-meta-item"><MdHistory size={11} />Cached: {item.cached_at}</span>
+														{item.url_note && <span className="bl-meta-item bl-note">{item.url_note}</span>}
+														<span className="bl-meta-item bl-jobid">ID: {item.job_id}</span>
+														<button
+															type="button"
+															className="bl-fix-trigger-btn"
+															onClick={() => setFixModalJob({ ...item, logoHue: (i * 47 + 180) % 360 })}
+														>
+															<MdEditNote size={13} /> Fix URL
+														</button>
+													</div>
+
+													</div>
+												</div>
+											))}
+										</div>
+									)}
+
+									{/* Pagination */}
+									{!brokenLinksStatus && brokenLinksTotal > BROKEN_PAGE_LIMIT && (
+										<div className="admin-pagination-wrap" style={{ marginTop: 16 }}>
+											<Pagination
+												current={brokenLinksPage}
+												total={brokenLinksTotal}
+												pageSize={BROKEN_PAGE_LIMIT}
+												showSizeChanger={false}
+												showTotal={(total, range) => `${range[0]}–${range[1]} of ${total} links`}
+												onChange={(page) => setBrokenLinksPage(page)}
+											/>
+										</div>
+									)}
+								</div>
+							</motion.div>
+						)}
 						</div>
 					</div>
 				</motion.div>
@@ -1393,6 +1620,104 @@ const JobManagement = () => {
 						</div>
 					</Form>
 				</Modal>
+
+					{/* ── Fix URL Modal ── */}
+					<Modal
+						open={!!fixModalJob}
+						onCancel={() => { setFixModalJob(null); setFixModalUrl(''); setFixModalCheckResult(null); dispatch(checkUrlReset()); }}
+						footer={null}
+						centered
+						width={520}
+						className="fix-url-modal"
+						closable={!fixBrokenUrlStatus}
+					>
+						{fixModalJob && (
+							<div className="fum-wrap">
+					
+								{/* Header */}
+								<div className="fum-header">
+									<div className="fum-icon-ring"><MdEditNote size={22} /></div>
+									<div>
+										<h3 className="fum-title">Fix Apply URL</h3>
+										<p className="fum-sub">Check the new URL is reachable, then apply the fix.</p>
+									</div>
+								</div>
+					
+								{/* Job preview */}
+								<div className="fum-job-pill">
+									<div className="fum-job-logo" style={{ background: `linear-gradient(135deg, hsl(${fixModalJob.logoHue ?? 220},68%,54%), hsl(${(fixModalJob.logoHue ?? 220) + 35},62%,40%))` }}>
+										{fixModalJob.company?.charAt(0) ?? '?'}
+									</div>
+									<div className="fum-job-info">
+										<span className="fum-job-title">{fixModalJob.title}</span>
+										<span className="fum-job-company">{fixModalJob.company}</span>
+									</div>
+									<Tag color={fixModalJob.url_note?.toLowerCase().includes('updated') ? 'green' : fixModalJob.url_status === 'unverified' ? 'orange' : 'red'} style={{ margin: 0 }}>
+										{fixModalJob.url_note?.toLowerCase().includes('updated') ? 'URL Updated ✓' : fixModalJob.url_status}
+									</Tag>
+								</div>
+					
+								{/* Current broken URL */}
+								<div className="fum-current-url">
+									<span className="fum-current-label">Current URL</span>
+									<div className="fum-url-chip">
+										<MdLinkOff size={13} style={{ color: '#ef4444', flexShrink: 0 }} />
+										<span className="fum-url-text">{fixModalJob.apply_url}</span>
+										<a href={fixModalJob.apply_url} target="_blank" rel="noreferrer" className="bl-open-btn"><MdOpenInNew size={13} /></a>
+									</div>
+								</div>
+					
+								{/* New URL input */}
+								<div className="fum-input-section">
+									<span className="fum-input-label">New Apply URL</span>
+									<div className="fum-input-row">
+										<Input
+											placeholder="https://company.com/careers/job-id"
+											value={fixModalUrl}
+											onChange={(e) => { setFixModalUrl(e.target.value); setFixModalCheckResult(null); }}
+											prefix={<MdLink size={14} style={{ color: '#94a3b8' }} />}
+											className="fum-input"
+											onPressEnter={() => { if (fixModalUrl.trim()) { setCheckingJobId(fixModalJob.job_id); dispatch(checkUrl(fixModalUrl.trim())); } }}
+										/>
+										<button
+											type="button"
+											className="bl-check-btn"
+											disabled={checkUrlStatus || !fixModalUrl.trim()}
+											onClick={() => { if (fixModalUrl.trim()) { setCheckingJobId(fixModalJob.job_id); dispatch(checkUrl(fixModalUrl.trim())); } }}
+										>
+											{checkUrlStatus ? <Spin size="small" /> : 'Check'}
+										</button>
+									</div>
+					
+									{/* Check result */}
+									{fixModalCheckResult && (
+										<div className={'fum-check-result' + (fixModalCheckResult?.live ? ' fum-check-result--ok' : ' fum-check-result--fail')}>
+											{fixModalCheckResult?.live
+												? <><span>✓</span> {fixModalCheckResult?.note || ('Status ' + fixModalCheckResult?.statusCode)}{fixModalCheckResult?.allowed === false ? ' · robots.txt blocked' : ''}</>
+												: <><span>✗</span> Unreachable{fixModalCheckResult?.note ? ' — ' + fixModalCheckResult?.note : ''}</>
+											}
+										</div>
+									)}
+								</div>
+					
+								{/* Actions */}
+								<div className="fum-actions">
+									<button type="button" className="fum-btn fum-btn--cancel"
+										onClick={() => { setFixModalJob(null); setFixModalUrl(''); setFixModalCheckResult(null); dispatch(checkUrlReset()); }}
+									>Cancel</button>
+									<button
+										type="button"
+										className="fum-btn fum-btn--apply"
+										disabled={!fixModalUrl.trim() || fixBrokenUrlStatus || fixModalCheckResult?.live === false}
+										onClick={() => { if (fixModalUrl.trim()) dispatch(fixBrokenUrl({ jobId: fixModalJob.job_id, apply_url: fixModalUrl.trim() })); }}
+									>
+										{fixBrokenUrlStatus ? <><Spin size="small" style={{ marginRight: 6 }} />Applying…</> : 'Apply Fix'}
+									</button>
+								</div>
+					
+							</div>
+						)}
+					</Modal>
 
 					{/* ── Delete Confirmation Modal ── */}
 					<Modal

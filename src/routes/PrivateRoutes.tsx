@@ -7,7 +7,18 @@ const PrivateRoutes = ({ children }: { children: JSX.Element; }) => {
 		return children;
 	}
 
-    const authenticationToken = sessionStorage.getItem('accessToken');
+    // Check sessionStorage first; if missing (e.g. new tab), accept a one-time
+    // cross-tab token written to localStorage before window.open('_blank').
+    let authenticationToken = sessionStorage.getItem('accessToken');
+    if (!authenticationToken) {
+        const crossTabToken = localStorage.getItem('_crossTabToken');
+        if (crossTabToken) {
+            // Promote to sessionStorage for this tab and clear the bridge key
+            sessionStorage.setItem('accessToken', crossTabToken);
+            localStorage.removeItem('_crossTabToken');
+            authenticationToken = crossTabToken;
+        }
+    }
     if (!authenticationToken) {
         return <Navigate to="/401" />;
     }

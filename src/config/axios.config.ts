@@ -62,6 +62,21 @@ const refreshToken = async (): Promise<string> => {
 
 const getBearerToken = async () => {
 	try {
+		// Cross-tab token bridge: if sessionStorage is empty (new tab opened via window.open),
+		// promote the one-time localStorage tokens to sessionStorage then clear them.
+		if (!sessionStorage.getItem('accessToken')) {
+			const crossAccess  = localStorage.getItem('_crossTabToken');
+			const crossRefresh = localStorage.getItem('_crossTabRefresh');
+			if (crossAccess) {
+				sessionStorage.setItem('accessToken', crossAccess);
+				localStorage.removeItem('_crossTabToken');
+			}
+			if (crossRefresh) {
+				sessionStorage.setItem('refreshToken', crossRefresh);
+				localStorage.removeItem('_crossTabRefresh');
+			}
+		}
+
 		const token = sessionStorage.getItem('accessToken');
 		if (!token) return await refreshToken();
 

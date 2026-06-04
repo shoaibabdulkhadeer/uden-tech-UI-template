@@ -1295,6 +1295,18 @@ function JobSearch() {
 		});
 	}, [resetFilters, previewUrl]);
 
+	// Opens /learn in a new tab with the textarea pre-filled.
+	// Bridges the auth token to the new tab via a short-lived localStorage key
+	// that PrivateRoute picks up and promotes to sessionStorage.
+	const openLearnTab = (jd: string) => {
+		const access  = sessionStorage.getItem('accessToken');
+		const refresh = sessionStorage.getItem('refreshToken');
+		if (access)  localStorage.setItem('_crossTabToken',   access);
+		if (refresh) localStorage.setItem('_crossTabRefresh', refresh);
+		localStorage.setItem('lpPrefillJd', jd);
+		window.open('/learn', '_blank', 'noopener,noreferrer');
+	};
+
 	const openJobPreview = useCallback((job: JobItem) => {
 		setPreviewJob(job);
 		setLiveInterviewRounds([]);
@@ -2444,8 +2456,7 @@ function JobSearch() {
 																	okText: 'Yes, let\'s go',
 																	cancelText: 'Cancel',
 																	onOk: () => {
-								sessionStorage.setItem('lpPrefillJd', job.detail.description ?? '');
-								window.open('/learn', '_blank');
+								openLearnTab(job.detail.description ?? '');
 							},
 																});
 															}}
@@ -2571,8 +2582,7 @@ function JobSearch() {
 																						className="jc-quick-pill jc-quick-pill--gap"
 																						onClick={(e) => {
 																							e.stopPropagation();
-																							sessionStorage.setItem('lpPrefillSkill', s);
-																							window.open('/learn', '_blank');
+																							openLearnTab(`I want to learn ${s} to improve my career prospects and qualify for more roles.`);
 																						}}
 																					>
 																						{s}<MdSchool size={9} />
@@ -2601,8 +2611,7 @@ function JobSearch() {
 																	<button type="button" className="jc-quick-act jc-quick-act--learn"
 																		onClick={(e) => {
 																			e.stopPropagation();
-																			sessionStorage.setItem('lpPrefillJd', job.detail.description ?? '');
-																			window.open('/learn', '_blank');
+																			openLearnTab(job.detail.description ?? '');
 																		}}>
 																			<MdSchool size={11} />Build skills
 																	</button>
@@ -2932,8 +2941,7 @@ function JobSearch() {
 																		const text = explanation?.trim()
 																			? `I want to learn ${skill}. ${explanation.trim()}`
 																			: `I want to learn ${skill} to improve my career prospects and qualify for more roles.`;
-																		localStorage.setItem('lpPrefillJd', text);
-																		window.open('/learn', '_blank');
+																		openLearnTab(text);
 																	}}
 																>
 																	<MdSchool size={11}/>
@@ -3118,8 +3126,7 @@ function JobSearch() {
 																		className="jd-ivc-learn-btn"
 																		style={{ '--ivc-accent': accent } as React.CSSProperties}
 																		onClick={() => {
-																			sessionStorage.setItem('lpPrefillJd', learnText);
-																			window.open('/learn', '_blank', 'noopener,noreferrer');
+																			openLearnTab(learnText);
 																		}}
 																	>
 																		<MdSchool size={13} style={{ marginRight: 5 }} />
@@ -3189,8 +3196,7 @@ function JobSearch() {
 										previewJob.company && `Company: ${previewJob.company}`,
 										previewJob.detail?.description,
 									].filter(Boolean).join('\n\n');
-									sessionStorage.setItem('lpPrefillJd', jdText);
-									window.open('/learn', '_blank');
+									openLearnTab(jdText);
 								}}
 							>
 								<span className="jd-action-icon jd-action-icon--skills"><MdSchool size={16}/></span>
