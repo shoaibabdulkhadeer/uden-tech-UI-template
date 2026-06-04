@@ -3,7 +3,7 @@
 .job-mgmt-page {
 	display: block !important; /* Kill any flex centering from parent shells */
 	background: #f8fafc;
-	overflow-x: hidden;
+	overflow-x: clip; /* clip instead of hidden — hidden creates a scroll container that breaks position:sticky */
 	position: relative;
 }
 
@@ -1470,20 +1470,80 @@ body.dark-theme .js-chip-group--violet .js-chip--active {
 	z-index: 1;
 }
 
-/* Company logo — same as career page */
+/* Company logo — app-icon squircle style */
 .admin-role-logo {
-	width: 50px;
-	height: 50px;
-	border-radius: 13px;
+	width: 52px;
+	height: 52px;
+	border-radius: 18px; /* squircle / iOS app icon shape */
 	flex-shrink: 0;
-	box-shadow: 0 4px 14px rgba(15, 23, 42, 0.18);
 	position: relative;
 	overflow: hidden;
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	border: 1px solid rgba(255, 255, 255, 0.18);
+	border: 1.5px solid rgba(255, 255, 255, 0.22);
 	margin-top: 2px;
+	box-shadow:
+		0 4px 16px rgba(15, 23, 42, 0.22),
+		inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+/* Grid mesh overlay */
+.admin-role-logo::before {
+	content: '';
+	position: absolute;
+	inset: 0;
+	background-image:
+		repeating-linear-gradient(0deg,   transparent, transparent 8px, rgba(255,255,255,0.09) 8px, rgba(255,255,255,0.09) 9px),
+		repeating-linear-gradient(90deg, transparent, transparent 8px, rgba(255,255,255,0.09) 8px, rgba(255,255,255,0.09) 9px);
+	z-index: 0;
+}
+
+/* Top-left shine */
+.admin-role-logo::after {
+	content: '';
+	position: absolute;
+	top: -8px; left: -8px;
+	width: 36px; height: 36px;
+	background: radial-gradient(circle, rgba(255,255,255,0.18) 0%, transparent 70%);
+	z-index: 0;
+}
+
+.admin-role-logo .logo-monogram {
+	position: relative;
+	z-index: 1;
+	font-size: 22px;
+	font-weight: 800;
+	color: #fff;
+	text-shadow: 0 1px 4px rgba(0,0,0,0.25);
+	letter-spacing: -0.01em;
+	line-height: 1;
+	text-transform: uppercase;
+}
+
+/* Preview modal logo — same style, larger */
+.preview-logo.admin-preview-logo {
+	width: 64px;
+	height: 64px;
+	border-radius: 22px;
+	border: 1.5px solid rgba(255,255,255,0.22);
+	box-shadow: 0 6px 20px rgba(15,23,42,0.22), inset 0 1px 0 rgba(255,255,255,0.3);
+}
+.preview-logo.admin-preview-logo::before {
+	content: '';
+	position: absolute;
+	inset: 0;
+	background-image:
+		repeating-linear-gradient(0deg,   transparent, transparent 8px, rgba(255,255,255,0.09) 8px, rgba(255,255,255,0.09) 9px),
+		repeating-linear-gradient(90deg, transparent, transparent 8px, rgba(255,255,255,0.09) 8px, rgba(255,255,255,0.09) 9px);
+	border-radius: inherit;
+	z-index: 0;
+}
+.preview-logo.admin-preview-logo .logo-monogram {
+	position: relative; z-index: 1;
+	font-size: 28px; font-weight: 800; color: #fff;
+	text-shadow: 0 1px 4px rgba(0,0,0,0.25);
+	text-transform: uppercase; line-height: 1;
 }
 
 .admin-role-main {
@@ -1930,6 +1990,60 @@ body.dark-theme .admin-action-chip:hover {
 	font-weight: 500;
 }
 
+/* ── Modal: quick-info chips row ── */
+.pm-chips {
+	display: flex; flex-wrap: wrap; gap: 6px;
+	margin: 10px 0 4px;
+}
+.pm-chip {
+	display: inline-flex; align-items: center; gap: 4px;
+	padding: 3px 9px; border-radius: 999px; font-size: 11.5px; font-weight: 600;
+	border: 1px solid transparent;
+}
+.pm-chip--blue   { background: rgba(59,130,246,0.1);  color: #2563eb; border-color: rgba(59,130,246,0.2); }
+.pm-chip--purple { background: rgba(139,92,246,0.1);  color: #7c3aed; border-color: rgba(139,92,246,0.2); }
+.pm-chip--green  { background: rgba(16,185,129,0.1);  color: #059669; border-color: rgba(16,185,129,0.2); }
+.pm-chip--orange { background: rgba(245,158,11,0.1);  color: #b45309; border-color: rgba(245,158,11,0.2); }
+.pm-chip--gray   { background: rgba(148,163,184,0.1); color: #64748b; border-color: rgba(148,163,184,0.2); }
+
+/* ── Modal: skills with explanations ── */
+.pm-skills-list {
+	display: flex; flex-direction: column; gap: 8px;
+}
+.pm-skill-item {
+	display: flex; flex-direction: column; gap: 4px;
+}
+.pm-skill-tag {
+	display: inline-flex; align-items: center;
+	padding: 3px 10px; border-radius: 6px;
+	background: rgba(99,102,241,0.08); color: #4f46e5;
+	font-size: 12px; font-weight: 600;
+	border: 1px solid rgba(99,102,241,0.15);
+	width: fit-content;
+}
+.pm-skill-exp {
+	margin: 0; font-size: 11.5px; color: #64748b;
+	line-height: 1.55; padding-left: 4px;
+}
+
+/* ── Modal: nice-to-have star colour ── */
+.resp-check--star { color: #f59e0b !important; }
+.preview-resp-item--nice { color: #78350f; }
+
+/* ── Modal: source info box ── */
+.pm-source-box {
+	display: flex; flex-direction: column; gap: 5px;
+	margin-top: 16px; padding: 10px 14px;
+	background: rgba(248,250,252,1);
+	border: 1px solid rgba(226,232,240,0.8);
+	border-radius: 10px;
+}
+.pm-source-row {
+	display: inline-flex; align-items: center; gap: 6px;
+	font-size: 11.5px; color: #94a3b8;
+}
+.pm-source-row svg { flex-shrink: 0; color: #cbd5e1; }
+
 /* ── Roles page two-column layout ───────────────────────────── */
 
 .admin-roles-layout {
@@ -1939,11 +2053,42 @@ body.dark-theme .admin-action-chip:hover {
 	align-items: start;
 }
 
+/* Sticky sidebar — overflow on the element itself is safe, only ancestors break sticky */
+.admin-roles-sidebar {
+	position: sticky;
+	top: 16px;
+	align-self: start; /* required for sticky inside CSS grid */
+	max-height: calc(100vh - 32px);
+	overflow-y: auto;
+	overflow-x: hidden;
+	/* thin custom scrollbar */
+	scrollbar-width: thin;
+	scrollbar-color: rgba(99, 102, 241, 0.25) transparent;
+}
+.admin-roles-sidebar::-webkit-scrollbar {
+	width: 4px;
+}
+.admin-roles-sidebar::-webkit-scrollbar-track {
+	background: transparent;
+}
+.admin-roles-sidebar::-webkit-scrollbar-thumb {
+	background: rgba(99, 102, 241, 0.25);
+	border-radius: 4px;
+}
+.admin-roles-sidebar::-webkit-scrollbar-thumb:hover {
+	background: rgba(99, 102, 241, 0.5);
+}
+
 @media (max-width: 900px) {
 	.admin-roles-layout {
 		grid-template-columns: 1fr;
 	}
-	.admin-roles-sidebar { order: 2; }
+	.admin-roles-sidebar {
+		position: static;
+		max-height: none;
+		overflow: visible;
+		order: 2;
+	}
 	.admin-roles-content { order: 1; }
 }
 
@@ -1954,9 +2099,7 @@ body.dark-theme .admin-action-chip:hover {
 	border: 1px solid rgba(148, 163, 184, 0.14);
 	background: #fff;
 	box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
-	overflow: hidden;
-	position: sticky;
-	top: 16px;
+	/* removed overflow:hidden — it breaks position:sticky in Chrome */
 }
 
 .admin-filter-card-head {
@@ -2065,9 +2208,7 @@ body.dark-theme .js-chip-group--amber .js-chip--active { color: #fff; }
 	border: 1px solid rgba(148, 163, 184, 0.13);
 	background: #fff;
 	box-shadow: 0 2px 12px rgba(15, 23, 42, 0.06);
-	overflow: hidden;
-	position: sticky;
-	top: 16px;
+	/* overflow:hidden removed — sticky is on .admin-roles-sidebar now */
 }
 
 .admin-filter-card-head {
@@ -2570,4 +2711,103 @@ body.dark-theme .arm-form .ant-select .ant-select-selector {
 	background: rgba(30, 41, 59, 0.8) !important;
 	border-color: rgba(51, 65, 85, 0.5) !important;
 	color: #e2e8f0 !important;
+}
+
+/* —— Admin Jobs Pagination —— */
+.admin-pagination-wrap {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	padding: 20px 0 8px;
+	border-top: 1px solid rgba(99, 102, 241, 0.1);
+	margin-top: 8px;
+}
+.admin-pagination-wrap .ant-pagination-item-active {
+	background: #6366f1;
+	border-color: #6366f1;
+}
+.admin-pagination-wrap .ant-pagination-item-active a {
+	color: #fff;
+}
+.admin-pagination-wrap .ant-pagination-total-text {
+	font-size: 12px;
+	color: #94a3b8;
+}
+
+/* ── Admin preview modal overrides ───────────────────────────── */
+/* Remove Ant Design modal body padding so the jd-* layout fills edge-to-edge */
+.admin-preview-modal .ant-modal-content {
+	padding: 0;
+	overflow: hidden;
+	border-radius: 20px;
+}
+.admin-preview-modal .ant-modal-close {
+	top: 14px; right: 14px; z-index: 10; color: rgba(255,255,255,0.7);
+}
+.admin-preview-modal .ant-modal-close:hover { color: #fff; }
+
+/* job-search-preview inside modal: fixed height with scroll */
+.admin-preview-modal .job-search-preview {
+	height: 82vh;
+	max-height: 720px;
+}
+
+/* Footer: 2 buttons instead of 3 */
+.admin-preview-modal .jd-footer {
+	grid-template-columns: 1fr 1fr;
+}
+
+/* ── Delete confirmation modal ───────────────────────────────── */
+.admin-delete-modal .ant-modal-content { border-radius: 20px; overflow: hidden; }
+
+.adm-wrap {
+	display: flex; flex-direction: column; align-items: center;
+	text-align: center; padding: 8px 4px 4px; gap: 10px;
+}
+.adm-icon-ring {
+	width: 64px; height: 64px; border-radius: 50%;
+	background: rgba(239,68,68,0.1); border: 2px solid rgba(239,68,68,0.2);
+	display: flex; align-items: center; justify-content: center;
+	color: #ef4444;
+}
+.adm-title {
+	margin: 0; font-size: 17px; font-weight: 700; color: #1e293b;
+}
+.adm-sub {
+	margin: 0; font-size: 13px; color: #64748b; line-height: 1.6; max-width: 320px;
+}
+.adm-job-pill {
+	display: flex; align-items: center; gap: 10px;
+	width: 100%; padding: 10px 14px;
+	background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px;
+}
+.adm-job-logo {
+	width: 40px; height: 40px; border-radius: 12px; flex-shrink: 0;
+	display: flex; align-items: center; justify-content: center;
+	font-size: 18px; font-weight: 800; color: #fff;
+	border: 1.5px solid rgba(255,255,255,0.2);
+}
+.adm-job-info { display: flex; flex-direction: column; gap: 2px; text-align: left; min-width: 0; }
+.adm-job-title { font-size: 13px; font-weight: 600; color: #1e293b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.adm-job-company { font-size: 11.5px; color: #94a3b8; }
+
+.adm-actions {
+	display: flex; gap: 10px; width: 100%; margin-top: 4px;
+}
+.adm-btn {
+	flex: 1; padding: 9px 0; border-radius: 10px; border: none;
+	cursor: pointer; font-size: 13px; font-weight: 600;
+	display: inline-flex; align-items: center; justify-content: center; gap: 4px;
+	transition: opacity 0.15s, transform 0.12s;
+}
+.adm-btn:hover { opacity: 0.88; transform: translateY(-1px); }
+.adm-btn:active { transform: translateY(0); }
+.adm-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+.adm-btn--cancel {
+	background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0;
+}
+.adm-btn--delete {
+	background: linear-gradient(135deg, #ef4444, #dc2626);
+	color: #fff;
+	box-shadow: 0 2px 10px rgba(239,68,68,0.3);
 }

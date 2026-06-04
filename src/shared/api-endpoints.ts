@@ -48,4 +48,10 @@ export const API_ENDPOINTS = {
 	UPDATE_TRACKER:  '/v2/tracker/{tracker_id}',
 
 	//#endregion
+
+	//#region Admin
+	GET_ADMIN_JOBS:    '/v2/admin/jobs',
+	EDIT_ADMIN_JOB:    '/v2/admin/jobs/{job_id}',
+	DELETE_ADMIN_JOB:  '/v2/admin/jobs/{job_id}',
+	//#endregion
 };

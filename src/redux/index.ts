@@ -31,6 +31,10 @@ import { addToTrackerReducer } from './features/jobSearch/addToTrackerSlice';
 import { deleteTrackerReducer } from './features/jobSearch/deleteTrackerSlice';
 import { updateTrackerReducer } from './features/jobSearch/updateTrackerSlice';
 import { getInterviewRoundsReducer } from './features/jobSearch/getInterviewRoundsSlice';
+import { getAdminJobsReducer } from './features/admin/getAdminJobsSlice';
+import { editAdminJobReducer } from './features/admin/editAdminJobSlice';
+import { postAdminJobReducer } from './features/admin/postAdminJobSlice';
+import { deleteAdminJobReducer } from './features/admin/deleteAdminJobSlice';
 
 export default combineReducers({
 	settings: Settings,
@@ -68,6 +72,10 @@ export default combineReducers({
 	updateTrackerReducer:updateTrackerReducer,
 	recommendationsReducer:recommendationsReducer,
 	getInterviewRoundsReducer:getInterviewRoundsReducer,
+	getAdminJobsReducer:getAdminJobsReducer,
+	editAdminJobReducer:editAdminJobReducer,
+	postAdminJobReducer:postAdminJobReducer,
+	deleteAdminJobReducer:deleteAdminJobReducer,
 
 });
 

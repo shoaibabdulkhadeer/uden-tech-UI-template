@@ -1,4 +1,11 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
+import { debounce } from 'lodash';
+import { useDispatch, useSelector } from 'react-redux';
+import { AppDispatch } from '../../../redux/store';
+import { getAdminJobs, getAdminJobsReset } from '../../../redux/features/admin/getAdminJobsSlice';
+import { editAdminJob, editAdminJobReset } from '../../../redux/features/admin/editAdminJobSlice';
+import { postAdminJob, postAdminJobReset } from '../../../redux/features/admin/postAdminJobSlice';
+import { deleteAdminJob, deleteAdminJobReset } from '../../../redux/features/admin/deleteAdminJobSlice';
 import {
 	Button,
 	Switch,
@@ -12,7 +19,12 @@ import {
 	Popconfirm,
 	Progress,
 	Avatar,
-	Select
+	Select,
+	Skeleton,
+	Tag,
+	Empty,
+	Pagination,
+	Spin
 } from 'antd';
 import {
 	MdWorkOutline,
@@ -40,13 +52,21 @@ import {
 	MdCheckCircle,
 	MdRemoveRedEye,
 	MdFilterList,
-	MdLaptopMac
+	MdLaptopMac,
+	MdVerified,
+	MdStar,
+	MdInfo,
+	MdAccessTime,
+	MdWork,
+	MdSchool,
+	MdAttachMoney,
 } from 'react-icons/md';
 import { motion, easeInOut } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import DashboardShellNetwork from '../Dashboard/DashboardShellNetwork';
 import DashboardPageHeadArt from '../Dashboard/DashboardPageHeadArt';
 import './job-management.css';
+import '../JobSearch/job-search.css';
 import '../../../styles/phase2-theme.css';
 import '../../../styles/dashboard-arena.css';
 
@@ -69,6 +89,19 @@ interface JobEntry {
 	skills: string[];
 	logoHue: number;
 	badges?: string[];
+	// API-sourced extras
+	experience?: string;
+	experienceLevel?: string;
+	sourceKind?: string;
+	urlStatus?: string;
+	urlNote?: string;
+	sector?: string;
+	requirements?: string[];
+	niceToHave?: string[];
+	skillsExplanations?: Record<string, string>;
+	source?: string;
+	cachedAt?: string;
+	currency?: string;
 }
 
 const MOCK_ADMIN_JOBS: JobEntry[] = [
@@ -173,9 +206,70 @@ const MOCK_ADMIN_JOBS: JobEntry[] = [
 const WORK_MODE_LABELS: Record<string, string> = { remote: 'Remote', hybrid: 'Hybrid', onsite: 'On-site' };
 const EMP_LABELS: Record<string, string> = { 'full-time': 'Full-time', 'part-time': 'Part-time', contract: 'Contract' };
 
+// Helper: map a raw API job to JobEntry shape
+function mapApiToJobEntry(job: any, idx: number): JobEntry {
+	const badges: string[] = [];
+	if (job.url_status === 'valid') badges.push('Verified');
+	if (job.source === 'ai_discovered') badges.push('AI Found');
+	const recentWords = ['today', 'yesterday', '1 day', '2 days', '3 days'];
+	if (recentWords.some((w) => (job.posted_date || '').toLowerCase().includes(w))) badges.push('New');
+	if (job.experience_level) badges.push(job.experience_level.charAt(0).toUpperCase() + job.experience_level.slice(1));
+
+	return {
+		id:             job.job_id || job._id || String(idx),
+		title:          job.title || 'Untitled Role',
+		company:        job.company || 'Unknown Company',
+		location:       job.location || '',
+		status:         'active',
+		visibility:     'visible',
+		applyLink:      job.apply_url || job.source_url || '',
+		applicants:     0,
+		postedOn:       job.posted_date || job.cached_at?.split(' ')[0] || new Date().toISOString().split('T')[0],
+		description:    job.description || job.description_summary || '',
+		responsibilities: job.what_youll_do || [],
+		workMode:       (['remote', 'hybrid', 'onsite'].includes(job.work_mode) ? job.work_mode : 'hybrid') as 'remote' | 'hybrid' | 'onsite',
+		employmentType: (job.job_type === 'full-time' || job.job_type === 'part-time' || job.job_type === 'contract' ? job.job_type : 'full-time') as 'full-time' | 'part-time' | 'contract',
+		salary:         job.salary_range || '',
+		skills:         job.skills_required || [],
+		logoHue:        (idx * 47 + 180) % 360,
+		badges,
+		experience:          job.experience || undefined,
+		experienceLevel:     job.experience_level || undefined,
+		sourceKind:          job.source_kind || undefined,
+		urlStatus:           job.url_status || undefined,
+		urlNote:             job.url_note || undefined,
+		sector:              job.sector || undefined,
+		requirements:        job.requirements?.length ? job.requirements : undefined,
+		niceToHave:          job.nice_to_have?.length ? job.nice_to_have : undefined,
+		skillsExplanations:  job.skills_explanations && Object.keys(job.skills_explanations).length ? job.skills_explanations : undefined,
+		source:              job.source || undefined,
+		cachedAt:            job.cached_at || undefined,
+		currency:            job.currency || undefined,
+	};
+}
+
 const JobManagement = () => {
 	const navigate = useNavigate();
-	const [jobs, setJobs] = useState<JobEntry[]>(MOCK_ADMIN_JOBS);
+	const dispatch = useDispatch<AppDispatch>();
+
+	const { adminJobsData, status: adminJobsStatus, error: adminJobsError } = useSelector(
+		(state: any) => state.getAdminJobsReducer
+	);
+	const { editAdminJobData, status: editAdminJobStatus, error: editAdminJobError } = useSelector(
+		(state: any) => state.editAdminJobReducer
+	);
+	const { postAdminJobData, status: postAdminJobStatus, error: postAdminJobError } = useSelector(
+		(state: any) => state.postAdminJobReducer
+	);
+
+	const { deleteAdminJobData, status: deleteAdminJobStatus, error: deleteAdminJobError, pendingJobId: deletePendingJobId } = useSelector(
+		(state: any) => state.deleteAdminJobReducer
+	);
+
+	const PAGE_LIMIT = 10;
+	const [jobs, setJobs] = useState<JobEntry[]>([]);
+	const [adminPage, setAdminPage] = useState(1);
+	const [adminTotal, setAdminTotal] = useState(0);
 	const [isModalVisible, setIsModalVisible] = useState(false);
 	const [form] = Form.useForm();
 	const [editingJob, setEditingJob] = useState<JobEntry | null>(null);
@@ -191,6 +285,187 @@ const JobManagement = () => {
 	const [skillInput, setSkillInput] = useState('');
 	const [previewJob, setPreviewJob] = useState<JobEntry | null>(null);
 
+	const [deleteConfirmJob, setDeleteConfirmJob] = useState<JobEntry | null>(null);
+	// Ref holds latest filter values so the debounced fn always reads fresh state
+	const filtersRef = useRef({ workModeFilter, empTypeFilter, skillsFilter });
+	filtersRef.current = { workModeFilter, empTypeFilter, skillsFilter };
+
+	// Helper to build API params from current filter ref + a given page
+	const buildParams = (page: number, title?: string) => {
+		const { workModeFilter: wm, empTypeFilter: et, skillsFilter: sk } = filtersRef.current;
+		return {
+			pageId:    page,
+			pageLimit: PAGE_LIMIT,
+			title:     (title ?? '').trim() || undefined,
+			work_mode: wm.length === 1 ? wm[0] : undefined,
+			job_type:  et.length === 1 ? et[0] : undefined,
+			skills:    sk.length > 0   ? sk.join(',') : undefined,
+		};
+	};
+
+	// Lodash-debounced search — fires 500ms after the user stops typing
+	const debouncedTitleSearch = useMemo(
+		() => debounce((title: string) => {
+			setAdminPage(1);
+			dispatch(getAdminJobs(buildParams(1, title)));
+		}, 500),
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+		[]
+	);
+
+	// Initial fetch on mount
+	useEffect(() => {
+		dispatch(getAdminJobs(buildParams(1)));
+	// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, []);
+
+	// Fetch whenever page number changes (page button click)
+	useEffect(() => {
+		dispatch(getAdminJobs(buildParams(adminPage, searchText)));
+	// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [adminPage]);
+
+	// Instant refetch when dropdown filters (work mode / job type / skills) change
+	useEffect(() => {
+		setAdminPage(1);
+		dispatch(getAdminJobs(buildParams(1, searchText)));
+	// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [workModeFilter, empTypeFilter, skillsFilter]);
+
+	// Handle admin jobs API response
+	useEffect(() => {
+		if (adminJobsStatus) return;
+		if (!adminJobsData && !adminJobsError) return;
+
+		if (adminJobsError && !adminJobsData) {
+			message.error(adminJobsError || 'Failed to load jobs');
+			dispatch(getAdminJobsReset());
+			return;
+		}
+
+		const code = adminJobsData?.statusCode ?? adminJobsData?.status;
+
+		if (code === 200 || code === 201) {
+			const rawJobs: any[] = adminJobsData?.data?.jobs ?? adminJobsData?.jobs ?? [];
+			const total: number  = adminJobsData?.data?.total ?? adminJobsData?.total ?? rawJobs.length;
+			const mapped = rawJobs.map((job, idx) => mapApiToJobEntry(job, idx));
+			setJobs(mapped);
+			setAdminTotal(total);
+		} else if (code === 400) {
+			message.warning(adminJobsData?.message || 'Bad request');
+		} else if (code === 401 || code === 403) {
+			message.error('Unauthorized — admin access required');
+		} else if (code === 500) {
+			message.error(adminJobsData?.message || 'Server error');
+		}
+
+		dispatch(getAdminJobsReset());
+	// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [adminJobsData, adminJobsStatus, adminJobsError]);
+
+	// Handle edit job API response
+	useEffect(() => {
+		if (editAdminJobStatus) return;
+		if (!editAdminJobData && !editAdminJobError) return;
+
+		if (editAdminJobError && !editAdminJobData) {
+			message.error(editAdminJobError || 'Failed to update job');
+			dispatch(editAdminJobReset());
+			return;
+		}
+
+		const code = editAdminJobData?.statusCode ?? editAdminJobData?.status;
+
+		if (code === 200 || code === 201) {
+			message.success('Job updated successfully!');
+			// Refresh the list with current filters
+			dispatch(getAdminJobs(buildParams(adminPage, searchText)));
+			setIsModalVisible(false);
+			setEditingJob(null);
+			form.resetFields();
+		} else if (code === 400) {
+			message.warning(editAdminJobData?.message || 'Invalid data');
+		} else if (code === 401 || code === 403) {
+			message.error('Unauthorized');
+		} else if (code === 404) {
+			message.error('Job not found');
+		} else if (code === 500) {
+			message.error(editAdminJobData?.message || 'Server error');
+		}
+
+		dispatch(editAdminJobReset());
+	// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [editAdminJobData, editAdminJobStatus, editAdminJobError]);
+
+	// Handle post (create) job API response
+	useEffect(() => {
+		if (postAdminJobStatus) return;
+		if (!postAdminJobData && !postAdminJobError) return;
+
+		if (postAdminJobError && !postAdminJobData) {
+			message.error(postAdminJobError || 'Failed to create job');
+			dispatch(postAdminJobReset());
+			return;
+		}
+
+		const code = postAdminJobData?.statusCode ?? postAdminJobData?.status;
+
+		if (code === 200 || code === 201) {
+			message.success('Job posted successfully!');
+			dispatch(getAdminJobs(buildParams(1, searchText)));
+			setAdminPage(1);
+			setIsModalVisible(false);
+			setEditingJob(null);
+			form.resetFields();
+		} else if (code === 400) {
+			message.warning(postAdminJobData?.message || 'Invalid data — check all required fields');
+		} else if (code === 401 || code === 403) {
+			message.error('Unauthorized');
+		} else if (code === 409) {
+			message.warning(postAdminJobData?.message || 'A job with this title already exists');
+		} else if (code === 500) {
+			message.error(postAdminJobData?.message || 'Server error');
+		}
+
+		dispatch(postAdminJobReset());
+	// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [postAdminJobData, postAdminJobStatus, postAdminJobError]);
+
+
+	// Handle delete job API response
+	useEffect(() => {
+		if (deleteAdminJobStatus) return;
+		if (!deleteAdminJobData && !deleteAdminJobError) return;
+
+		if (deleteAdminJobError && !deleteAdminJobData) {
+			message.error(deleteAdminJobError || 'Failed to delete job');
+			dispatch(deleteAdminJobReset());
+			return;
+		}
+
+		const code = deleteAdminJobData?.statusCode ?? deleteAdminJobData?.status;
+
+		if (code === 200 || code === 201) {
+			message.success('Job deleted successfully');
+			// Remove from local list immediately for instant feedback
+			const deletedId = deleteAdminJobData?.jobId;
+			if (deletedId) setJobs(prev => prev.filter(j => j.id !== deletedId));
+			// Refresh from API to sync pagination
+			dispatch(getAdminJobs(buildParams(adminPage, searchText)));
+		} else if (code === 400) {
+			message.warning(deleteAdminJobData?.message || 'Bad request');
+		} else if (code === 401 || code === 403) {
+			message.error('Unauthorized — admin access required');
+		} else if (code === 404) {
+			message.warning('Job not found — it may have already been deleted');
+			dispatch(getAdminJobs(buildParams(adminPage, searchText)));
+		} else if (code === 500) {
+			message.error(deleteAdminJobData?.message || 'Server error');
+		}
+
+		dispatch(deleteAdminJobReset());
+	// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [deleteAdminJobData, deleteAdminJobStatus, deleteAdminJobError]);
 	const filteredJobs = useMemo(() => {
 		const now = new Date();
 		return jobs.filter((j) => {
@@ -230,31 +505,36 @@ const JobManagement = () => {
 
 	const handleAddOrEdit = (values: any) => {
 		if (editingJob) {
-			setJobs(jobs.map((j) => (j.id === editingJob.id ? { ...j, ...values } : j)));
-			message.success('Job updated successfully');
+			// Map form field names back to API field names
+			dispatch(editAdminJob({
+				jobId:            editingJob.id,
+				title:            values.title,
+				company:          values.company,
+				description:      values.description,
+				location:         values.location,
+				sector:           values.sector,
+				work_mode:        values.work_mode,
+				job_type:         values.job_type,
+				experience_level: values.experience_level,
+				skills_required:  values.skills_required,
+				salary_range:     values.salary_range,
+				apply_url:        values.apply_url,
+			}));
 		} else {
-			const newJob: JobEntry = {
-				id: Math.random().toString(36).substr(2, 9),
-				status: 'active',
-				visibility: 'visible',
-				applicants: 0,
-				postedOn: new Date().toISOString().split('T')[0],
-				logoHue: Math.floor(Math.random() * 360),
-				description: values.description || '',
-				responsibilities: [],
-				workMode: values.workMode || 'remote',
-				employmentType: values.employmentType || 'full-time',
-				salary: values.salary || '',
-				skills: [],
-				badges: [],
-				...values
-			};
-			setJobs([newJob, ...jobs]);
-			message.success('New role added successfully');
+			dispatch(postAdminJob({
+				title:            values.title,
+				company:          values.company,
+				description:      values.description,
+				location:         values.location,
+				sector:           values.sector,
+				work_mode:        values.work_mode,
+				job_type:         values.job_type,
+				experience_level: values.experience_level,
+				skills_required:  values.skills_required,
+				salary_range:     values.salary_range,
+				apply_url:        values.apply_url,
+			}));
 		}
-		setIsModalVisible(false);
-		form.resetFields();
-		setEditingJob(null);
 	};
 
 	const toggleStatus = (id: string) => {
@@ -429,11 +709,23 @@ const JobManagement = () => {
 							{activeTab === '1' && (
 								<div className="admin-nexus-tab-actions">
 									<Input
-										placeholder="Scan roles, companies, locations..."
+										placeholder="Search by job title..."
 										prefix={<MdSearch size={15} style={{ color: '#94a3b8' }} />}
 										className="admin-search admin-nexus-search"
 										value={searchText}
-										onChange={(e) => setSearchText(e.target.value)}
+										onChange={(e) => {
+											const val = e.target.value;
+											setSearchText(val);
+											if (!val.trim()) {
+												// Cleared — cancel pending debounce and fetch immediately
+												debouncedTitleSearch.cancel();
+												setAdminPage(1);
+												dispatch(getAdminJobs(buildParams(1, '')));
+											} else {
+												debouncedTitleSearch(val);
+											}
+										}}
+										allowClear
 									/>
 									<Button
 										type="primary"
@@ -470,11 +762,24 @@ const JobManagement = () => {
 														<MdFilterList size={15} />
 														Filters
 													</span>
-													{(statusFilter.length > 0 || visibilityFilter.length > 0 || workModeFilter.length > 0 || empTypeFilter.length > 0 || applicantsFilter || postedFilter || skillsFilter.length > 0) && (
-														<button type="button" className="afc-reset-btn"
-															onClick={() => { setStatusFilter([]); setVisibilityFilter([]); setWorkModeFilter([]); setEmpTypeFilter([]); setApplicantsFilter(''); setPostedFilter(''); setSkillsFilter([]); setSkillInput(''); }}
+													{(searchText || statusFilter.length > 0 || visibilityFilter.length > 0 || workModeFilter.length > 0 || empTypeFilter.length > 0 || skillsFilter.length > 0) && (
+														<button
+															type="button"
+															className="afc-reset-btn"
+															onClick={() => {
+																debouncedTitleSearch.cancel();
+																setSearchText('');
+																setStatusFilter([]);
+																setVisibilityFilter([]);
+																setWorkModeFilter([]);
+																setEmpTypeFilter([]);
+																setSkillsFilter([]);
+																setSkillInput('');
+																setAdminPage(1);
+																dispatch(getAdminJobs({ pageId: 1, pageLimit: PAGE_LIMIT }));
+															}}
 														>
-															<MdRestartAlt size={12} /> Clear
+															<MdRestartAlt size={12} /> Clear all
 														</button>
 													)}
 												</div>
@@ -555,53 +860,6 @@ const JobManagement = () => {
 													))}
 												</div>
 
-												{/* Applicants */}
-												<div className="afc-section">
-													<div className="afc-section-head">
-														<span className="afc-section-icon afc-section-icon--emerald"><MdPeople size={9} /></span>
-														Applicants
-														{applicantsFilter && <span className="afc-active-badge">1</span>}
-													</div>
-													{([
-														{ val: '0',    label: 'None' },
-														{ val: '1-20', label: '1 – 20' },
-														{ val: '21-50',label: '21 – 50' },
-														{ val: '50+',  label: '50+' },
-													]).map(({ val, label }) => (
-														<button key={val} type="button"
-															className={`afc-option afc-option--emerald${applicantsFilter === val ? ' afc-option--active' : ''}`}
-															onClick={() => setApplicantsFilter(p => p === val ? '' : val)}
-														>
-															<span className="afc-option-dot" />
-															<span className="afc-option-label">{label}</span>
-															<MdCheckCircle size={13} className="afc-option-check" aria-hidden />
-														</button>
-													))}
-												</div>
-
-												{/* Posted */}
-												<div className="afc-section">
-													<div className="afc-section-head">
-														<span className="afc-section-icon afc-section-icon--rose"><MdCalendarToday size={9} /></span>
-														Date Posted
-														{postedFilter && <span className="afc-active-badge">1</span>}
-													</div>
-													{([
-														{ val: '7',  label: 'Last 7 days' },
-														{ val: '14', label: 'Last 14 days' },
-														{ val: '30', label: 'Last 30 days' },
-													]).map(({ val, label }) => (
-														<button key={val} type="button"
-															className={`afc-option afc-option--rose${postedFilter === val ? ' afc-option--active' : ''}`}
-															onClick={() => setPostedFilter(p => p === val ? '' : val)}
-														>
-															<span className="afc-option-dot" />
-															<span className="afc-option-label">{label}</span>
-															<MdCheckCircle size={13} className="afc-option-check" aria-hidden />
-														</button>
-													))}
-												</div>
-
 												{/* Skills */}
 												<div className="afc-section afc-section--last">
 													<div className="afc-section-head">
@@ -646,10 +904,17 @@ const JobManagement = () => {
 										{/* RIGHT — role card list */}
 										<div className="admin-roles-content">
 									<ul className="admin-role-list">
-										{filteredJobs.length === 0 ? (
+										{/* Loading skeleton */}
+										{adminJobsStatus ? (
+											[0,1,2,3].map((k) => (
+												<li key={k} className="admin-role-card" style={{ pointerEvents: 'none' }}>
+													<Skeleton avatar={{ size: 48, shape: 'square' }} active paragraph={{ rows: 3 }} title={{ width: '45%' }} />
+												</li>
+											))
+										) : filteredJobs.length === 0 ? (
 											<li className="admin-role-empty">
 												<MdWorkOutline size={32} />
-												<p>No roles match your filters</p>
+												<p>{jobs.length === 0 ? 'No jobs loaded yet' : 'No roles match your filters'}</p>
 											</li>
 										) : filteredJobs.map((job) => (
 											<li key={job.id} className="admin-role-card">
@@ -657,10 +922,8 @@ const JobManagement = () => {
 												{/* Company logo */}
 												<div
 													className="admin-role-logo"
-													style={{ background: `linear-gradient(135deg, hsl(${job.logoHue},70%,52%), hsl(${job.logoHue + 40},65%,42%))` }}
+													style={{ background: `linear-gradient(145deg, hsl(${job.logoHue},72%,56%), hsl(${job.logoHue + 35},68%,38%))` }}
 												>
-													<div className="logo-mesh-ring" />
-													<div className="logo-mesh-ring logo-mesh-ring--2" />
 													<span className="logo-monogram">{job.company.charAt(0)}</span>
 												</div>
 
@@ -738,7 +1001,24 @@ const JobManagement = () => {
 																<button
 																	type="button"
 																	className="admin-action-chip"
-																	onClick={() => { setEditingJob(job); form.setFieldsValue(job); setIsModalVisible(true); }}
+																	onClick={() => {
+	setEditingJob(job);
+	// Pre-fill using API field names
+	form.setFieldsValue({
+		title:            job.title,
+		company:          job.company,
+		description:      job.description,
+		location:         job.location,
+		sector:           job.sector,
+		work_mode:        job.workMode,
+		job_type:         job.employmentType,
+		experience_level: job.experienceLevel,
+		skills_required:  job.skills,
+		salary_range:     job.salary,
+		apply_url:        job.applyLink,
+	});
+	setIsModalVisible(true);
+}}
 																>
 																	<MdEdit size={13} />
 																	Edit
@@ -762,17 +1042,41 @@ const JobManagement = () => {
 																	className="nexus-switch"
 																/>
 															</Tooltip>
-															<Popconfirm title="Delete this role?" onConfirm={() => deleteJob(job.id)} okText="Delete" cancelText="Cancel" okType="danger">
-																<button type="button" className="admin-action-chip admin-action-chip--danger">
-																	<MdDeleteOutline size={13} />
-																</button>
-															</Popconfirm>
+										<Tooltip title="Delete role">
+											<button
+												type="button"
+												className="admin-action-chip admin-action-chip--danger"
+												disabled={!!(deleteAdminJobStatus && deletePendingJobId === job.id)}
+												onClick={() => setDeleteConfirmJob(job)}
+											>
+												{deleteAdminJobStatus && deletePendingJobId === job.id
+													? <Spin size="small" />
+													: <MdDeleteOutline size={13} />}
+											</button>
+										</Tooltip>
 														</div>
 													</div>
 												</div>
 											</li>
 										))}
 									</ul>
+
+									{/* Pagination */}
+									{!adminJobsStatus && adminTotal > PAGE_LIMIT && (
+										<div className="admin-pagination-wrap">
+											<Pagination
+												current={adminPage}
+												total={adminTotal}
+												pageSize={PAGE_LIMIT}
+												showSizeChanger={false}
+												showTotal={(total, range) => `${range[0]}–${range[1]} of ${total} jobs`}
+												onChange={(page) => {
+													setAdminPage(page);
+													window.scrollTo({ top: 0, behavior: 'smooth' });
+												}}
+											/>
+										</div>
+									)}
 										</div>{/* admin-roles-content */}
 									</div>{/* admin-roles-layout */}
 								</motion.div>
@@ -914,65 +1218,241 @@ const JobManagement = () => {
 
 					<Form form={form} layout="vertical" onFinish={handleAddOrEdit} className="arm-form">
 
-						{/* Title — full width */}
-						<Form.Item name="title" label="Job Title" rules={[{ required: true, message: 'Required' }]}>
+						{/* Title */}
+						<Form.Item
+							name="title"
+							label="Job Title"
+							rules={[
+								{ required: true, message: 'Job title is required' },
+								{ min: 3, message: 'Title must be at least 3 characters' },
+								{ max: 120, message: 'Title cannot exceed 120 characters' },
+							]}
+						>
 							<Input placeholder="e.g. Senior Software Engineer" className="arm-input" />
 						</Form.Item>
 
-						{/* Company + Location — side by side */}
+						{/* Company + Location */}
 						<div className="arm-row">
-							<Form.Item name="company" label="Company" rules={[{ required: true, message: 'Required' }]}>
+							<Form.Item
+								name="company"
+								label="Company"
+								rules={[
+									{ required: true, message: 'Company name is required' },
+									{ min: 2, message: 'At least 2 characters' },
+								]}
+							>
 								<Input placeholder="e.g. Stripe" prefix={<MdBusiness size={14} style={{ color: '#94a3b8' }} />} className="arm-input" />
 							</Form.Item>
-							<Form.Item name="location" label="Location" rules={[{ required: true, message: 'Required' }]}>
-								<Input placeholder="e.g. Remote" prefix={<MdLocationOn size={14} style={{ color: '#94a3b8' }} />} className="arm-input" />
+							<Form.Item
+								name="location"
+								label="Location"
+								rules={[{ required: true, message: 'Location is required' }]}
+							>
+								<Input placeholder="e.g. Bengaluru, India" prefix={<MdLocationOn size={14} style={{ color: '#94a3b8' }} />} className="arm-input" />
 							</Form.Item>
 						</div>
 
-						{/* Work Mode + Employment Type — side by side */}
+						{/* Work Mode + Job Type */}
 						<div className="arm-row">
-							<Form.Item name="workMode" label="Work Mode">
+							<Form.Item
+								name="work_mode"
+								label="Work Mode"
+								rules={[{ required: true, message: 'Select a work mode' }]}
+							>
 								<Select placeholder="Select" className="arm-select" popupClassName="arm-dropdown">
 									<Select.Option value="remote">🌐 Remote</Select.Option>
 									<Select.Option value="hybrid">🏢 Hybrid</Select.Option>
 									<Select.Option value="onsite">📍 On-site</Select.Option>
 								</Select>
 							</Form.Item>
-							<Form.Item name="employmentType" label="Employment Type">
+							<Form.Item
+								name="job_type"
+								label="Job Type"
+								rules={[{ required: true, message: 'Select a job type' }]}
+							>
 								<Select placeholder="Select" className="arm-select" popupClassName="arm-dropdown">
 									<Select.Option value="full-time">Full-time</Select.Option>
 									<Select.Option value="part-time">Part-time</Select.Option>
 									<Select.Option value="contract">Contract</Select.Option>
+									<Select.Option value="internship">Internship</Select.Option>
 								</Select>
 							</Form.Item>
 						</div>
 
-						{/* Salary + Apply URL — side by side */}
+						{/* Experience Level + Sector */}
 						<div className="arm-row">
-							<Form.Item name="salary" label="Salary Range">
-								<Input placeholder="e.g. $90K – $120K / yr" className="arm-input" />
+							<Form.Item
+								name="experience_level"
+								label="Experience Level"
+								rules={[{ required: true, message: 'Select experience level' }]}
+							>
+								<Select placeholder="Select" className="arm-select" popupClassName="arm-dropdown">
+									<Select.Option value="junior">Junior</Select.Option>
+									<Select.Option value="mid">Mid</Select.Option>
+									<Select.Option value="senior">Senior</Select.Option>
+									<Select.Option value="lead">Lead</Select.Option>
+									<Select.Option value="executive">Executive</Select.Option>
+								</Select>
 							</Form.Item>
-							<Form.Item name="applyLink" label="Apply URL" rules={[{ required: true, type: 'url', message: 'Enter a valid URL' }]}>
+							<Form.Item
+								name="sector"
+								label="Sector"
+							>
+								<Select placeholder="Select (optional)" className="arm-select" popupClassName="arm-dropdown">
+									<Select.Option value="private">Private</Select.Option>
+									<Select.Option value="public">Public</Select.Option>
+									<Select.Option value="nonprofit">Non-profit</Select.Option>
+									<Select.Option value="startup">Startup</Select.Option>
+								</Select>
+							</Form.Item>
+						</div>
+
+						{/* Salary + Apply URL */}
+						<div className="arm-row">
+							<Form.Item name="salary_range" label="Salary Range">
+								<Select placeholder="Select salary range" className="arm-select" popupClassName="arm-dropdown" allowClear>
+									<Select.Option value="₹3L – ₹6L / yr">₹3L – ₹6L / yr</Select.Option>
+									<Select.Option value="₹6L – ₹10L / yr">₹6L – ₹10L / yr</Select.Option>
+									<Select.Option value="₹10L – ₹15L / yr">₹10L – ₹15L / yr</Select.Option>
+									<Select.Option value="₹15L – ₹25L / yr">₹15L – ₹25L / yr</Select.Option>
+									<Select.Option value="₹25L – ₹40L / yr">₹25L – ₹40L / yr</Select.Option>
+									<Select.Option value="₹40L – ₹60L / yr">₹40L – ₹60L / yr</Select.Option>
+									<Select.Option value="₹60L – ₹80L / yr">₹60L – ₹80L / yr</Select.Option>
+									<Select.Option value="₹80L+ / yr">₹80L+ / yr</Select.Option>
+									<Select.Option value="$30K – $60K / yr">$30K – $60K / yr</Select.Option>
+									<Select.Option value="$60K – $90K / yr">$60K – $90K / yr</Select.Option>
+									<Select.Option value="$90K – $130K / yr">$90K – $130K / yr</Select.Option>
+									<Select.Option value="$130K – $180K / yr">$130K – $180K / yr</Select.Option>
+									<Select.Option value="$180K+ / yr">$180K+ / yr</Select.Option>
+									<Select.Option value="$180K – $250K / yr">$180K – $250K / yr</Select.Option>
+									<Select.Option value="$250K – $350K / yr">$250K – $350K / yr</Select.Option>
+									<Select.Option value="$350K – $500K / yr">$350K – $500K / yr</Select.Option>
+									<Select.Option value="$500K+ / yr">$500K+ / yr</Select.Option>
+									<Select.Option value="Competitive">Competitive</Select.Option>
+									<Select.Option value="Not disclosed">Not disclosed</Select.Option>
+								</Select>
+							</Form.Item>
+							<Form.Item
+								name="apply_url"
+								label="Apply URL"
+								rules={[
+									{ required: true, message: 'Apply URL is required' },
+									{ type: 'url', message: 'Enter a valid URL (https://…)' },
+								]}
+							>
 								<Input placeholder="https://company.com/apply" prefix={<MdLink size={14} style={{ color: '#94a3b8' }} />} className="arm-input" />
 							</Form.Item>
 						</div>
 
-						{/* Description — full width */}
-						<Form.Item name="description" label="Job Description" style={{ marginBottom: 0 }}>
+						{/* Skills — tag input */}
+						<Form.Item
+							name="skills_required"
+							label="Skills Required"
+							rules={[{ required: true, message: 'Add at least one skill', type: 'array', min: 1 }]}
+						>
+							<Select
+								mode="tags"
+								placeholder="Type a skill and press Enter"
+								className="arm-select"
+								popupClassName="arm-dropdown"
+								tokenSeparators={[',']}
+								open={false}
+							/>
+						</Form.Item>
+
+						{/* Description */}
+						<Form.Item
+							name="description"
+							label="Job Description"
+							style={{ marginBottom: 0 }}
+							rules={[
+								{ required: true, message: 'Description is required' },
+								{ min: 20, message: 'Description should be at least 20 characters' },
+							]}
+						>
 							<Input.TextArea rows={3} placeholder="What this role is about, the team, the mission…" className="arm-textarea" />
 						</Form.Item>
 
 						{/* Footer */}
 						<div className="arm-footer">
-							<button type="button" className="arm-btn-cancel" onClick={() => { setIsModalVisible(false); setEditingJob(null); }}>
+							<button type="button" className="arm-btn-cancel" onClick={() => { setIsModalVisible(false); setEditingJob(null); form.resetFields(); }}>
 								Cancel
 							</button>
-							<button type="submit" className="arm-btn-submit">
-								{editingJob ? <><MdEdit size={14} /> Save Changes</> : <><MdAdd size={14} /> Create Role</>}
+							<button
+								type="submit"
+								className="arm-btn-submit"
+								disabled={editAdminJobStatus || postAdminJobStatus}
+							>
+								{(editAdminJobStatus || postAdminJobStatus)
+									? <><Spin size="small" style={{ marginRight: 6 }} />{editingJob ? 'Saving…' : 'Posting…'}</>
+									: editingJob
+										? <><MdEdit size={14} /> Save Changes</>
+										: <><MdAdd size={14} /> Post Job</>
+								}
 							</button>
 						</div>
 					</Form>
 				</Modal>
+
+					{/* ── Delete Confirmation Modal ── */}
+					<Modal
+						open={!!deleteConfirmJob}
+						onCancel={() => setDeleteConfirmJob(null)}
+						footer={null}
+						centered
+						width={420}
+						closable={!deleteAdminJobStatus}
+						className="admin-delete-modal"
+					>
+						{deleteConfirmJob && (
+							<div className="adm-wrap">
+								<div className="adm-icon-ring">
+									<MdDeleteOutline size={28} />
+								</div>
+								<h3 className="adm-title">Delete this role?</h3>
+								<p className="adm-sub">
+									You are about to permanently remove this job from the cache.
+									This action cannot be undone.
+								</p>
+								<div className="adm-job-pill">
+									<div
+										className="adm-job-logo"
+										style={{ background: `linear-gradient(145deg, hsl(${deleteConfirmJob.logoHue},72%,56%), hsl(${deleteConfirmJob.logoHue + 35},68%,38%))` }}
+									>
+										{deleteConfirmJob.company.charAt(0)}
+									</div>
+									<div className="adm-job-info">
+										<span className="adm-job-title">{deleteConfirmJob.title}</span>
+										<span className="adm-job-company">{deleteConfirmJob.company} · {deleteConfirmJob.location}</span>
+									</div>
+								</div>
+								<div className="adm-actions">
+									<button
+										type="button"
+										className="adm-btn adm-btn--cancel"
+										disabled={deleteAdminJobStatus}
+										onClick={() => setDeleteConfirmJob(null)}
+									>
+										Cancel
+									</button>
+									<button
+										type="button"
+										className="adm-btn adm-btn--delete"
+										disabled={deleteAdminJobStatus}
+										onClick={() => {
+											dispatch(deleteAdminJob(deleteConfirmJob.id));
+											setDeleteConfirmJob(null);
+										}}
+									>
+										{deleteAdminJobStatus && deletePendingJobId === deleteConfirmJob.id
+											? <><Spin size="small" style={{ marginRight: 6 }} />Deleting…</>
+											: <><MdDeleteOutline size={14} style={{ marginRight: 4 }} />Yes, delete</>
+										}
+									</button>
+								</div>
+							</div>
+						)}
+					</Modal>
 
 				{/* Candidate Preview Modal */}
 				<Modal
@@ -980,108 +1460,228 @@ const JobManagement = () => {
 					onCancel={() => setPreviewJob(null)}
 					footer={null}
 					centered
-					className="admin-preview-modal"
-					width={680}
-					title={
-						<div className="preview-modal-header">
-							<span className="preview-modal-badge">
-								<MdRemoveRedEye size={13} />
-								Candidate View
-							</span>
-							<span className="preview-modal-note">This is exactly how candidates see this role</span>
-						</div>
-					}
+					className="job-search-job-preview-modal admin-preview-modal"
+					wrapClassName="job-search-job-preview-modal-wrap"
+					width={760}
+					title={null}
+					closable
+					bodyStyle={{ padding: 0 }}
 				>
 					{previewJob && (
-						<div className="preview-job-card">
-							{/* Logo + title */}
-							<div className="preview-top">
-								<div
-									className="preview-logo"
-									style={{ background: `linear-gradient(135deg, hsl(${previewJob.logoHue},70%,52%), hsl(${previewJob.logoHue + 40},65%,42%))` }}
-								>
-									<div className="logo-mesh-ring" />
-									<div className="logo-mesh-ring logo-mesh-ring--2" />
-									<span className="logo-monogram">{previewJob.company.charAt(0)}</span>
+						<div className="job-search-preview">
+							<div className="jd-scroll-area">
+
+								{/* ── Dark gradient header (same as Career Acceleration) ── */}
+								<header className="job-search-preview-head">
+									<div className="jd-head-top">
+
+										{/* Logo */}
+										<div
+											className="job-search-preview-logo"
+											style={{ background: `linear-gradient(145deg, hsl(${previewJob.logoHue},72%,56%), hsl(${previewJob.logoHue + 35},68%,38%))` }}
+										>
+											<div className="logo-mesh-ring" />
+											<div className="logo-mesh-ring logo-mesh-ring--2" />
+											<span className="logo-monogram logo-monogram--lg">{previewJob.company.charAt(0)}</span>
+										</div>
+
+										{/* Identity block */}
+										<div className="job-search-preview-head-copy">
+											<div className="job-search-preview-title-row">
+												<h2 className="job-search-preview-title">{previewJob.title}</h2>
+												{previewJob.urlStatus === 'valid' && (
+													<MdVerified size={18} className="jd-verified-icon" />
+												)}
+											</div>
+											<p className="job-search-preview-company">
+												<MdBusiness size={13} />{previewJob.company}
+												{previewJob.location && (
+													<><span className="job-search-job-dot"> · </span><MdLocationOn size={13} />{previewJob.location}</>
+												)}
+											</p>
+											{/* Meta chips */}
+											<div className="job-search-preview-meta-line">
+												<span className="job-search-preview-chip">
+													<MdWork size={10} />{EMP_LABELS[previewJob.employmentType]}
+												</span>
+												<span className="job-search-preview-chip job-search-preview-chip--muted">
+													{WORK_MODE_LABELS[previewJob.workMode]}
+												</span>
+												{previewJob.experience && (
+													<span className="job-search-preview-chip job-search-preview-chip--muted">
+														<MdAccessTime size={10} />{previewJob.experience}
+													</span>
+												)}
+												{previewJob.experienceLevel && (
+													<span className="job-search-preview-chip job-search-preview-chip--muted" style={{ textTransform: 'capitalize' }}>
+														{previewJob.experienceLevel}
+													</span>
+												)}
+												{previewJob.salary && (
+													<span className="job-search-preview-chip job-search-preview-chip--accent">
+														<MdAttachMoney size={10} />{previewJob.currency ? `${previewJob.currency} ` : ''}{previewJob.salary}
+													</span>
+												)}
+												{previewJob.sector && (
+													<span className="job-search-preview-chip job-search-preview-chip--muted" style={{ textTransform: 'capitalize' }}>
+														<MdBarChart size={10} />{previewJob.sector}
+													</span>
+												)}
+												{previewJob.postedOn && (
+													<span className="job-search-preview-chip job-search-preview-chip--muted">
+														<MdCalendarToday size={10} />{previewJob.postedOn}
+													</span>
+												)}
+												{previewJob.sourceKind && (
+													<span className="job-search-preview-chip job-search-preview-chip--muted" style={{ textTransform: 'capitalize' }}>
+														{previewJob.sourceKind}
+													</span>
+												)}
+											</div>
+										</div>
+									</div>
+
+									{/* About + What you'll do — 2-col inside header */}
+									<div className="jd-head-desc">
+										<div className="jd-head-desc-col">
+											<p className="jd-head-desc-label"><MdListAlt size={12} /> About the role</p>
+											<p className="jd-head-desc-text">{previewJob.description}</p>
+										</div>
+										{previewJob.responsibilities && previewJob.responsibilities.length > 0 && (
+											<div className="jd-head-desc-col">
+												<p className="jd-head-desc-label"><MdWork size={12} /> What you'll do</p>
+												<ul className="jd-head-resp-list">
+													{previewJob.responsibilities.map((r, i) => <li key={i}>{r}</li>)}
+												</ul>
+											</div>
+										)}
+									</div>
+								</header>
+
+								{/* ── Skills ── */}
+								{previewJob.skills.length > 0 && (
+									<div className="jd-skills-section">
+										<h4 className="jd-section-label">
+											<span className="jd-section-icon jd-section-icon--violet"><MdSchool size={12} /></span>
+											Skills required
+										</h4>
+										<div className="jd-skills-row">
+											{previewJob.skills.map((s) => (
+												<Tooltip
+													key={s}
+													title={previewJob.skillsExplanations?.[s] || null}
+													overlayStyle={{ maxWidth: 260 }}
+												>
+													<span className="job-search-preview-skill">{s}</span>
+												</Tooltip>
+											))}
+										</div>
+									</div>
+								)}
+
+								{/* ── Body panels ── */}
+								<div className="jd-body">
+									<div className="jd-panels-stack">
+
+										{/* Requirements */}
+										{previewJob.requirements && previewJob.requirements.length > 0 && (
+											<div className="jd-panel jd-panel--full jd-panel--fit">
+												<h3 className="jd-panel-title">
+													<MdCheckCircle size={15} className="jd-panel-title-icon jd-panel-title-icon--gold" />
+													Requirements
+												</h3>
+												<ul className="preview-resp-list">
+													{previewJob.requirements.map((r, i) => (
+														<li key={i} className="preview-resp-item">
+															<MdCheckCircle size={13} className="resp-check" />{r}
+														</li>
+													))}
+												</ul>
+											</div>
+										)}
+
+										{/* Nice to have */}
+										{previewJob.niceToHave && previewJob.niceToHave.length > 0 && (
+											<div className="jd-panel jd-panel--full" style={{ background: 'linear-gradient(160deg,#fffbeb,#fef3c7,#fffde7)' }}>
+												<h3 className="jd-panel-title">
+													<MdStar size={15} className="jd-panel-title-icon" style={{ color: '#f59e0b' }} />
+													Nice to have
+												</h3>
+												<ul className="preview-resp-list">
+													{previewJob.niceToHave.map((n, i) => (
+														<li key={i} className="preview-resp-item" style={{ color: '#92400e' }}>
+															<MdStar size={13} style={{ color: '#f59e0b', flexShrink: 0 }} />{n}
+														</li>
+													))}
+												</ul>
+											</div>
+										)}
+
+										{/* Source info */}
+										{(previewJob.urlNote || previewJob.cachedAt || previewJob.source) && (
+											<div className="jd-panel jd-panel--full" style={{ background: '#f8fafc' }}>
+												<h3 className="jd-panel-title">
+													<MdInfo size={15} className="jd-panel-title-icon jd-panel-title-icon--indigo" />
+													Source info
+												</h3>
+												<div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 4 }}>
+													{previewJob.urlNote && (
+														<div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+															<MdLink size={14} style={{ color: '#6366f1', flexShrink: 0, marginTop: 2 }} />
+															<span style={{ fontSize: 13, color: '#475569', lineHeight: 1.55 }}>{previewJob.urlNote}</span>
+														</div>
+													)}
+													{previewJob.source && (
+														<div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+															<MdInfo size={14} style={{ color: '#94a3b8', flexShrink: 0 }} />
+															<span style={{ fontSize: 13, color: '#64748b' }}>Source: <strong>{previewJob.source.replace(/_/g, ' ')}</strong></span>
+														</div>
+													)}
+													{previewJob.cachedAt && (
+														<div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+															<MdHistory size={14} style={{ color: '#94a3b8', flexShrink: 0 }} />
+															<span style={{ fontSize: 13, color: '#64748b' }}>Cached: {previewJob.cachedAt}</span>
+														</div>
+													)}
+												</div>
+											</div>
+										)}
+									</div>
 								</div>
-								<div className="preview-title-block">
-									<h2 className="preview-job-title">{previewJob.title}</h2>
-									<p className="preview-job-meta">
-										<MdBusiness size={13} />
-										{previewJob.company}
-										<span className="role-dot">·</span>
-										<MdLocationOn size={13} />
-										{previewJob.location}
-										<span className="role-dot">·</span>
-										{EMP_LABELS[previewJob.employmentType]}
-										<span className="role-dot">·</span>
-										{WORK_MODE_LABELS[previewJob.workMode]}
-									</p>
-									<p className="preview-salary">{previewJob.salary}</p>
-								</div>
+
+							</div>{/* end jd-scroll-area */}
+
+							{/* ── Footer ── */}
+							<footer className="jd-footer">
 								<a
 									href={previewJob.applyLink}
 									target="_blank"
 									rel="noreferrer"
-									className="preview-apply-btn"
+									className="jd-action-btn jd-action-btn--apply"
+									style={{ textDecoration: 'none' }}
 								>
-									Apply Now
-									<MdOpenInNew size={13} />
+									<span className="jd-action-icon jd-action-icon--apply"><MdOpenInNew size={16} /></span>
+									<span className="jd-action-text">
+										<span className="jd-action-label">Apply now</span>
+										<span className="jd-action-sub">→ company site</span>
+									</span>
 								</a>
-							</div>
+								<button
+									type="button"
+									className="jd-action-btn jd-action-btn--skills"
+									onClick={() => {
+										sessionStorage.setItem('lpPrefillJd', previewJob.description ?? '');
+										window.open('/learn', '_blank', 'noopener,noreferrer');
+									}}
+								>
+									<span className="jd-action-icon jd-action-icon--skills"><MdSchool size={16} /></span>
+									<span className="jd-action-text">
+										<span className="jd-action-label">Build skills</span>
+										<span className="jd-action-sub">→ learning path</span>
+									</span>
+								</button>
+							</footer>
 
-							{/* Badges */}
-							{previewJob.badges && previewJob.badges.length > 0 && (
-								<div className="preview-badges">
-									{previewJob.badges.map((b) => (
-										<span key={b} className="preview-badge">{b}</span>
-									))}
-								</div>
-							)}
-
-							<div className="preview-divider" />
-
-							{/* About */}
-							<div className="preview-section">
-								<h3 className="preview-section-title">About the role</h3>
-								<p className="preview-section-body">{previewJob.description}</p>
-							</div>
-
-							{/* Responsibilities */}
-							{previewJob.responsibilities.length > 0 && (
-								<div className="preview-section">
-									<h3 className="preview-section-title">What you'll do</h3>
-									<ul className="preview-resp-list">
-										{previewJob.responsibilities.map((r, i) => (
-											<li key={i} className="preview-resp-item">
-												<MdCheckCircle size={14} className="resp-check" />
-												{r}
-											</li>
-										))}
-									</ul>
-								</div>
-							)}
-
-							{/* Skills */}
-							{previewJob.skills.length > 0 && (
-								<div className="preview-section">
-									<h3 className="preview-section-title">Skills</h3>
-									<div className="preview-skills">
-										{previewJob.skills.map((s) => (
-											<span key={s} className="preview-skill-tag">{s}</span>
-										))}
-									</div>
-								</div>
-							)}
-
-							{/* Footer */}
-							<div className="preview-footer">
-								<span className="preview-stat"><MdPeople size={13} /> {previewJob.applicants} applicants</span>
-								<span className="preview-stat">
-									<MdCalendarToday size={12} />
-									Posted {new Date(previewJob.postedOn).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
-								</span>
-							</div>
 						</div>
 					)}
 				</Modal>
