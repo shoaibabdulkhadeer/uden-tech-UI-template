@@ -265,6 +265,12 @@ function JobSearch() {
 	const [trackerIdMap, setTrackerIdMap] = useState<Record<string, string>>({});
 	const [trackerTotal, setTrackerTotal] = useState(0);
 	const [trackerPage, setTrackerPage] = useState(1);
+	const [trackerLoadingMore, setTrackerLoadingMore] = useState(false);
+	const [showTrackerKanban, setShowTrackerKanban] = useState(false);
+	const [dragJobId, setDragJobId] = useState<string | null>(null);
+	const [dragOverCol, setDragOverCol] = useState<string | null>(null);
+	const [dragPos, setDragPos] = useState<{x:number;y:number} | null>(null);
+	const [dragMeta, setDragMeta] = useState<{offsetX:number;offsetY:number;w:number;h:number} | null>(null);
 	const TRACKER_PAGE_LIMIT = 10;
 	const [dismissedIds, setDismissedIds] = useState<Set<string>>(() => new Set());
 	const [previewJob, setPreviewJob] = useState<JobItem | null>(null);
@@ -394,6 +400,53 @@ function JobSearch() {
 
 
 	// Hover open/close for quick-view panel
+	// Kanban infinite scroll — load next page when any column reaches bottom
+	const handleKanbanScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
+		const el = e.currentTarget;
+		const nearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 80;
+		if (nearBottom && trackerJobs.length < trackerTotal && !trackerLoadingMore && !trackerStatus) {
+			setTrackerLoadingMore(true);
+			dispatch(getTrackerApplications({ pageId: trackerPage + 1, pageLimit: TRACKER_PAGE_LIMIT }));
+		}
+	}, [trackerJobs.length, trackerTotal, trackerLoadingMore, trackerStatus, trackerPage, dispatch]);
+
+	// Mouse-based kanban drag tracking
+	useEffect(() => {
+		if (!dragJobId) return;
+		const S: Record<string,string> = { applied:'applied', screening:'shortlisted', interview:'interviewing', offer:'offer' };
+		const onMove = (e: MouseEvent) => {
+			setDragPos({ x: e.clientX, y: e.clientY });
+			const cols = document.querySelectorAll('[data-kanban-col]');
+			let found: string | null = null;
+			cols.forEach(col => {
+				const r = col.getBoundingClientRect();
+				if (e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom)
+					found = col.getAttribute('data-kanban-col');
+			});
+			setDragOverCol(found);
+		};
+		const onUp = (e: MouseEvent) => {
+			const cols = document.querySelectorAll('[data-kanban-col]');
+			let target: string | null = null;
+			cols.forEach(col => {
+				const r = col.getBoundingClientRect();
+				if (e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom)
+					target = col.getAttribute('data-kanban-col');
+			});
+			if (target && (appStages[dragJobId] ?? 'applied') !== target) {
+				setAppStages(prev => ({ ...prev, [dragJobId]: target as any }));
+				const tid = trackerIdMap[dragJobId];
+				if (tid) dispatch(updateTracker({ trackerId: tid, status: S[target] as any }));
+			}
+			setDragJobId(null); setDragOverCol(null); setDragPos(null); setDragMeta(null);
+			document.body.classList.remove('tracker-dragging');
+		};
+		window.addEventListener('mousemove', onMove);
+		window.addEventListener('mouseup', onUp);
+		return () => { window.removeEventListener('mousemove', onMove); window.removeEventListener('mouseup', onUp); };
+	// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [dragJobId]);
+
 	const onQuickEnter = useCallback((id: string) => {
 		if (quickHoverTimer.current) clearTimeout(quickHoverTimer.current);
 		setQuickViewJobId(id);
@@ -681,6 +734,7 @@ function JobSearch() {
 		}
 
 		dispatch(trackerReset());
+		setTrackerLoadingMore(false);
 	// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [trackerData, trackerStatus, trackerError]);
 
@@ -1780,8 +1834,8 @@ function JobSearch() {
 										</button>
 										<span className="view-tabs-divider" />
 										<button type="button"
-											className={`view-tab view-tab--emerald${activeView === 'applied' ? ' view-tab--active' : ''}`}
-											onClick={() => setActiveView('applied')}>
+											className="view-tab view-tab--emerald"
+											onClick={() => { dispatch(getTrackerApplications({ pageId: 1, pageLimit: TRACKER_PAGE_LIMIT })); setShowTrackerKanban(true); }}>
 											<span className="view-tab-icon"><MdSend size={13} /></span>
 											<span className="view-tab-label">Application Tracker</span>
 											{appliedIds.size > 0 && <span className="view-tab-count">{appliedIds.size}</span>}
@@ -3663,6 +3717,223 @@ function JobSearch() {
 				</>,
 				document.body
 			)}
+		{/* ── Application Tracker Kanban Modal ── */}
+		<Modal
+			title={null}
+			footer={null}
+			visible={showTrackerKanban}
+			onCancel={() => setShowTrackerKanban(false)}
+			width="96vw"
+			style={{ top: 16, paddingBottom: 0 }}
+			centered
+			destroyOnClose={false}
+			className="tracker-kanban-modal"
+			wrapClassName="tracker-kanban-modal-wrap"
+			closeIcon={<IoClose size={18} />}
+		>
+			{(() => {
+				const KANBAN_STAGES = ['applied','screening','interview','offer'] as const;
+				const STAGE_CFG = {
+					applied:   { label: 'Applied',   color: '#2563eb', bg: '#eff6ff', border: '#bfdbfe', icon: <MdSend size={14}/> },
+					screening: { label: 'Screening', color: '#d97706', bg: '#fffbeb', border: '#fde68a', icon: <MdListAlt size={14}/> },
+					interview: { label: 'Interview', color: '#7c3aed', bg: '#f5f3ff', border: '#ddd6fe', icon: <MdPsychology size={14}/> },
+					offer:     { label: 'Offer',     color: '#059669', bg: '#f0fdf4', border: '#bbf7d0', icon: <MdEmojiEvents size={14}/> },
+				};
+				const STATUS_MAP: Record<string,string> = { applied:'applied', screening:'shortlisted', interview:'interviewing', offer:'offer' };
+
+				return (
+					<div className="tracker-kanban">
+						{/* Header */}
+						<div className="tracker-kanban-header">
+							<div style={{ flex: 1, minWidth: 0 }}>
+								<div className="tracker-kanban-title">
+									<MdSend size={18} />
+									Application Tracker
+									{appliedIds.size > 0 && <span className="tracker-kanban-count">{appliedIds.size}</span>}
+									<span className="tracker-kanban-view-label">Kanban View</span>
+								</div>
+								<p className="tracker-kanban-sub">Track your job applications across every stage of the hiring process</p>
+							</div>
+							<span className="tracker-kanban-dnd-hint">
+								<MdSyncAlt size={13} /> Drag &amp; drop to move
+							</span>
+						</div>
+
+						{/* Columns */}
+						<div className="tracker-kanban-columns">
+							{KANBAN_STAGES.map((stage) => {
+								const cfg = STAGE_CFG[stage];
+								const jobs = trackerJobs.filter(j => (appStages[j.id] ?? 'applied') === stage);
+								const isDragOver = dragOverCol === stage;
+								const VISIBLE_LIMIT = 5;
+								const hasOverflow = jobs.length > VISIBLE_LIMIT;
+
+								return (
+									<div
+										key={stage}
+										className={`tracker-kanban-col${isDragOver ? ' tracker-kanban-col--drag-over' : ''}${hasOverflow ? ' tracker-kanban-col--scrollable' : ''}`}
+										data-kanban-col={stage}
+										style={isDragOver ? { outline: `2px dashed ${cfg.color}`, outlineOffset: '-2px', borderRadius: '12px' } : undefined}
+									>
+										{/* Column header */}
+										<div className="tracker-kanban-col-head" style={{ borderColor: cfg.border }}>
+											<span className="tracker-kanban-col-icon" style={{ background: cfg.bg, color: cfg.color }}>{cfg.icon}</span>
+											<span className="tracker-kanban-col-label" style={{ color: cfg.color }}>{cfg.label}</span>
+											<span className="tracker-kanban-col-badge" style={{ background: cfg.bg, color: cfg.color, borderColor: cfg.border }}>{jobs.length}</span>
+										</div>
+
+										{/* Cards */}
+										<div className="tracker-kanban-cards" onScroll={handleKanbanScroll}>
+											{trackerStatus && jobs.length === 0 ? (
+												<div className="tracker-kanban-loading"><Spin size="small" /></div>
+											) : jobs.length === 0 ? (
+												<div className="tracker-kanban-empty">
+													<span style={{ color: cfg.color, opacity: 0.4, fontSize: 28 }}>{cfg.icon}</span>
+													<p>No applications</p>
+												</div>
+											) : jobs.map((job) => {
+												const currentIdx = KANBAN_STAGES.indexOf(appStages[job.id] ?? 'applied');
+												const canAdvance = currentIdx < KANBAN_STAGES.length - 1;
+												const nextStage = canAdvance ? KANBAN_STAGES[currentIdx + 1] : null;
+												const nextCfg = nextStage ? STAGE_CFG[nextStage] : null;
+
+												return (
+													<div
+														key={job.id}
+														className={`tracker-kanban-card${dragJobId === job.id ? ' tracker-kanban-card--dragging' : ''}`}
+														style={dragJobId === job.id ? { opacity: 0, pointerEvents: 'none' } : undefined}
+														onMouseDown={(e) => {
+															e.preventDefault();
+															const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+															setDragMeta({ offsetX: e.clientX - rect.left, offsetY: e.clientY - rect.top, w: rect.width, h: rect.height });
+															setDragPos({ x: e.clientX, y: e.clientY });
+															setDragJobId(job.id);
+														}}
+														onClick={() => { if (!dragJobId) { setShowTrackerKanban(false); openJobPreview(job); } }}
+													>
+														{/* Card top */}
+														<div className="tracker-kanban-card-top">
+															<span className="tracker-kanban-card-stage-pill" style={{ background: cfg.bg, color: cfg.color, borderColor: cfg.border }}>
+																{cfg.icon} {cfg.label}
+															</span>
+															<button
+																type="button"
+																className="tracker-kanban-card-remove"
+																onClick={(e) => { e.stopPropagation(); const tid = trackerIdMap[job.id]; if (tid) dispatch(deleteTracker(tid)); }}
+																title="Remove"
+															>
+																<MdDelete size={13} />
+															</button>
+														</div>
+
+														{/* Company + title */}
+														<div className="tracker-kanban-card-identity">
+															<div className="tracker-kanban-card-logo" style={{ background: `linear-gradient(135deg, hsl(${job.logoHue},70%,52%), hsl(${job.logoHue+40},65%,42%))` }}>
+																{job.company.charAt(0)}
+															</div>
+															<div>
+																<p className="tracker-kanban-card-title">{job.title}</p>
+																<p className="tracker-kanban-card-company">{job.company} · {job.location}</p>
+															</div>
+														</div>
+
+														{/* Meta row */}
+														<div className="tracker-kanban-card-meta">
+															{job.detail?.employmentType && <span className="tracker-kanban-meta-chip">{job.detail.employmentType}</span>}
+															{job.workMode && <span className="tracker-kanban-meta-chip">{job.workMode}</span>}
+															{job.matchScore != null && <span className="tracker-kanban-meta-chip tracker-kanban-meta-chip--fit">{job.matchScore}% fit</span>}
+														</div>
+
+														{/* Stage progress dots */}
+														<div className="tracker-kanban-card-footer" onClick={(e) => e.stopPropagation()}>
+															<div className="tracker-kanban-progress">
+																{KANBAN_STAGES.map((s, si) => {
+																	const isActive = s === (appStages[job.id] ?? 'applied');
+																	const isPast = si < currentIdx;
+																	const sCfg = STAGE_CFG[s];
+																	return (
+																		<div key={s} className="tracker-kanban-progress-step">
+																			<div
+																				className="tracker-kanban-progress-dot"
+																				style={isActive ? { background: sCfg.color, boxShadow: `0 0 0 2px ${sCfg.bg}` } : isPast ? { background: '#10b981' } : { background: '#e2e8f0' }}
+																			/>
+																			{si < KANBAN_STAGES.length - 1 && (
+																				<div className="tracker-kanban-progress-line" style={{ background: isPast ? '#10b981' : '#e2e8f0' }} />
+																			)}
+																		</div>
+																	);
+																})}
+																<span className="tracker-kanban-progress-label" style={{ color: cfg.color }}>{cfg.label}</span>
+															</div>
+														</div>
+													</div>
+												);
+											})}
+										</div>
+										{/* Overflow within loaded cards */}
+										{hasOverflow && (
+											<div className="tracker-kanban-col-overflow">
+												↕ Scroll to see all {jobs.length} in this stage
+											</div>
+										)}
+
+										{/* Global load-more hint — only show on last column */}
+										{stage === 'offer' && !trackerLoadingMore && trackerJobs.length < trackerTotal && (
+											<div className="tracker-kanban-load-more" style={{ borderTop: '1px solid #f1f5f9' }}>
+												<span style={{ color: '#94a3b8', fontSize: 11 }}>
+													↓ Scroll any column · {trackerTotal - trackerJobs.length} more to load
+												</span>
+											</div>
+										)}
+
+										{/* Spinner while loading next page */}
+										{stage === 'offer' && trackerLoadingMore && (
+											<div className="tracker-kanban-load-more">
+												<Spin size="small" /> Loading more…
+											</div>
+										)}
+									</div>
+								);
+							})}
+						</div>
+					</div>
+				);
+			})()}
+
+			{/* Floating drag card portal — fully opaque, follows cursor */}
+			{dragJobId && dragPos && dragMeta && (() => {
+				const dj = trackerJobs.find(j => j.id === dragJobId);
+				if (!dj) return null;
+				return ReactDOM.createPortal(
+					<div style={{
+						position: 'fixed',
+						left: dragPos.x - dragMeta.offsetX,
+						top: dragPos.y - dragMeta.offsetY,
+						width: dragMeta.w,
+						zIndex: 99999,
+						pointerEvents: 'none',
+						transform: 'rotate(3deg) scale(1.05)',
+						boxShadow: '0 20px 60px rgba(15,23,42,0.25)',
+						borderRadius: '8px',
+						background: '#fff',
+						border: '1px solid #94a3b8',
+						padding: '9px 10px',
+					}}>
+						<div style={{ display:'flex', alignItems:'center', gap:8, minWidth:0 }}>
+							<div style={{ width:28, minWidth:28, height:28, borderRadius:6, background:`linear-gradient(135deg, hsl(${dj.logoHue},70%,52%), hsl(${dj.logoHue+40},65%,42%))`, display:'flex', alignItems:'center', justifyContent:'center', color:'#fff', fontWeight:700, fontSize:12, flexShrink:0 }}>
+								{dj.company.charAt(0)}
+							</div>
+							<div style={{ minWidth:0, flex:1, overflow:'hidden' }}>
+								<p style={{ margin:'0 0 2px', fontSize:12, fontWeight:600, color:'#0f172a', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{dj.title}</p>
+								<p style={{ margin:0, fontSize:10.5, color:'#64748b', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{dj.company} · {dj.location}</p>
+							</div>
+						</div>
+					</div>,
+					document.body
+				);
+			})()}
+		</Modal>
+
 		</>
 	);
 }
