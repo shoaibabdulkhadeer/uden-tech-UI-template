@@ -217,15 +217,7 @@ const DashboardShellNetwork = ({ className, suspendLoop = false }: DashboardShel
 		};
 	}, [suspendLoop]);
 
-	return (
-		<div
-			ref={wrapRef}
-			className={['dash-next-shell-network', className].filter(Boolean).join(' ')}
-			aria-hidden
-		>
-			<canvas ref={canvasRef} className="dash-next-shell-network-canvas" />
-		</div>
-	);
+	return null; // node network disabled app-wide
 };
 
 export default DashboardShellNetwork;

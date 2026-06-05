@@ -412,24 +412,35 @@ function JobSearch() {
 			const data = resumeData?.data;
 			const mergedSkills: string[] = Array.from(new Set((data?.skills || []).filter(Boolean)));
 
+			// Auto-apply detected filters directly (banner removed — see js-ai-banner JSX below)
+			const detectedExpLevel   = normalizeExpLevel(
+				data?.career_level       ??
+				data?.experienceLevel    ??
+				data?.expLevel           ??
+				data?.experience         ??
+				(data?.total_experience_years != null
+					? String(data.total_experience_years) + ' years'
+					: null)
+			);
+			const detectedWorkMode   = data?.workMode || data?.work_mode || null;
+			const detectedEmployment = normalizeEmployment(
+				data?.employmentType ?? data?.employment ??
+				data?.jobType        ?? data?.job_type   ?? null
+			);
+			if (mergedSkills.length > 0) setSkillsFilter((prev) => { const m = [...prev]; mergedSkills.forEach((s) => { if (!m.includes(s)) m.push(s); }); return m; });
+			if (detectedExpLevel)   setExpFilter(detectedExpLevel);
+			if (detectedWorkMode)   setWorkFilter((prev) => prev.includes(detectedWorkMode) ? prev : [...prev, detectedWorkMode]);
+			if (detectedEmployment?.length) setEmpFilter((prev) => { const m = [...prev]; detectedEmployment.forEach((e) => { if (!m.includes(e)) m.push(e); }); return m; });
+			setFiltersJustApplied(true);
+			setTimeout(() => setFiltersJustApplied(false), 3000);
+			setTourStep(1);
+			setShowFindTour(true);
+			/* COMMENTED — AI detected banner (keep for future use)
 			setDetectedFilters({
-				skills:     mergedSkills,
-				expLevel:   normalizeExpLevel(
-					data?.career_level       ??
-					data?.experienceLevel    ??
-					data?.expLevel           ??
-					data?.experience         ??
-					(data?.total_experience_years != null
-						? String(data.total_experience_years) + ' years'
-						: null)
-				),
-				workMode:   data?.workMode   || data?.work_mode   || null,
-				employment: normalizeEmployment(
-					data?.employmentType ?? data?.employment ??
-					data?.jobType        ?? data?.job_type   ?? null
-				),
-				source: 'resume',
+				skills: mergedSkills, expLevel: detectedExpLevel,
+				workMode: detectedWorkMode, employment: detectedEmployment, source: 'resume',
 			});
+			*/
 			const parsedLoc = parseLocationString(data?.location);
 			if (parsedLoc) setDetectedLocation(parsedLoc);
 			// Fetch fresh profile after resume upload (button will show spinner, then go green)
@@ -1564,24 +1575,6 @@ function JobSearch() {
 							<p className="dash-next-page-lead">
 								Your AI-powered career hub — discover roles aligned with your learning path, analyse your resume or paste a job description to surface the best-fit opportunities, and manage your entire job search from one place.
 							</p>
-							<div className="career-accel-feature-row">
-								<span className="career-accel-feature-chip career-accel-feature-chip--indigo">
-									<span className="career-accel-chip-icon"><MdAutoAwesome size={12} /></span>
-									AI-matched roles
-								</span>
-								<span className="career-accel-feature-chip career-accel-feature-chip--cyan">
-									<span className="career-accel-chip-icon"><MdDescription size={12} /></span>
-									Resume &amp; JD analysis
-								</span>
-								<span className="career-accel-feature-chip career-accel-feature-chip--amber">
-									<span className="career-accel-chip-icon"><MdBookmarkBorder size={12} /></span>
-									Job tracker
-								</span>
-								<span className="career-accel-feature-chip career-accel-feature-chip--emerald">
-									<span className="career-accel-chip-icon"><MdWorkOutline size={12} /></span>
-									Skill-verified listings
-								</span>
-							</div>
 						</div>
 					</div>
 				</header>
@@ -2014,7 +2007,8 @@ function JobSearch() {
 												</div>
 											</div>
 
-										{detectedFilters && !matchLoading && (
+										{/* COMMENTED — AI detected banner (auto-apply now happens on upload)
+									{detectedFilters && !matchLoading && (
 											<div className="js-ai-banner">
 												<div className="js-ai-banner-head">
 													<span className="js-ai-banner-icon"><MdAutoAwesome size={13} /></span>
@@ -2062,6 +2056,7 @@ function JobSearch() {
 												</div>
 											</div>
 										)}
+									COMMENTED — end AI detected banner */}
 
 										{/* ── Primary Find AI Matches CTA ── */}
 										<div className="me-find-btn-wrap">
@@ -2797,46 +2792,72 @@ function JobSearch() {
 											<span className="job-search-preview-chip jd-chip--hiring"><MdTrendingUp size={10} style={{marginRight:3,verticalAlign:'middle'}}/>{previewJob.hiringStatus}</span>
 										) : null}
 									</div>
-									{previewJob.matchScore != null ? (
-										<div className="jd-score-bar-wrap">
-											<div className="jd-score-bar-track">
-												<div className="jd-score-bar-fill" style={{width:`${previewJob.matchScore}%`}} />
-											</div>
-											<span className="jd-score-bar-label">{previewJob.matchScore}% profile match</span>
-										</div>
-									) : null}
+{/* score bar removed — fit % already shown in header badge and ring */}
 								</div>
 							</div>
 
-							{/* Bottom row: About + What you'll do inside header */}
-							<div className="jd-head-desc">
-								<>
-									<div className="jd-head-desc-col">
-										<p className="jd-head-desc-label"><MdDescription size={12}/> About the role</p>
-										{jobByIdStatus ? (
-											<Skeleton active title={false} paragraph={{ rows: 3, width: ['100%', '100%', '82%'] }} />
-										) : (
-											<p className="jd-head-desc-text">{previewJob.detail.description}</p>
-										)}
-									</div>
-									<div className="jd-head-desc-col">
-										<p className="jd-head-desc-label"><MdOutlineAssignment size={12}/> What you&apos;ll do</p>
-										{jobByIdStatus ? (
-											<Skeleton active title={false} paragraph={{ rows: 5, width: ['240px', '290px', '260px', '310px', '255px'] }} className="jd-resp-skel" />
-										) : (
-											<ul className="jd-head-resp-list">
-												{previewJob.detail.responsibilities.map((r) => (
-													<li key={r}>{r}</li>
-												))}
-											</ul>
-										)}
-									</div>
-								</>
-							</div>
 						</header>
 
 						{/* ── Scrollable body — Skills + Fit + Rounds ── */}
 						<div className="jd-body">
+
+							{/* Left column */}
+							<div className="jd-body-left">
+
+							{/* About the role */}
+							{!jobByIdStatus && previewJob.detail.description && (
+								<div className="jd-section-block">
+									<h4 className="jd-section-label">
+										<span className="jd-section-icon jd-section-icon--violet"><MdDescription size={12}/></span>
+										About the role
+									</h4>
+									<p style={{margin:0,fontSize:'13px',lineHeight:1.7,color:'#374151'}}>{previewJob.detail.description}</p>
+								</div>
+							)}
+
+							{/* Requirements + What you'll do — side by side */}
+							<div className="jd-two-col-block">
+								{/* Requirements */}
+								<div className="jd-two-col-section">
+									<h4 className="jd-section-label">
+										<span className="jd-section-icon jd-section-icon--violet"><MdFactCheck size={12}/></span>
+										Requirements
+									</h4>
+									{jobByIdStatus ? (
+										<Skeleton active title={false} paragraph={{ rows: 4, width: ['100%','90%','95%','80%'] }} />
+									) : (previewJob.detail.requirements ?? []).length > 0 ? (
+										<ul className="jd-req-list">
+											{(previewJob.detail.requirements ?? []).map((r: string) => (
+												<li key={r} className="jd-req-item">
+													<span className="jd-req-check"><MdCheckCircle size={13}/></span>
+													{r}
+												</li>
+											))}
+										</ul>
+									) : (
+										<p style={{fontSize:'12.5px',color:'#94a3b8',margin:0}}>No requirements listed.</p>
+									)}
+								</div>
+
+								{/* What you'll do */}
+								<div className="jd-two-col-section">
+									<h4 className="jd-section-label">
+										<span className="jd-section-icon jd-section-icon--violet"><MdOutlineAssignment size={12}/></span>
+										What you&apos;ll do
+									</h4>
+									{jobByIdStatus ? (
+										<Skeleton active title={false} paragraph={{ rows: 5, width: ['100%','90%','95%','85%','80%'] }} className="jd-resp-skel" />
+									) : previewJob.detail.responsibilities?.length > 0 ? (
+										<ul className="jd-head-resp-list">
+											{previewJob.detail.responsibilities.map((r) => (
+												<li key={r}>{r}</li>
+											))}
+										</ul>
+									) : (
+										<p style={{fontSize:'12.5px',color:'#94a3b8',margin:0}}>No responsibilities listed for this role.</p>
+									)}
+								</div>
+							</div>
 
 							{/* Skills */}
 							<div className="jd-skills-section">
@@ -2859,7 +2880,57 @@ function JobSearch() {
 								)}
 							</div>
 
-							{/* Fit + Interview — stacked full-width */}
+							{/* Interview rounds — left column, below skills */}
+							<div className="jd-section-block jd-section-block--rounds">
+								<h4 className="jd-section-label">
+									<span className="jd-section-icon jd-section-icon--violet"><MdEmojiEvents size={12}/></span>
+									Interview rounds
+								</h4>
+								{interviewRoundsStatus ? (
+									<Skeleton active paragraph={{ rows: 4 }} title={{ width: '55%' }} />
+								) : interviewDataAvailable === false ? (
+									<div className="jd-rounds-not-found">
+										<p className="jd-rounds-nf-title">No verified rounds found</p>
+										{interviewNotFoundMsg && <p className="jd-rounds-nf-msg">{interviewNotFoundMsg}</p>}
+									</div>
+								) : (() => {
+									const rounds = liveInterviewRounds.length > 0 ? liveInterviewRounds : previewJob.detail.interviewRounds ?? [];
+									if (rounds.length === 0 && interviewDataAvailable === null) return <p style={{fontSize:'12.5px',color:'#94a3b8',margin:0}}>Interview data loading…</p>;
+									const TYPE_COLOR: Record<string, string> = { hr:'#06b6d4', technical:'#6366f1', case:'#f59e0b', behavioral:'#10b981', onsite:'#8b5cf6', assignment:'#f97316', screening:'#06b6d4' };
+									return (
+										<div className="jd-ivc-list">
+											{rounds.map((rd: any, i: number) => {
+												const accent = TYPE_COLOR[(rd.type ?? '').toLowerCase()] ?? '#6366f1';
+												const learnText = [rd.name, rd.description, rd.tips].filter(Boolean).join('\n\n');
+												return (
+													<div key={rd.round ?? i} className="jd-ivc-card" style={{ '--ivc-accent': accent } as React.CSSProperties}>
+														<div className="jd-ivc-card-left">
+															<span className="jd-ivc-badge" style={{ background: accent }}>{rd.round ?? i + 1}</span>
+															<div className="jd-ivc-connector" aria-hidden />
+														</div>
+														<div className="jd-ivc-card-body">
+															<div className="jd-ivc-header">
+																<span className="jd-ivc-name">{rd.name}</span>
+																{rd.type && <span className="jd-ivc-type-chip" style={{ color: accent, borderColor: accent, background: `${accent}18` }}>{rd.type}</span>}
+															</div>
+															{rd.duration && <span className="jd-ivc-duration"><MdAccessTime size={11} style={{ marginRight:4, verticalAlign:'middle' }}/>{rd.duration}</span>}
+															{rd.description && <p className="jd-ivc-desc">{rd.description}</p>}
+															{rd.tips && <div className="jd-ivc-tips"><span className="jd-ivc-tips-label">💡 Tip</span><p className="jd-ivc-tips-text">{rd.tips}</p></div>}
+															<button type="button" className="jd-ivc-learn-btn" style={{ '--ivc-accent': accent } as React.CSSProperties} onClick={() => openLearnTab(learnText)}>
+																<MdSchool size={13} style={{ marginRight:5 }}/>Learn this round →
+															</button>
+														</div>
+													</div>
+												);
+											})}
+										</div>
+									);
+								})()}
+							</div>
+
+							</div>{/* end jd-body-left */}
+
+							{/* Right column — AI Fit only */}
 							<div className="jd-panels-stack">
 
 							{/* Your fit — full row */}
@@ -3019,135 +3090,6 @@ function JobSearch() {
 								</>}
 								</div>
 
-							{/* Interview rounds — full row below fit */}
-							<div className="jd-panel jd-panel--rounds jd-panel--full">
-									<h3 className="jd-panel-title">
-										<MdEmojiEvents size={16} className="jd-panel-title-icon jd-panel-title-icon--indigo"/>
-										Interview rounds
-									</h3>
-
-									{/* Loading — skeleton while API is in-flight */}
-									{interviewRoundsStatus ? (
-										<div className="jd-rounds-loading">
-											<Skeleton active paragraph={{ rows: 4 }} title={{ width: '55%' }} />
-											<p className="jd-rounds-loading-hint">
-												<Spin size="small" style={{ marginRight: 6 }} />
-												Fetching interview process for <strong>{previewJob.company}</strong>…
-											</p>
-										</div>
-
-									/* API returned: no data available */
-									) : interviewDataAvailable === false ? (
-										<div className="jd-rounds-not-found">
-											<div className="jd-rounds-nf-icon" aria-hidden>🔍</div>
-											<p className="jd-rounds-nf-title">No verified rounds found</p>
-											{interviewNotFoundMsg && (
-												<p className="jd-rounds-nf-msg">{interviewNotFoundMsg}</p>
-											)}
-											{interviewDisclaimer && (
-												<div className="jd-rounds-nf-disclaimer">
-													<MdMenuBook size={12} style={{ flexShrink: 0, marginTop: 2 }} />
-													<span>{interviewDisclaimer}</span>
-												</div>
-											)}
-										</div>
-
-									/* Rounds available */
-									) : (() => {
-										const rounds =
-											liveInterviewRounds.length > 0
-												? liveInterviewRounds
-												: previewJob.detail.interviewRounds ?? [];
-
-										if (rounds.length === 0 && interviewDataAvailable === null) return null;
-
-										// Type → accent colour map
-										const TYPE_COLOR: Record<string, string> = {
-											hr:         '#06b6d4',
-											technical:  '#6366f1',
-											case:       '#f59e0b',
-											behavioral: '#10b981',
-											onsite:     '#8b5cf6',
-											assignment: '#f97316',
-											screening:  '#06b6d4',
-										};
-
-										return (
-											<>
-												{liveInterviewRounds.length > 0 && (
-													<p className="jd-rounds-source-badge">
-														<MdVerified size={12} style={{ marginRight: 4, verticalAlign: 'middle', color: '#6366f1' }} />
-														Live data · <strong>{previewJob.company}</strong>
-													</p>
-												)}
-
-												<div className="jd-ivc-list">
-													{rounds.map((rd: any, i: number) => {
-														const accent = TYPE_COLOR[(rd.type ?? '').toLowerCase()] ?? '#6366f1';
-														const learnText = [rd.name, rd.description, rd.tips].filter(Boolean).join('\n\n');
-														return (
-															<div key={rd.round ?? i} className="jd-ivc-card" style={{ '--ivc-accent': accent } as React.CSSProperties}>
-																<div className="jd-ivc-card-left">
-																	<span className="jd-ivc-badge" style={{ background: accent }}>
-																		{rd.round ?? i + 1}
-																	</span>
-																	<div className="jd-ivc-connector" aria-hidden />
-																</div>
-																<div className="jd-ivc-card-body">
-																	<div className="jd-ivc-header">
-																		<span className="jd-ivc-name">{rd.name}</span>
-																		{rd.type && (
-																			<span className="jd-ivc-type-chip" style={{ color: accent, borderColor: accent, background: `${accent}18` }}>
-																				{rd.type}
-																			</span>
-																		)}
-																	</div>
-
-																	{rd.duration && (
-																		<span className="jd-ivc-duration">
-																			<MdAccessTime size={11} style={{ marginRight: 4, verticalAlign: 'middle' }} />
-																			{rd.duration}
-																		</span>
-																	)}
-
-																	{rd.description && (
-																		<p className="jd-ivc-desc">{rd.description}</p>
-																	)}
-
-																	{rd.tips && (
-																		<div className="jd-ivc-tips">
-																			<span className="jd-ivc-tips-label">💡 Tip</span>
-																			<p className="jd-ivc-tips-text">{rd.tips}</p>
-																		</div>
-																	)}
-
-																	<button
-																		type="button"
-																		className="jd-ivc-learn-btn"
-																		style={{ '--ivc-accent': accent } as React.CSSProperties}
-																		onClick={() => {
-																			openLearnTab(learnText);
-																		}}
-																	>
-																		<MdSchool size={13} style={{ marginRight: 5 }} />
-																		Learn this round now →
-																	</button>
-																</div>
-															</div>
-														);
-													})}
-												</div>
-
-												{interviewDisclaimer && (
-													<div className="jd-rounds-nf-disclaimer" style={{ marginTop: 10 }}>
-														<MdMenuBook size={12} style={{ flexShrink: 0, marginTop: 2 }} />
-														<span>{interviewDisclaimer}</span>
-													</div>
-												)}
-											</>
-										);
-									})()}
-							</div>
 
 							</div>{/* end jd-panels-stack */}
 

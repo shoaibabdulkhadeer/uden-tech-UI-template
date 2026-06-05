@@ -17,7 +17,7 @@ import {
 const {Sider} = Layout;
 
 const Sidebar = () => {
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
   const {themeType, navStyle} = useSelector(({settings}:any) => settings);
   const navCollapsed = useSelector(({common}:any) => common.navCollapsed);
   const width = useSelector(({common}:any) => common.width);
