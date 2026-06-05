@@ -2440,6 +2440,7 @@ function JobSearch() {
 																{b}
 															</span>
 														)) : null}
+														<Tooltip title="Build a learning path for this role" placement="top" mouseEnterDelay={0.5}>
 														<button
 															type="button"
 															className="job-lp-btn"
@@ -2459,8 +2460,21 @@ function JobSearch() {
 															<MdSchool size={12} />
 															Learning Path
 														</button>
+														</Tooltip>
 
-														{/* ── Quick view hover panel + View details ── */}
+														{/* Click to open full detail — outside quick-wrap so it doesn't trigger panel */}
+														<Tooltip title="View full job details" placement="top" mouseEnterDelay={0.5}>
+															<button
+																type="button"
+																className="jc-vd-btn"
+																onClick={(e) => { e.stopPropagation(); openJobPreview(job); }}
+															>
+																<MdDescription size={11} />
+																View details
+															</button>
+														</Tooltip>
+
+														{/* ── Quick view hover panel ── */}
 														<div
 															className="jc-quick-wrap"
 															onMouseEnter={() => onQuickEnter(job.id)}
@@ -2473,16 +2487,6 @@ function JobSearch() {
 															>
 																<MdBolt size={11} />
 																Quick view
-															</button>
-
-															{/* Click to open full detail */}
-															<button
-																type="button"
-																className="jc-vd-btn"
-																onClick={(e) => { e.stopPropagation(); openJobPreview(job); }}
-															>
-																<MdDescription size={11} />
-																View details
 															</button>
 
 															{/* Hover panel */}
@@ -3305,22 +3309,24 @@ function JobSearch() {
 				open={showReviewModal}
 				onCancel={() => setShowReviewModal(false)}
 				footer={null}
-				width={520}
+				width={720}
 				centered
 				className="js-review-modal"
 				closeIcon={<IoClose size={18} />}
 			>
 				<div className="js-review-body">
 					<div className="js-review-hero">
-						<div className="js-review-hero-icon"><MdAutoAwesome size={28} /></div>
-						<p className="js-review-eyebrow">AI Match Engine</p>
-						<h2 className="js-review-title">Review your search</h2>
-						<p className="js-review-sub">Make sure these look right before we run the search — each query uses AI matching.</p>
+						<div className="js-review-hero-icon"><MdAutoAwesome size={24} /></div>
+						<div className="js-review-hero-copy">
+							<p className="js-review-eyebrow">AI Match Engine</p>
+							<h2 className="js-review-title">Review your search</h2>
+							<p className="js-review-sub">Make sure these look right before we run the search.</p>
+						</div>
 						<div className="js-review-count-badge">
 							<MdTune size={13} />
 							{activeFilterCount > 0
 								? `${activeFilterCount} filter${activeFilterCount !== 1 ? 's' : ''} active`
-								: titleInput.trim() ? 'Title search · no filters' : '0 filters active'
+								: titleInput.trim() ? 'Title search' : '0 filters'
 							}
 						</div>
 					</div>

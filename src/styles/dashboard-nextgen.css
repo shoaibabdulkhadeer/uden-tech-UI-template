@@ -3,6 +3,23 @@
  * Keeps existing grid/structure; upgrades surfaces, type, and depth.
  */
 
+/* ── Poppins — app-wide font via cascade ── */
+:root {
+	--phase2-font-display: 'Poppins', system-ui, sans-serif;
+}
+
+html body,
+html body .ant-layout,
+html body .ant-modal,
+html body .ant-drawer,
+html body .ant-dropdown,
+html body .ant-tooltip,
+html body .ant-select-dropdown,
+html body .ant-popover {
+	font-family: 'Poppins', system-ui, sans-serif !important;
+}
+
+
 .dash-next {
 	--dn-radius: 16px;
 	--dn-radius-sm: 12px;
@@ -154,17 +171,13 @@ body.dark-theme .dash-next-shell-network {
 }
 
 .dash-next-page-title {
-	font-family: var(--phase2-font-display, 'Outfit', system-ui, sans-serif);
-	font-size: clamp(1.5rem, 3vw, 1.85rem);
-	font-weight: 800;
-	letter-spacing: -0.04em;
-	line-height: 1.1;
+	font-family: var(--phase2-font-display, 'Poppins', system-ui, sans-serif);
+	font-size: clamp(1.35rem, 2.5vw, 1.6rem);
+	font-weight: 600;
+	letter-spacing: -0.02em;
+	line-height: 1.2;
 	margin: 0 !important;
-	background: linear-gradient(135deg, #0f172a 0%, #4f46e5 45%, #ec4899 100%);
-	-webkit-background-clip: text;
-	background-clip: text;
-	-webkit-text-fill-color: transparent;
-	filter: drop-shadow(0 2px 4px rgba(0,0,0,0.02));
+	color: #0f172a;
 }
 
 body.dark-theme .dash-next-page-title {
@@ -181,9 +194,9 @@ body.dark-theme .dash-next-page-title {
 	padding: 6px 18px;
 	border-radius: 999px;
 	font-size: 11px;
-	font-weight: 800;
+	font-weight: 500;
 	text-transform: uppercase;
-	letter-spacing: 0.08em;
+	letter-spacing: 0.06em;
 	background: rgba(255, 255, 255, 0.75);
 	backdrop-filter: blur(12px) saturate(180%);
 	-webkit-backdrop-filter: blur(12px) saturate(180%);
