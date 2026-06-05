@@ -10018,10 +10018,40 @@ body.tracker-dragging * { cursor: grabbing !important; }
 	border-color: #bbf7d0;
 }
 
-/* Footer — stage progress */
+/* Footer — stage progress + view button */
 .tracker-kanban-card-footer {
 	border-top: 1px solid #f1f5f9;
 	padding-top: 8px;
+}
+
+.tracker-kanban-footer-row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 6px;
+}
+
+.tracker-kanban-view-btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 3px;
+	padding: 3px 8px;
+	border-radius: 5px;
+	font-size: 10px;
+	font-weight: 500;
+	border: 1px solid #e2e8f0;
+	background: #fff;
+	color: #2563eb;
+	cursor: pointer;
+	font-family: inherit;
+	white-space: nowrap;
+	flex-shrink: 0;
+	transition: background 0.15s, border-color 0.15s;
+}
+
+.tracker-kanban-view-btn:hover {
+	background: #eff6ff;
+	border-color: #bfdbfe;
 }
 
 .tracker-kanban-progress {

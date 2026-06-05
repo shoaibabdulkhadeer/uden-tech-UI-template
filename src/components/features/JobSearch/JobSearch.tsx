@@ -3809,7 +3809,7 @@ function JobSearch() {
 															setDragPos({ x: e.clientX, y: e.clientY });
 															setDragJobId(job.id);
 														}}
-														onClick={() => { if (!dragJobId) { setShowTrackerKanban(false); openJobPreview(job); } }}
+														onClick={() => { if (!dragJobId) openJobPreview(job); }}
 													>
 														{/* Card top */}
 														<div className="tracker-kanban-card-top">
@@ -3846,24 +3846,34 @@ function JobSearch() {
 
 														{/* Stage progress dots */}
 														<div className="tracker-kanban-card-footer" onClick={(e) => e.stopPropagation()}>
-															<div className="tracker-kanban-progress">
-																{KANBAN_STAGES.map((s, si) => {
-																	const isActive = s === (appStages[job.id] ?? 'applied');
-																	const isPast = si < currentIdx;
-																	const sCfg = STAGE_CFG[s];
-																	return (
-																		<div key={s} className="tracker-kanban-progress-step">
-																			<div
-																				className="tracker-kanban-progress-dot"
-																				style={isActive ? { background: sCfg.color, boxShadow: `0 0 0 2px ${sCfg.bg}` } : isPast ? { background: '#10b981' } : { background: '#e2e8f0' }}
-																			/>
-																			{si < KANBAN_STAGES.length - 1 && (
-																				<div className="tracker-kanban-progress-line" style={{ background: isPast ? '#10b981' : '#e2e8f0' }} />
-																			)}
-																		</div>
-																	);
-																})}
-																<span className="tracker-kanban-progress-label" style={{ color: cfg.color }}>{cfg.label}</span>
+															<div className="tracker-kanban-footer-row">
+																<div className="tracker-kanban-progress">
+																	{KANBAN_STAGES.map((s, si) => {
+																		const isActive = s === (appStages[job.id] ?? 'applied');
+																		const isPast = si < currentIdx;
+																		const sCfg = STAGE_CFG[s];
+																		return (
+																			<div key={s} className="tracker-kanban-progress-step">
+																				<div
+																					className="tracker-kanban-progress-dot"
+																					style={isActive ? { background: sCfg.color, boxShadow: `0 0 0 2px ${sCfg.bg}` } : isPast ? { background: '#10b981' } : { background: '#e2e8f0' }}
+																				/>
+																				{si < KANBAN_STAGES.length - 1 && (
+																					<div className="tracker-kanban-progress-line" style={{ background: isPast ? '#10b981' : '#e2e8f0' }} />
+																				)}
+																			</div>
+																		);
+																	})}
+																	<span className="tracker-kanban-progress-label" style={{ color: cfg.color }}>{cfg.label}</span>
+																</div>
+																<button
+																	type="button"
+																	className="tracker-kanban-view-btn"
+																	onMouseDown={(e) => e.stopPropagation()}
+																	onClick={(e) => { e.stopPropagation(); openJobPreview(job); }}
+																>
+																	<MdDescription size={11} /> View details
+																</button>
 															</div>
 														</div>
 													</div>
