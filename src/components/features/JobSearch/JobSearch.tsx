@@ -1436,6 +1436,40 @@ function JobSearch() {
 
 	const filtersBlock = useMemo(() => (
 		<div className="job-search-filters-block">
+			<p className="job-search-filters-label">
+				<span className="filter-label-icon filter-label-icon--indigo"><MdSearch size={12} /></span>
+				Search jobs by job title
+			</p>
+			<label className="me-title-input-wrap">
+				<MdSearch size={11} className="me-title-icon" aria-hidden />
+				<input
+					type="text"
+					className="me-title-input"
+					placeholder="e.g. Data Analyst…"
+					value={titleInput}
+					maxLength={60}
+					onChange={(e) => {
+						const cleaned = e.target.value.replace(/[^a-zA-Z\s\-./]/g, '');
+						setTitleInput(cleaned.slice(0, 60));
+					}}
+				/>
+				{titleInput.length > 45 && (
+					<span className="me-title-char-count" style={{ color: titleInput.length >= 58 ? '#ef4444' : '#94a3b8' }}>
+						{60 - titleInput.length}
+					</span>
+				)}
+				{titleInput && (
+					<button
+						type="button"
+						className="me-title-clear"
+						onClick={(e) => { e.preventDefault(); setTitleInput(''); }}
+						aria-label="Clear job title"
+					>
+						<IoClose size={12} />
+					</button>
+				)}
+			</label>
+			<div className="job-search-filters-divider" />
 			<div id="js-emp-work-filter" className="js-filter-top-group">
 			<p className="job-search-filters-label">
 				<span className="filter-label-icon filter-label-icon--indigo"><MdWorkOutline size={12} /></span>
@@ -1602,7 +1636,7 @@ function JobSearch() {
 			</Button>
 		</div>
 		</div>
-	), [empFilter, workFilter, expFilter, sectorFilter, skillInput, skillsFilter, locationResetKey, activeFilterCount, filtersJustApplied, showFindTour, resetFilters, handleFindJobs, hasResumeOrJd]);
+	), [empFilter, workFilter, expFilter, sectorFilter, skillInput, skillsFilter, locationResetKey, activeFilterCount, filtersJustApplied, showFindTour, resetFilters, handleFindJobs, hasResumeOrJd, titleInput]);
 
 	return (
 		<>
@@ -1998,20 +2032,8 @@ function JobSearch() {
 												</motion.div>
 											</div>
 
-											{/* ── Title input + JD toggle row ── */}
+											{/* ── JD toggle + Find AI Matches row ── */}
 											<div className="me-jd-row">
-												<label className="me-title-input-wrap">
-													<MdSearch size={11} className="me-title-icon" aria-hidden />
-													<input
-														type="text"
-														className="me-title-input"
-														placeholder="Job title..."
-														value={titleInput}
-														onChange={(e) => setTitleInput(e.target.value)}
-													/>
-													<span className="me-jd-optional">optional</span>
-												</label>
-												<span className="me-jd-row-line" aria-hidden />
 												<button
 													type="button"
 													className={`me-jd-toggle${showJdSection ? ' me-jd-toggle--open' : ''}`}
@@ -2023,17 +2045,70 @@ function JobSearch() {
 								}}
 												>
 													<span className="me-jd-toggle-icon">{showJdSection ? <MdRestartAlt size={12} /> : <MdAdd size={12} />}</span>
-													{showJdSection ? 'Remove Job Description' : 'Also add a Job Description'}
-													<span className="me-jd-optional">optional</span>
+													{showJdSection ? 'Minimize Job Description' : 'Got a job description? Add it here'}
 												</button>
+												{/* Button sits in the row only when JD is collapsed */}
+												{!showJdSection && (
+													<div className="me-find-trigger">
+														<button
+															ref={findBtnRef}
+															type="button"
+															className={`me-find-btn${listLoading ? ' me-find-btn--loading' : !canSearch ? ' me-find-btn--disabled' : ''}${filtersJustApplied ? ' me-find-btn--glow' : ''}`}
+															disabled={listLoading || !canSearch}
+															onClick={() => { setShowFindTour(false); handleFindJobs(); }}
+														>
+															{listLoading ? (
+																<>
+																	<span className="me-find-btn-spinner" />
+																	<span>Searching…</span>
+																</>
+															) : (<>
+																{!canSearch
+																	? <MdLockOutline size={15} className="me-find-btn-icon" />
+																	: <MdAutoAwesome size={15} className="me-find-btn-icon" />
+																}
+																<span>Find AI Matches</span>
+																{activeFilterCount > 0 && (
+																	<span className="me-find-badge">{activeFilterCount} filter{activeFilterCount > 1 ? 's' : ''}</span>
+																)}
+															</>)}
+														</button>
+														{!canSearch && (<>
+															<div className="me-find-tooltip" role="tooltip">
+																<div className="me-tt-header">
+																	<span className="me-tt-lock-icon">🔐</span>
+																	<span className="me-tt-title">Unlock AI Matching</span>
+																</div>
+																<p className="me-tt-sub">Complete both steps to activate</p>
+																<div className="me-tt-divider" />
+																<div className="me-tt-checks">
+																	<div className={`me-tt-check${hasSearchInput ? ' me-tt-check--met' : ''}`}>
+																		<span className="me-tt-dot" />
+																		<span>Resume, JD, or job title entered</span>
+																	</div>
+																	<div className={`me-tt-check${(activeFilterCount > 0 || titleInput.trim().length > 0) ? ' me-tt-check--met' : ''}`}>
+																		<span className="me-tt-dot" />
+																		<span>At least 1 filter or job title entered</span>
+																	</div>
+																</div>
+															</div>
+															<div className="me-find-tooltip-arrow" />
+														</>)}
+													</div>
+												)}
 											</div>
+											{!showJdSection && !canSearch && (
+												<p className="me-find-hint" style={{ textAlign: 'right', marginTop: 4 }}>
+													{!hasSearchInput ? 'Upload a resume, paste a JD, or enter a job title' : 'Add at least one filter or enter a job title'}
+												</p>
+											)}
 
 											{/* ── JD textarea (collapsible) ── */}
 											<div ref={jdSectionRef} className="me-jd-section">
 												<div className="me-jd-section-inner">
 													<div className="me-section-head">
 														<span className="me-section-icon me-section-icon--jd"><MdContentPaste size={12} /></span>
-														<span className="me-section-label">Job Description</span>
+														<span className="me-section-label">Paste your target JD</span>
 														{pastedJd.trim() && (
 															<button
 																type="button"
@@ -2045,8 +2120,8 @@ function JobSearch() {
 														)}
 													</div>
 													<Input.TextArea
-														rows={4}
-														placeholder="Paste a job description to refine your matches and send it to the AI search…"
+														rows={3}
+														placeholder="Paste the JD here — AI will cross-match it with your resume and skills to surface your best-fit roles…"
 														value={pastedJd}
 														onChange={(e) => setPastedJd(e.target.value)}
 														className="premium-textarea me-jd-textarea"
@@ -2058,6 +2133,59 @@ function JobSearch() {
 															JD will be sent to AI search when you click Find AI Matches
 														</p>
 													)}
+													{/* Button moves below textarea when JD is open */}
+													<div className="me-find-btn-wrap" style={{ marginTop: 10 }}>
+														<div className="me-find-trigger">
+															<button
+																type="button"
+																className={`me-find-btn${listLoading ? ' me-find-btn--loading' : !canSearch ? ' me-find-btn--disabled' : ''}${filtersJustApplied ? ' me-find-btn--glow' : ''}`}
+																disabled={listLoading || !canSearch}
+																onClick={() => { setShowFindTour(false); handleFindJobs(); }}
+															>
+																{listLoading ? (
+																	<>
+																		<span className="me-find-btn-spinner" />
+																		<span>Searching…</span>
+																	</>
+																) : (<>
+																	{!canSearch
+																		? <MdLockOutline size={15} className="me-find-btn-icon" />
+																		: <MdAutoAwesome size={15} className="me-find-btn-icon" />
+																	}
+																	<span>Find AI Matches</span>
+																	{activeFilterCount > 0 && (
+																		<span className="me-find-badge">{activeFilterCount} filter{activeFilterCount > 1 ? 's' : ''}</span>
+																	)}
+																</>)}
+															</button>
+															{!canSearch && (<>
+																<div className="me-find-tooltip" role="tooltip">
+																	<div className="me-tt-header">
+																		<span className="me-tt-lock-icon">🔐</span>
+																		<span className="me-tt-title">Unlock AI Matching</span>
+																	</div>
+																	<p className="me-tt-sub">Complete both steps to activate</p>
+																	<div className="me-tt-divider" />
+																	<div className="me-tt-checks">
+																		<div className={`me-tt-check${hasSearchInput ? ' me-tt-check--met' : ''}`}>
+																			<span className="me-tt-dot" />
+																			<span>Resume, JD, or job title entered</span>
+																		</div>
+																		<div className={`me-tt-check${(activeFilterCount > 0 || titleInput.trim().length > 0) ? ' me-tt-check--met' : ''}`}>
+																			<span className="me-tt-dot" />
+																			<span>At least 1 filter or job title entered</span>
+																		</div>
+																	</div>
+																</div>
+																<div className="me-find-tooltip-arrow" />
+															</>)}
+														</div>
+														{!canSearch && (
+															<p className="me-find-hint">
+																{!hasSearchInput ? 'Upload a resume, paste a JD, or enter a job title' : 'Add at least one filter or enter a job title'}
+															</p>
+														)}
+													</div>
 												</div>
 											</div>
 
@@ -2112,60 +2240,6 @@ function JobSearch() {
 										)}
 									COMMENTED — end AI detected banner */}
 
-										{/* ── Primary Find AI Matches CTA ── */}
-										<div className="me-find-btn-wrap">
-											<div className="me-find-trigger">
-												<button
-													ref={findBtnRef}
-													type="button"
-													className={`me-find-btn${listLoading ? ' me-find-btn--loading' : !canSearch ? ' me-find-btn--disabled' : ''}${filtersJustApplied ? ' me-find-btn--glow' : ''}`}
-													disabled={listLoading || !canSearch}
-													onClick={() => { setShowFindTour(false); handleFindJobs(); }}
-												>
-													{listLoading ? (
-														<>
-															<span className="me-find-btn-spinner" />
-															<span>Searching…</span>
-														</>
-													) : (<>
-														{!canSearch
-															? <MdLockOutline size={15} className="me-find-btn-icon" />
-															: <MdAutoAwesome size={15} className="me-find-btn-icon" />
-														}
-														<span>Find AI Matches</span>
-														{activeFilterCount > 0 && (
-															<span className="me-find-badge">{activeFilterCount} filter{activeFilterCount > 1 ? 's' : ''}</span>
-														)}
-													</>)}
-												</button>
-												{!canSearch && (<>
-													<div className="me-find-tooltip" role="tooltip">
-														<div className="me-tt-header">
-															<span className="me-tt-lock-icon">🔐</span>
-															<span className="me-tt-title">Unlock AI Matching</span>
-														</div>
-														<p className="me-tt-sub">Complete both steps to activate</p>
-														<div className="me-tt-divider" />
-														<div className="me-tt-checks">
-															<div className={`me-tt-check${hasSearchInput ? ' me-tt-check--met' : ''}`}>
-																<span className="me-tt-dot" />
-																<span>Resume, JD, or job title entered</span>
-															</div>
-															<div className={`me-tt-check${(activeFilterCount > 0 || titleInput.trim().length > 0) ? ' me-tt-check--met' : ''}`}>
-																<span className="me-tt-dot" />
-																<span>At least 1 filter or job title entered</span>
-															</div>
-														</div>
-													</div>
-													<div className="me-find-tooltip-arrow" />
-												</>)}
-											</div>
-											{!canSearch && (
-												<p className="me-find-hint">
-													{!hasSearchInput ? 'Upload a resume, paste a JD, or enter a job title' : 'Add at least one filter or enter a job title'}
-												</p>
-											)}
-										</div>
 									</div>
 									)}
 

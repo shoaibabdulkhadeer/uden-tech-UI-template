@@ -1417,8 +1417,7 @@ body.dark-theme .jd-reset-btn {
 	font-size: 11.5px;
 	font-weight: 700;
 	color: #334155;
-	text-transform: uppercase;
-	letter-spacing: 0.5px;
+	letter-spacing: 0.2px;
 }
 
 .me-section-ready {
@@ -1436,8 +1435,9 @@ body.dark-theme .jd-reset-btn {
 .me-jd-row {
 	display: flex;
 	align-items: center;
-	gap: 0;
-	margin: 10px 0 0;
+	justify-content: space-between;
+	gap: 8px;
+	margin: 8px 0 0;
 }
 
 .me-title-input-wrap {
@@ -1478,6 +1478,46 @@ body.dark-theme .jd-reset-btn {
 }
 
 .me-title-input::placeholder { color: #94a3b8; }
+
+/* Title input inside the filter panel — full width, rectangular */
+.job-search-filters-block .me-title-input-wrap {
+	display: flex;
+	width: 100%;
+	border-radius: 8px;
+	box-sizing: border-box;
+	padding: 5px 10px;
+}
+
+.job-search-filters-block .me-title-input {
+	flex: 1;
+	width: 100%;
+	min-width: 0;
+	font-size: 12px;
+}
+
+.me-title-char-count {
+	font-size: 10px;
+	font-weight: 500;
+	flex-shrink: 0;
+	line-height: 1;
+	font-family: 'Outfit', sans-serif;
+}
+
+.me-title-clear {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background: none;
+	border: none;
+	padding: 2px;
+	cursor: pointer;
+	color: #94a3b8;
+	flex-shrink: 0;
+	border-radius: 50%;
+	transition: color 0.15s, background 0.15s;
+	line-height: 1;
+}
+.me-title-clear:hover { color: #475569; background: rgba(0,0,0,0.06); }
 
 .me-jd-row-line {
 	flex: 1;
@@ -1560,7 +1600,7 @@ body.dark-theme .jd-reset-btn {
 
 /* ── Primary Find AI Matches button (in card) ── */
 .me-find-btn-wrap {
-	margin-top: 10px;
+	margin-top: 4px;
 	display: flex;
 	flex-direction: column;
 	align-items: flex-end;
