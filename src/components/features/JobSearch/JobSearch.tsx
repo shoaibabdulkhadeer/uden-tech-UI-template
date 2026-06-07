@@ -2643,27 +2643,6 @@ function JobSearch() {
 																{b}
 															</span>
 														)) : null}
-														<Tooltip title="Build a learning path for this role" placement="top" mouseEnterDelay={0.5}>
-														<button
-															type="button"
-															className="job-lp-btn"
-															onClick={(e) => {
-																e.stopPropagation();
-																Modal.confirm({
-																	title: 'Go to Learning Path?',
-																	content: `You'll be taken to the Learning Path page with the job description for "${job.title}" at ${job.company} pre-filled. Ready to generate your path?`,
-																	okText: 'Yes, let\'s go',
-																	cancelText: 'Cancel',
-																	onOk: () => {
-								openLearnTab(job.detail.description ?? '');
-							},
-																});
-															}}
-														>
-															<MdSchool size={12} />
-															Learning Path
-														</button>
-														</Tooltip>
 
 														{/* Click to open full detail — outside quick-wrap so it doesn't trigger panel */}
 														<Tooltip title="View full job details" placement="top" mouseEnterDelay={0.5}>
@@ -4025,37 +4004,18 @@ function JobSearch() {
 															{job.matchScore != null && <span className="tracker-kanban-meta-chip tracker-kanban-meta-chip--fit">{job.matchScore}% fit</span>}
 														</div>
 
-														{/* Stage progress dots */}
-														<div className="tracker-kanban-card-footer" onClick={(e) => e.stopPropagation()}>
-															<div className="tracker-kanban-footer-row">
-																<div className="tracker-kanban-progress">
-																	{KANBAN_STAGES.map((s, si) => {
-																		const isActive = s === (appStages[job.id] ?? 'applied');
-																		const isPast = si < currentIdx;
-																		const sCfg = STAGE_CFG[s];
-																		return (
-																			<div key={s} className="tracker-kanban-progress-step">
-																				<div
-																					className="tracker-kanban-progress-dot"
-																					style={isActive ? { background: sCfg.color, boxShadow: `0 0 0 2px ${sCfg.bg}` } : isPast ? { background: '#10b981' } : { background: '#e2e8f0' }}
-																				/>
-																				{si < KANBAN_STAGES.length - 1 && (
-																					<div className="tracker-kanban-progress-line" style={{ background: isPast ? '#10b981' : '#e2e8f0' }} />
-																				)}
-																			</div>
-																		);
-																	})}
-																</div>
-																<button
-																	type="button"
-																	className="tracker-kanban-view-btn"
-																	onMouseDown={(e) => e.stopPropagation()}
-																	onClick={(e) => { e.stopPropagation(); openJobPreview(job); }}
-																>
-																	<MdDescription size={11} /> View
-																</button>
-															</div>
-														</div>
+								<div className="tracker-kanban-card-footer" onClick={(e) => e.stopPropagation()}>
+									<div className="tracker-kanban-footer-row" style={{ justifyContent: 'flex-end' }}>
+										<button
+											type="button"
+											className="tracker-kanban-view-btn"
+											onMouseDown={(e) => e.stopPropagation()}
+											onClick={(e) => { e.stopPropagation(); openJobPreview(job); }}
+										>
+											<MdDescription size={11} /> View
+										</button>
+									</div>
+								</div>
 														{confirmDeleteId === job.id && (
 															<div style={{
 																display: 'flex', alignItems: 'center', justifyContent: 'space-between',
@@ -4155,19 +4115,6 @@ function JobSearch() {
 											<div style={{ flex: 1, minWidth: 0 }}>
 												<p style={{ margin: '0 0 2px', fontSize: 13, fontWeight: 600, color: '#0f172a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{job.title}</p>
 												<p style={{ margin: 0, fontSize: 11.5, color: '#64748b', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{job.company}{job.location ? ` · ${job.location}` : ''}</p>
-											</div>
-											<div style={{ display: 'flex', alignItems: 'center', gap: 0, flexShrink: 0 }}>
-												{KANBAN_STAGES.map((s, si) => {
-													const isActive = s === stage;
-													const isPast = si < currentIdx;
-													const sCfg = STAGE_CFG[s];
-													return (
-														<div key={s} style={{ display: 'flex', alignItems: 'center' }}>
-															<div style={{ width: 8, height: 8, borderRadius: '50%', background: isActive ? sCfg.color : isPast ? '#10b981' : '#e2e8f0', boxShadow: isActive ? `0 0 0 2px ${sCfg.bg}` : 'none', flexShrink: 0, transition: 'background 0.2s' }} />
-															{si < KANBAN_STAGES.length - 1 && <div style={{ width: 16, height: 2, background: isPast ? '#10b981' : '#e2e8f0', flexShrink: 0 }} />}
-														</div>
-													);
-												})}
 											</div>
 											<span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '3px 9px', borderRadius: 20, fontSize: 11, fontWeight: 600, background: cfg.bg, color: cfg.color, border: `1px solid ${cfg.border}`, flexShrink: 0 }}>
 												{cfg.icon} {cfg.label}

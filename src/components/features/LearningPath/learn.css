@@ -283,53 +283,53 @@
 
 /* Main card */
 .learn-next-main-card {
-	border-radius: 20px !important;
-	border: 1px solid rgba(99,102,241,0.12) !important;
-	box-shadow:
-		0 4px 24px rgba(99,102,241,0.08),
-		0 1px 4px rgba(15,23,42,0.04) !important;
+	border-radius: 12px !important;
+	border: 1px solid #e2e8f0 !important;
+	box-shadow: 0 1px 4px rgba(15,23,42,0.06) !important;
 	background: #fff !important;
 	overflow: hidden;
 }
 
+/* Override the old heavy boxshadow in this context */
+.learn-page .boxshadowcard1 {
+	box-shadow: 0 1px 4px rgba(15,23,42,0.06) !important;
+}
+
+/* Smaller rocket art */
+.learn-page .dash-next-page-head-art {
+	width: 48px !important;
+	height: 48px !important;
+}
+
+/* Plain black title — ID selector beats the 7-class chain in dashboard-arena.css */
+#learn-page-title-text {
+	background-image: none !important;
+	-webkit-background-clip: unset !important;
+	background-clip: unset !important;
+	-webkit-text-fill-color: #0f172a !important;
+	color: #0f172a !important;
+	animation: none !important;
+}
+
+/* Remove gradient top border from the card */
+.learn-page .phase2-learn-shell::before {
+	display: none !important;
+}
+
 /* Toolbar */
 .learn-next-card-toolbar {
-	background: rgba(255,255,255,0.94);
-	backdrop-filter: blur(20px);
-	border-bottom: 1.5px solid rgba(16,185,129,0.16);
+	background: #fff !important;
+	backdrop-filter: none !important;
+	border-bottom: 1px solid #f1f5f9 !important;
 	position: relative;
 	overflow: hidden;
-	padding: 16px 20px !important;
-	box-shadow: 0 2px 16px rgba(16,185,129,0.07), 0 1px 4px rgba(15,23,42,0.04);
+	padding: 12px 20px !important;
+	box-shadow: none !important;
 }
 
-.learn-next-card-toolbar::before {
-	content: '';
-	position: absolute;
-	inset: 0;
-	background:
-		radial-gradient(ellipse 55% 100% at 100% 50%, rgba(16,185,129,0.08) 0%, transparent 60%),
-		radial-gradient(ellipse 40% 80% at 0% 50%, rgba(99,102,241,0.07) 0%, transparent 60%);
-	pointer-events: none;
-}
-
-/* Shimmer on toolbar */
+.learn-next-card-toolbar::before,
 .learn-next-card-toolbar::after {
-	content: '';
-	position: absolute;
-	top: 0; left: 0;
-	width: 60%;
-	height: 100%;
-	background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.55) 50%, transparent 100%);
-	transform: translateX(-140%);
-	will-change: transform;
-	animation: learn-toolbar-shimmer 3s ease-in-out infinite;
-	pointer-events: none;
-}
-
-@keyframes learn-toolbar-shimmer {
-	from { transform: translateX(-140%); }
-	to   { transform: translateX(280%); }
+	display: none !important;
 }
 
 /* Overview chip */
@@ -337,23 +337,23 @@
 	display: inline-flex;
 	align-items: center;
 	gap: 6px;
-	padding: 6px 14px;
-	border-radius: 999px;
-	background: rgba(99,102,241,0.08);
-	border: 1px solid rgba(99,102,241,0.2);
-	color: #4f46e5 !important;
+	padding: 5px 12px;
+	border-radius: 8px;
+	background: #f8fafc;
+	border: 1px solid #e2e8f0;
+	color: #334155 !important;
 	font-size: 12px;
-	font-weight: 700;
+	font-weight: 400;
 	cursor: pointer;
-	transition: background 0.18s;
+	transition: background 0.15s;
 	position: relative;
 	z-index: 1;
 }
 .learn-next-overview-chip:hover {
-	background: rgba(99,102,241,0.14);
+	background: #f1f5f9;
 }
 .learn-next-overview-chip-icon,
-.learn-next-overview-chip-label { color: #4f46e5; }
+.learn-next-overview-chip-label { color: #334155; }
 
 /* Flow arrow between chips */
 .learn-next-toolbar-flow-icon {
@@ -375,15 +375,16 @@
 
 /* Mode select trigger */
 .learn-next-mode-select.ant-select .ant-select-selector {
-	background: rgba(99,102,241,0.07) !important;
-	border: 1px solid rgba(99,102,241,0.22) !important;
-	border-radius: 999px !important;
-	color: #4f46e5 !important;
+	background: #f8fafc !important;
+	border: 1px solid #e2e8f0 !important;
+	border-radius: 8px !important;
+	color: #334155 !important;
 }
 .learn-next-mode-select.ant-select .ant-select-arrow,
-.learn-next-mode-select .learn-next-mode-select-chevron { color: #6366f1 !important; }
+.learn-next-mode-select .learn-next-mode-select-chevron { color: #64748b !important; }
 .learn-next-mode-trigger-inner { display: flex; align-items: center; gap: 6px; }
-.learn-next-mode-trigger-text { color: #4f46e5; font-weight: 700; font-size: 12px; }
+.learn-next-mode-trigger-text { color: #334155; font-weight: 400; font-size: 12px; }
+.learn-page .learn-next-mode-trigger-text { font-weight: 400 !important; }
 .learn-next-mode-trigger-glyph {
 	display: flex; align-items: center; justify-content: center;
 	width: 20px; height: 20px; border-radius: 6px;
@@ -416,24 +417,24 @@
 
 /* Generate button */
 .learn-next-generate-btn.ant-btn {
-	background: linear-gradient(135deg, #10b981, #059669) !important;
+	background: #10b981 !important;
 	border: none !important;
-	border-radius: 999px !important;
-	font-weight: 700 !important;
-	font-size: 12px !important;
-	box-shadow: 0 3px 10px rgba(16,185,129,0.4) !important;
+	border-radius: 8px !important;
+	font-weight: 600 !important;
+	font-size: 13px !important;
+	box-shadow: none !important;
 	color: #fff !important;
 	position: relative; z-index: 1;
 }
 .learn-next-generate-btn.ant-btn:hover {
-	background: linear-gradient(135deg, #059669, #047857) !important;
-	box-shadow: 0 5px 16px rgba(16,185,129,0.5) !important;
+	background: #059669 !important;
+	box-shadow: none !important;
 }
 
 /* Card divider */
 .learn-next-card-divider {
 	height: 1px;
-	background: linear-gradient(90deg, transparent 0%, rgba(99,102,241,0.15) 40%, rgba(34,211,238,0.12) 60%, transparent 100%);
+	background: #f1f5f9;
 }
 
 /* Input well */
@@ -604,14 +605,122 @@
 	overflow: hidden;
 }
 
+/* Collapse stacked bottom spacing */
+.note-container.open { padding-bottom: 0 !important; }
+.learn-compose-studio { padding-bottom: 0 !important; }
+.learn-compose-body { padding-bottom: 0 !important; }
+.learn-compose-inner { padding-bottom: 0 !important; }
+.learn-compose-form { gap: 8px !important; }
+.learn-compose-cta-row { margin-top: 0 !important; margin-bottom: 0 !important; }
+.learn-compose-cta-row .gx-p-0.gx-m-0 { margin-bottom: 0 !important; }
+
+/* ── Mode trigger glyph — override gradient icons ── */
+.learn-page .learn-next-mode-trigger-glyph {
+	background: #f1f5f9 !important;
+	box-shadow: none !important;
+	border-radius: 6px !important;
+	width: 22px !important;
+	height: 22px !important;
+	color: #475569 !important;
+}
+.learn-page .learn-next-mode-trigger-glyph--skill,
+.learn-page .learn-next-mode-trigger-glyph--week,
+.learn-page .learn-next-mode-trigger-glyph--hour {
+	background: #f1f5f9 !important;
+	color: #475569 !important;
+}
+.learn-page .learn-next-mode-trigger-glyph svg { color: #475569 !important; }
+
+/* ── Mode dropdown ── */
+.learn-next-mode-dropdown.ant-select-dropdown {
+	min-width: 280px !important;
+	padding: 5px !important;
+	border-radius: 12px !important;
+	border: 1px solid #e5e7eb !important;
+	box-shadow: 0 10px 30px rgba(0,0,0,0.1), 0 2px 8px rgba(0,0,0,0.06) !important;
+	background: #fff !important;
+}
+/* Hide glow layers */
+.learn-next-mode-option-glow { display: none !important; }
+/* Each option row */
+.learn-next-mode-dropdown .ant-select-item {
+	margin: 0 !important;
+	padding: 0 !important;
+	border-radius: 8px !important;
+	background: transparent !important;
+}
+.learn-next-mode-option {
+	display: flex !important;
+	align-items: flex-start !important;
+	gap: 11px !important;
+	padding: 10px 12px !important;
+	border-radius: 8px !important;
+	background: transparent !important;
+	border: none !important;
+	box-shadow: none !important;
+}
+/* Hover */
+.learn-next-mode-dropdown .ant-select-item-option-active {
+	background: transparent !important;
+}
+.learn-next-mode-dropdown .ant-select-item-option-active .learn-next-mode-option {
+	background: #f9fafb !important;
+}
+/* Selected — left accent + light bg */
+.learn-next-mode-dropdown .ant-select-item-option-selected {
+	background: transparent !important;
+}
+.learn-next-mode-dropdown .ant-select-item-option-selected .learn-next-mode-option {
+	background: #f0f9ff !important;
+	border-left: 3px solid #2563eb !important;
+	padding-left: 9px !important;
+}
+.learn-next-mode-dropdown .ant-select-item-option-selected .learn-next-mode-option svg {
+	color: #2563eb !important;
+}
+.learn-next-mode-dropdown .ant-select-item-option-selected .learn-next-mode-option-title {
+	color: #1d4ed8 !important;
+}
+/* Icon */
+.learn-next-mode-option svg {
+	margin-top: 3px !important;
+	color: #6b7280 !important;
+	flex-shrink: 0 !important;
+}
+/* Copy block */
+.learn-next-mode-option-copy {
+	display: flex !important;
+	flex-direction: column !important;
+	gap: 3px !important;
+}
+.learn-next-mode-option-title {
+	font-size: 13.5px !important;
+	font-weight: 600 !important;
+	color: #111827 !important;
+	letter-spacing: -0.1px !important;
+	line-height: 1.3 !important;
+}
+.learn-next-mode-option-desc {
+	display: block !important;
+	font-size: 11.5px !important;
+	color: #9ca3af !important;
+	font-weight: 400 !important;
+	line-height: 1.5 !important;
+	margin-top: 0 !important;
+}
+
 
 /* ── Compose body ── */
 .learn-compose-body {
-	padding: 12px 20px 16px;
-	background:
-		radial-gradient(ellipse 70% 60% at 100% 0%, rgba(99,102,241,0.05) 0%, transparent 60%),
-		radial-gradient(ellipse 50% 50% at 0% 100%, rgba(16,185,129,0.04) 0%, transparent 60%),
-		linear-gradient(160deg, #f8faff 0%, #fafbff 100%);
+	padding: 14px 20px 14px;
+	background: #fff;
+}
+
+.learn-compose-body .learn-compose-inner {
+	background: #fff;
+	border: none;
+	border-radius: 0;
+	padding: 0;
 }
 
 /* Eyebrow row */
@@ -672,12 +781,12 @@
 
 /* Title + subtitle */
 .learn-compose-title {
-	font-size: 20px;
-	font-weight: 800;
+	font-size: 14px;
+	font-weight: 600;
 	color: #0f172a;
-	letter-spacing: -0.03em;
-	line-height: 1.2;
-	margin-bottom: 5px !important;
+	letter-spacing: 0;
+	line-height: 1.4;
+	margin-bottom: 10px !important;
 }
 
 .learn-compose-subtitle {
@@ -701,21 +810,21 @@
 }
 
 .learn-compose-textarea.ant-input {
-	border-radius: 16px !important;
-	border: 1.5px solid rgba(99,102,241,0.18) !important;
+	border-radius: 10px !important;
+	border: 1px solid #e2e8f0 !important;
 	background: #fff !important;
 	font-size: 13.5px !important;
 	line-height: 1.65 !important;
 	padding: 10px 12px 26px !important;
-	box-shadow: 0 2px 12px rgba(99,102,241,0.06), 0 1px 3px rgba(15,23,42,0.04) !important;
+	box-shadow: none !important;
 	resize: vertical !important;
-	transition: border-color 0.2s, box-shadow 0.2s !important;
+	transition: border-color 0.2s !important;
+	min-height: 64px !important;
+	max-height: 160px !important;
 }
 .learn-compose-textarea.ant-input:focus {
-	border-color: #6366f1 !important;
-	box-shadow:
-		0 0 0 3px rgba(99,102,241,0.1),
-		0 4px 20px rgba(99,102,241,0.12) !important;
+	border-color: #94a3b8 !important;
+	box-shadow: 0 0 0 2px rgba(148,163,184,0.15) !important;
 }
 .learn-compose-textarea.ant-input::placeholder { color: #c7d2e7; font-style: italic; }
 
@@ -756,32 +865,46 @@
 
 /* CTA button */
 .learn-compose-cta.ant-btn {
-	height: 48px !important;
-	border-radius: 14px !important;
-	background: linear-gradient(135deg, #10b981 0%, #059669 60%, #047857 100%) !important;
+	height: 40px !important;
+	border-radius: 8px !important;
+	background: #2563eb !important;
 	border: none !important;
-	font-size: 14px !important;
-	font-weight: 800 !important;
-	letter-spacing: 0.01em !important;
+	font-size: 13px !important;
+	font-weight: 600 !important;
+	letter-spacing: 0 !important;
 	color: #fff !important;
-	box-shadow: 0 4px 16px rgba(16,185,129,0.35), 0 1px 4px rgba(15,23,42,0.08) !important;
-	transition: transform 0.18s, box-shadow 0.18s !important;
-	display: flex !important;
+	box-shadow: none !important;
+	transition: background 0.15s !important;
+	display: inline-flex !important;
 	align-items: center !important;
 	justify-content: center !important;
-	gap: 8px !important;
+	gap: 7px !important;
+	width: auto !important;
+	min-width: unset !important;
+	padding: 0 12px !important;
+	height: 28px !important;
+	font-size: 11.5px !important;
 }
 .learn-compose-cta.ant-btn:hover:not(:disabled) {
-	transform: translateY(-1px) !important;
-	box-shadow: 0 8px 24px rgba(16,185,129,0.45), 0 2px 8px rgba(15,23,42,0.1) !important;
+	background: #1d4ed8 !important;
+	transform: none !important;
+	box-shadow: none !important;
 }
 .learn-compose-cta.ant-btn:active:not(:disabled) {
-	transform: translateY(0) !important;
+	transform: none !important;
 }
 .learn-compose-cta.ant-btn:disabled {
-	background: linear-gradient(135deg, #94a3b8, #64748b) !important;
+	background: #e2e8f0 !important;
+	color: #94a3b8 !important;
 	box-shadow: none !important;
-	opacity: 0.6 !important;
+	opacity: 1 !important;
+}
+
+/* Button row — right-aligned */
+.learn-compose-cta-row {
+	display: flex;
+	justify-content: flex-end;
+	margin-top: 3px;
 }
 .learn-compose-cta-icon {
 	flex-shrink: 0;
@@ -800,15 +923,11 @@
 	padding: 10px 20px !important;
 	gap: 10px !important;
 	flex-wrap: wrap !important;
-	/* colorful gradient accent on top edge */
-	border-top: 3px solid transparent !important;
-	background-image:
-		linear-gradient(rgba(255,255,255,0.94), rgba(255,255,255,0.94)),
-		linear-gradient(90deg, #6366f1 0%, #06b6d4 50%, #10b981 100%) !important;
-	background-origin: border-box !important;
-	background-clip: padding-box, border-box !important;
-	/* remove the old bottom-only border */
-	border-bottom: 1px solid rgba(99,102,241,0.1) !important;
+	border-top: none !important;
+	background-image: none !important;
+	background-origin: unset !important;
+	background-clip: unset !important;
+	border-bottom: 1px solid #f1f5f9 !important;
 }
 
 /* Left group: nav chips + separator + util actions */

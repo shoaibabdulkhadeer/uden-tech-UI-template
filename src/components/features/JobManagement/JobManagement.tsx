@@ -680,17 +680,19 @@ const JobManagement = () => {
 							<DashboardPageHeadArt />
 						</div>
 						<div className="dash-next-page-head-copy">
-							<div className="gx-mb-2" style={{ display: 'flex', gap: 8 }}>
-								<div className="genz-pill vibrant">
+							<div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+								<h1 className="dash-next-page-title" style={{ margin: 0 }}>
+									Admin Nexus
+								</h1>
+								<div className="genz-pill vibrant genz-pill--sm">
 									<MdAutoAwesome className="genz-icon" />
 									Applicant Operations
 								</div>
-								<div className="genz-pill glow">
+								<div className="genz-pill glow genz-pill--sm">
 									<div className="dot" />
 									Admin Access
 								</div>
 							</div>
-							<h1 className="dash-next-page-title">Admin Nexus</h1>
 							<p className="dash-next-page-lead">
 								Centralized administration for job lifecycle and applicant flow.
 							</p>
@@ -860,7 +862,7 @@ const JobManagement = () => {
 										icon={<MdAdd size={16} />}
 										onClick={() => { setEditingJob(null); form.resetFields(); setIsModalVisible(true); }}
 									>
-										Add New Role
+										Add New Job
 									</Button>
 								</div>
 							)}
@@ -1437,7 +1439,7 @@ const JobManagement = () => {
 							{editingJob ? <MdEdit size={18} /> : <MdAdd size={18} />}
 						</div>
 						<div className="arm-header-text">
-							<h3 className="arm-header-title">{editingJob ? 'Edit Role' : 'Add New Role'}</h3>
+							<h3 className="arm-header-title">{editingJob ? 'Edit Job' : 'Add New Job'}</h3>
 							<p className="arm-header-sub">{editingJob ? 'Update the role details below' : 'Fill in the details to publish a new role'}</p>
 						</div>
 						<button type="button" className="arm-close-btn" onClick={() => { setIsModalVisible(false); setEditingJob(null); }}>×</button>

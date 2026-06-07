@@ -29,7 +29,7 @@ import { FaCircleMinus, FaTags } from 'react-icons/fa6';
 import { GiSplitCross } from 'react-icons/gi';
 import { GrPowerReset } from 'react-icons/gr';
 import { IoReturnDownBackOutline } from 'react-icons/io5';
-import { MdAutoAwesome, MdQuiz } from 'react-icons/md';
+import { MdAutoAwesome, MdOutlineCalendarMonth, MdOutlineSchool, MdOutlineTimer, MdQuiz } from 'react-icons/md';
 import { PiCertificateFill, PiEngineBold, PiTimerFill } from 'react-icons/pi';
 import { RxDashboard } from 'react-icons/rx';
 import { SiBookstack, SiChartdotjs, SiConfluence } from 'react-icons/si';
@@ -136,9 +136,8 @@ const Learn = () => {
 	const handleModeChange = (value: any) => {
 		const v = value && typeof value === 'object' && 'value' in value ? value.value : value;
 		setSelectedMode(v);
-		if (v === 'WEEK') {
-			// navigate('/my-lead');
-		}
+		setShowNote(true);
+		setIsGenerated(false);
 	};
 
 	useEffect(() => {
@@ -354,6 +353,7 @@ const Learn = () => {
 		 setSummaryNote(summaryData?.data?.details);
 		 setJDID(summaryData?.data?.details?.JdID)
 		 setShowNote(false);
+		 setReviewAcknowledge(false);
 		 setGenerateModal(true);
 		 // dispatch(addLearningPath({ text: summaryData?.data?.details?.roleSummary }));
 		 dispatch(summarizeReset());
@@ -628,45 +628,27 @@ const Learn = () => {
 						<div className="dash-next-page-head-row">
 							<DashboardPageHeadArt className="dash-next-page-head-art" />
 							<div className="dash-next-page-head-copy">
-								<div className="gx-mb-2" style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-									<div className="genz-pill vibrant">
+								<div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+									<h1 className="dash-next-page-title" style={{ margin: 0 }}>
+										<span className="dash-next-page-title-inner" id="learn-page-title-text">Learning Path</span>
+									</h1>
+									<div className="genz-pill vibrant genz-pill--sm">
 										<MdAutoAwesome className="genz-icon" />
 										AI Path Engine
 									</div>
-									<div className="genz-pill glow">
+									<div className="genz-pill glow genz-pill--sm">
 										<div className="dot" />
 										Live Generation
 									</div>
 								</div>
-								<h1 className="dash-next-page-title">
-									<span className="dash-next-page-title-inner">Learning Path</span>
-								</h1>
 								<p className="dash-next-page-lead">
 									Paste a job description or describe your goals — AI builds a personalised, milestone-driven learning path tailored to your skill gaps.
 								</p>
-								<div className="career-accel-feature-row">
-									<span className="career-accel-feature-chip career-accel-feature-chip--indigo">
-										<span className="career-accel-chip-icon"><MdAutoAwesome size={12} /></span>
-										AI-generated path
-									</span>
-									<span className="career-accel-feature-chip career-accel-feature-chip--cyan">
-										<span className="career-accel-chip-icon"><VscActivateBreakpoints size={12} /></span>
-										Skill &amp; week modes
-									</span>
-									<span className="career-accel-feature-chip career-accel-feature-chip--amber">
-										<span className="career-accel-chip-icon"><MdQuiz size={12} /></span>
-										Built-in quizzes
-									</span>
-									<span className="career-accel-feature-chip career-accel-feature-chip--emerald">
-										<span className="career-accel-chip-icon"><PiCertificateFill size={12} /></span>
-										Certifications
-									</span>
-								</div>
 							</div>
 						</div>
 					</header>
 					<motion.div initial={{ y: 300, opacity: 0.5 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.9, ease: easeInOut }}>
-						<div className="boxshadowcard1 gx-pb-3 phase2-learn-shell learn-next-main-card" style={{ borderRadius: '10px' }}>
+						<div className="boxshadowcard1 phase2-learn-shell learn-next-main-card" style={{ borderRadius: '10px' }}>
 						<div className="learn-next-card-toolbar learn-toolbar-bar">
 							<div className="learn-toolbar-left">
 								<div className="learn-toolbar-nav">
@@ -702,21 +684,21 @@ const Learn = () => {
 												{selectedMode === 'SKILL' ? (
 													<>
 														<span className="learn-next-mode-trigger-glyph learn-next-mode-trigger-glyph--skill">
-															<VscActivateBreakpoints size={15} aria-hidden />
+															<MdOutlineSchool size={14} aria-hidden />
 														</span>
 														<span className="learn-next-mode-trigger-text">Skill path</span>
 													</>
 												) : selectedMode === 'HOUR' ? (
 													<>
 														<span className="learn-next-mode-trigger-glyph learn-next-mode-trigger-glyph--hour">
-															<PiTimerFill size={15} aria-hidden />
+															<MdOutlineTimer size={14} aria-hidden />
 														</span>
 														<span className="learn-next-mode-trigger-text">Hour path</span>
 													</>
 												) : (
 													<>
 														<span className="learn-next-mode-trigger-glyph learn-next-mode-trigger-glyph--week">
-															<PiTimerFill size={15} aria-hidden />
+															<MdOutlineCalendarMonth size={14} aria-hidden />
 														</span>
 														<span className="learn-next-mode-trigger-text">Week path</span>
 													</>
@@ -728,10 +710,7 @@ const Learn = () => {
 								>
 									<Select.Option value="SKILL" key="SKILL">
 										<div className="learn-next-mode-option">
-											<span className="learn-next-mode-option-glow learn-next-mode-option-glow--skill" aria-hidden />
-											<span className="learn-next-mode-option-icon-wrap learn-next-mode-option-icon-wrap--skill">
-												<VscActivateBreakpoints size={18} aria-hidden />
-											</span>
+											<MdOutlineSchool size={18} style={{ flexShrink: 0 }} aria-hidden />
 											<span className="learn-next-mode-option-copy">
 												<span className="learn-next-mode-option-title">Skill based</span>
 												<span className="learn-next-mode-option-desc">
@@ -742,10 +721,7 @@ const Learn = () => {
 									</Select.Option>
 									<Select.Option value="WEEK" key="WEEK">
 										<div className="learn-next-mode-option">
-											<span className="learn-next-mode-option-glow learn-next-mode-option-glow--week" aria-hidden />
-											<span className="learn-next-mode-option-icon-wrap learn-next-mode-option-icon-wrap--week">
-												<PiTimerFill size={18} aria-hidden />
-											</span>
+											<MdOutlineCalendarMonth size={18} style={{ flexShrink: 0 }} aria-hidden />
 											<span className="learn-next-mode-option-copy">
 												<span className="learn-next-mode-option-title">Week based</span>
 												<span className="learn-next-mode-option-desc">
@@ -754,20 +730,17 @@ const Learn = () => {
 											</span>
 										</div>
 									</Select.Option>
-								<Select.Option value="HOUR" key="HOUR">
-						<div className="learn-next-mode-option">
-							<span className="learn-next-mode-option-glow learn-next-mode-option-glow--hour" aria-hidden />
-							<span className="learn-next-mode-option-icon-wrap learn-next-mode-option-icon-wrap--hour">
-								<PiTimerFill size={18} aria-hidden />
-							</span>
-							<span className="learn-next-mode-option-copy">
-								<span className="learn-next-mode-option-title">Hour based</span>
-								<span className="learn-next-mode-option-desc">
-									Break down the path by hours — fine-grained control over your daily study blocks.
-								</span>
-							</span>
-						</div>
-					</Select.Option>
+									<Select.Option value="HOUR" key="HOUR">
+										<div className="learn-next-mode-option">
+											<MdOutlineTimer size={18} style={{ flexShrink: 0 }} aria-hidden />
+											<span className="learn-next-mode-option-copy">
+												<span className="learn-next-mode-option-title">Hour based</span>
+												<span className="learn-next-mode-option-desc">
+													Break down the path by hours — fine-grained control over your daily study blocks.
+												</span>
+											</span>
+										</div>
+									</Select.Option>
 					</Select>
 									{selectedMode === 'HOUR' && (
 										<div className={`lp-total-hours-wrap${totalHours !== null && (totalHours < 1 || totalHours > 500) ? ' lp-total-hours-wrap--error' : ''}`}>
@@ -781,6 +754,18 @@ const Learn = () => {
 												value={totalHours}
 												onChange={(v) => setTotalHours(v as number | null)}
 												size="small"
+												controls={false}
+												parser={(value) => {
+													const digits = (value ?? '').replace(/[^0-9]/g, '').slice(0, 3);
+													const num = parseInt(digits, 10);
+													return isNaN(num) ? ('' as any) : Math.min(num, 500) as any;
+												}}
+												formatter={(value) => (value !== undefined && value !== null ? String(value) : '')}
+												onKeyDown={(e) => {
+													if (['Backspace','Delete','Tab','Escape','Enter','ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Home','End'].includes(e.key)) return;
+													if ((e.ctrlKey || e.metaKey) && ['a','c','v','x'].includes(e.key.toLowerCase())) return;
+													if (!/^\d$/.test(e.key)) e.preventDefault();
+												}}
 											/>
 											<span className="lp-total-hours-label">
 												{totalHours !== null && totalHours > 500 ? 'Max 500 hrs' : totalHours !== null && totalHours < 1 ? 'Min 1 hr' : '/ 500 hrs'}
@@ -796,7 +781,7 @@ const Learn = () => {
 										<IoReturnDownBackOutline size={13} />
 										<span>Dashboard</span>
 									</button>
-									<button type="button" className="learn-toolbar-util-btn" onClick={() => { form.setFieldValue('text', ''); if (charCountRef.current) { charCountRef.current.textContent = '0 / 100'; charCountRef.current.className = 'learn-compose-char-count'; } }}>
+									<button type="button" className="learn-toolbar-util-btn" onClick={() => { form.setFieldValue('text', ''); if (charCountRef.current) { charCountRef.current.textContent = '0 / 100'; charCountRef.current.className = 'learn-compose-char-count'; } setPagesummary(''); setSummaryNote(undefined); }}>
 										<GrPowerReset size={12} />
 										<span>Reset</span>
 									</button>
@@ -893,78 +878,66 @@ const Learn = () => {
 						</div>
 
 						<div className="learn-next-card-divider" aria-hidden />
-						<div className={`note-container gx-px-2 ${showNote ? 'open' : ''}`}>
+						<div className={`note-container ${showNote ? 'open' : ''}`}>
 							<div className="learn-compose-studio">
 
 																{/* ── Compose body ── */}
 								<div className="learn-compose-body">
-									{/* eyebrow + status */}
-									<div className="learn-compose-eyebrow-row">
-										<span className="learn-compose-eyebrow">
-											<MdAutoAwesome size={11} className="learn-compose-eyebrow-icon" />
-											AI Path Engine
-										</span>
-										<span className="learn-compose-status">
-											<span className="learn-compose-status-dot" aria-hidden />
-											Ready
-										</span>
-									</div>
+									<div className="learn-compose-inner">
+										<h2 className="learn-compose-title gx-m-0">Describe your target role</h2>
 
-									<h2 className="learn-compose-title gx-m-0">Describe your target role</h2>
-									<p className="learn-compose-subtitle gx-m-0">
-										Paste a job description or tell us what you want to learn — AI builds a personalised path.
-									</p>
-
-									<Form
-										form={form}
-										layout="vertical"
-										onFinish={onFinish}
-										onValuesChange={(changed) => {
-											if (changed.text !== undefined && charCountRef.current) {
-												const len = (changed.text ?? '').length;
-												charCountRef.current.textContent = `${len} / 100`;
-												charCountRef.current.className = `learn-compose-char-count${len >= 100 ? ' learn-compose-char-count--ready' : ''}`;
-											}
-										}}
-										className="learn-compose-form"
-									>
-										<div className="learn-compose-field-wrap">
-											<Form.Item
-												name="text"
-												validateTrigger="onBlur"
-												className="gx-m-0 learn-compose-field"
-												rules={COMPOSE_FIELD_RULES}
-											>
-												<TextArea
-													rows={3}
-													placeholder="e.g. 'Frontend Engineer at a SaaS company — strong in React, TypeScript, system design…'"
-													className="learn-compose-textarea"
-												/>
-											</Form.Item>
-											<span ref={charCountRef} className="learn-compose-char-count">0 / 100</span>
-										</div>
-
-										{!pagesummary && (
-											<div className="learn-compose-tip">
-												<MdAutoAwesome size={13} className="learn-compose-tip-icon" />
-												<span>AI generates a week-by-week or skill-by-skill plan from your input — the more detail you add, the sharper the path.</span>
+										<Form
+											form={form}
+											layout="vertical"
+											onFinish={onFinish}
+											onValuesChange={(changed) => {
+												if (changed.text !== undefined && charCountRef.current) {
+													const len = (changed.text ?? '').length;
+													charCountRef.current.textContent = `${len} / 100`;
+													charCountRef.current.className = `learn-compose-char-count${len >= 100 ? ' learn-compose-char-count--ready' : ''}`;
+												}
+											}}
+											className="learn-compose-form"
+										>
+											<div className="learn-compose-field-wrap">
+												<Form.Item
+													name="text"
+													validateTrigger="onBlur"
+													className="gx-m-0 learn-compose-field"
+													rules={COMPOSE_FIELD_RULES}
+												>
+													<TextArea
+														rows={2}
+														placeholder="e.g. 'Frontend Engineer at a SaaS company — strong in React, TypeScript, system design…'"
+														className="learn-compose-textarea"
+													/>
+												</Form.Item>
+												<span ref={charCountRef} className="learn-compose-char-count">0 / 100</span>
 											</div>
-										)}
 
-										<Form.Item className="gx-p-0 gx-m-0">
-											<Button
-												htmlType="submit"
-												type="primary"
-												className="learn-compose-cta"
-												disabled={learnLoader || summaryLoader || isGenerated}
-												loading={learnLoader || summaryLoader}
-												block
-											>
-												{!(learnLoader || summaryLoader) && <PiEngineBold size={15} className="learn-compose-cta-icon" />}
-												Generate Learning Path
-											</Button>
-										</Form.Item>
-									</Form>
+											<div className="learn-compose-cta-row">
+												<Form.Item className="gx-p-0 gx-m-0">
+													<Button
+														htmlType="submit"
+														type="primary"
+														className="learn-compose-cta"
+														disabled={learnLoader || summaryLoader || isGenerated || (selectedMode === 'HOUR' && (totalHours === null || totalHours < 1 || totalHours > 500))}
+														loading={learnLoader || summaryLoader}
+													>
+														{!(learnLoader || summaryLoader) && <PiEngineBold size={15} className="learn-compose-cta-icon" />}
+														Generate Learning Path
+													</Button>
+												</Form.Item>
+											</div>
+
+											{!pagesummary && (
+												<div className="learn-compose-tip">
+													<MdAutoAwesome size={13} className="learn-compose-tip-icon" />
+													<span>AI generates a week-by-week or skill-by-skill plan from your input — the more detail you add, the sharper the path.</span>
+												</div>
+											)}
+										</Form>
+									</div>
 								</div>
 							</div>
 						</div>
@@ -1011,7 +984,7 @@ const Learn = () => {
 							/>
 						)}
 
-						<div className="learn-next-path-section learn-next-path-graph gx-timeline-section gx-timeline-center gx-pt-3 gx-pb-2 gx-px-3 gx-m-0">
+						<div className="learn-next-path-section learn-next-path-graph gx-timeline-section gx-timeline-center gx-pt-2 gx-pb-2 gx-px-3 gx-m-0">
 							<div className="learn-next-path-panel-header dash-next-toolbar dash-next-paths-header">
 								<div className="learn-next-path-panel-header-row gx-d-flex gx-align-items-center gx-justify-content-between gx-w-100">
 									<div className="gx-d-flex gx-align-items-center learn-next-path-panel-heading" style={{ gap: 14 }}>
@@ -1075,7 +1048,7 @@ const Learn = () => {
 											key={index}
 										>
 											<div className="gx-timeline-time gx-font-weight-semi-bold" style={{ padding: '5px !important' }}>
-												{selectedMode === 'SKILL' ? `Skill - ${index + 1}` : selectedMode === 'HOUR' ? `~${Math.max(1, Math.round((item?.weeks || 1) * 8))}h` : `${item?.weeks}`}
+												{selectedMode === 'SKILL' ? `Skill - ${index + 1}` : selectedMode === 'HOUR' ? `~${Math.max(1, Math.round((item?.duration_minutes || 60) / 60))}h` : `${item?.weeks}`}
 											</div>
 											{/* <div className="gx-timeline-time gx-font-weight-semi-bold" style={{ padding: '5px !important' }}>
 												{item?.weeks}
@@ -1108,7 +1081,9 @@ const Learn = () => {
 																		<PiTimerFill size={11} />
 																		{item?.hours
 																			? `${item.hours} hrs`
-																			: selectedMode === 'WEEK' || selectedMode === 'HOUR'
+																			: selectedMode === 'HOUR'
+																			? `~${Math.max(1, Math.round((item?.duration_minutes || 60) / 60))} hrs`
+																			: selectedMode === 'WEEK'
 																			? `~${Math.max(1, Math.round((item?.weeks || 1) * 8))} hrs`
 																			: '~6 hrs'}
 																	</span>
@@ -1558,7 +1533,9 @@ const Learn = () => {
 									<PiTimerFill size={12} />
 									{modalContent?.hours
 										? `${modalContent.hours} hrs`
-										: selectedMode === 'WEEK' || selectedMode === 'HOUR'
+										: selectedMode === 'HOUR'
+										? `~${Math.max(1, Math.round((modalContent?.duration_minutes || 60) / 60))} hrs`
+										: selectedMode === 'WEEK'
 										? `~${Math.max(1, Math.round((parseInt(modalContent?.weeks) || 1) * 8))} hrs`
 										: '~6 hrs'}
 								</span>
@@ -1892,7 +1869,10 @@ const Learn = () => {
 											company: summaryNote?.company,
 											requiredSkills: Array.isArray(summaryNote?.required_skills) && summaryNote?.required_skills.length > 0 ? summaryNote?.required_skills : null,
 											optionalSkills: Array.isArray(summaryNote?.optional_skills) && summaryNote?.optional_skills.length > 0 ? summaryNote?.optional_skills : null,
-											jdId: JDID
+											jdId: JDID,
+											mode: selectedMode === 'WEEK' ? 'weekly' : selectedMode === 'SKILL' ? 'skill' : 'hourly',
+											...(selectedMode === 'HOUR' && totalHours !== null ? { hours_available: totalHours } : {}),
+											current_level: 'beginner'
 										}));
 										setGenerateModal(false);
 										setPagesummary(summaryNote?.summary);

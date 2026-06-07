@@ -10265,6 +10265,15 @@ body.tracker-dragging * { cursor: grabbing !important; }
 	min-height: 420px;
 }
 
+/* Mute progress dots on the page */
+.application-tracker-page .tracker-kanban-progress-dot {
+	background: #cbd5e1 !important;
+	box-shadow: none !important;
+}
+.application-tracker-page .tracker-kanban-progress-line {
+	background: #e2e8f0 !important;
+}
+
 /* Muted stage pills, card shadow, meta chips — page + modal */
 .application-tracker-page .tracker-kanban-card-stage-pill,
 .tracker-kanban-modal-wrap .tracker-kanban-card-stage-pill {

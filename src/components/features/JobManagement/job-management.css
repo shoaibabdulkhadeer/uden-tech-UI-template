@@ -311,7 +311,7 @@
 }
 
 .view-tab:hover:not(.view-tab--active) {
-	background: rgba(99, 102, 241, 0.07);
+	background: rgba(15, 23, 42, 0.06);
 	color: #334155;
 }
 
@@ -339,24 +339,13 @@
 }
 
 .view-tab--indigo.view-tab--active {
-	background: linear-gradient(135deg, #6366f1 0%, #7c3aed 100%);
+	background: #2563eb;
 	color: #fff;
-	box-shadow: 0 3px 12px rgba(99,102,241,0.4), inset 0 1px 0 rgba(255,255,255,0.15);
+	box-shadow: none;
 }
 
 .view-tab--active::after {
-	content: '';
-	position: absolute;
-	top: 0; left: 0;
-	width: 55%; height: 100%;
-	background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.28) 50%, transparent 100%);
-	transform: translateX(-160%);
-	animation: admin-tab-shimmer 2.6s ease-in-out infinite;
-	pointer-events: none;
-}
-@keyframes admin-tab-shimmer {
-	from { transform: translateX(-160%); }
-	to   { transform: translateX(300%); }
+	display: none;
 }
 
 body.dark-theme .view-tabs {
@@ -399,14 +388,14 @@ body.dark-theme .view-tab:hover:not(.view-tab--active) {
 
 /* Violet active variant (Activity Monitor) */
 .view-tab--violet.view-tab--active {
-	background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
+	background: #2563eb;
 	color: #fff;
-	box-shadow: 0 3px 12px rgba(139, 92, 246, 0.4), inset 0 1px 0 rgba(255,255,255,0.15);
+	box-shadow: none;
 }
 
 .view-tab--violet:hover:not(.view-tab--active) {
-	background: rgba(139, 92, 246, 0.07);
-	color: #7c3aed;
+	background: rgba(37, 99, 235, 0.07);
+	color: #334155;
 }
 
 /* ── Enhanced toolbar ──────────────────────────────────────── */
@@ -476,52 +465,38 @@ body.dark-theme .view-tab:hover:not(.view-tab--active) {
 }
 
 .admin-nexus-add-btn {
-	height: 38px !important;
-	padding: 0 20px !important;
-	border-radius: 12px !important;
-	font-weight: 700 !important;
-	font-size: 13px !important;
+	height: 30px !important;
+	padding: 0 14px !important;
+	border-radius: 7px !important;
+	font-weight: 500 !important;
+	font-size: 12px !important;
 	display: inline-flex !important;
 	align-items: center !important;
-	gap: 7px !important;
+	gap: 6px !important;
 	white-space: nowrap;
 	flex-shrink: 0;
-	background: linear-gradient(135deg, #6366f1 0%, #7c3aed 100%) !important;
+	background: #2563eb !important;
 	border: none !important;
-	box-shadow: 0 4px 14px rgba(99, 102, 241, 0.4), inset 0 1px 0 rgba(255,255,255,0.15) !important;
-	letter-spacing: -0.01em;
+	box-shadow: none !important;
+	letter-spacing: 0;
 	position: relative;
 	overflow: hidden;
-	transition: box-shadow 0.2s ease, transform 0.2s ease, opacity 0.2s ease !important;
+	transition: background 0.15s ease !important;
 }
 
-.admin-nexus-add-btn::before {
-	content: '';
-	position: absolute;
-	top: 0; left: -60%;
-	width: 50%; height: 100%;
-	background: linear-gradient(90deg, transparent, rgba(255,255,255,0.22), transparent);
-	transform: skewX(-15deg);
-	animation: add-btn-shimmer 3s ease-in-out infinite;
-	pointer-events: none;
-}
-
-@keyframes add-btn-shimmer {
-	0%   { left: -60%; opacity: 0; }
-	15%  { opacity: 1; }
-	60%  { left: 130%; opacity: 0.8; }
-	100% { left: 130%; opacity: 0; }
-}
+.admin-nexus-add-btn::before { display: none; }
 
 .admin-nexus-add-btn:hover {
-	transform: translateY(-1px) !important;
-	box-shadow: 0 8px 24px rgba(99, 102, 241, 0.5), inset 0 1px 0 rgba(255,255,255,0.2) !important;
-	opacity: 0.95 !important;
+	background: #1d4ed8 !important;
+	transform: none !important;
+	box-shadow: none !important;
+	opacity: 1 !important;
 }
 
 .admin-nexus-add-btn:active {
-	transform: translateY(0px) !important;
-	box-shadow: 0 2px 8px rgba(99, 102, 241, 0.35) !important;
+	background: #1e40af !important;
+	transform: none !important;
+	box-shadow: none !important;
 }
 
 /* Tabs Content Area */
@@ -1561,10 +1536,10 @@ body.dark-theme .js-chip-group--violet .js-chip--active {
 }
 
 .admin-role-title {
-	font-size: 15px;
-	font-weight: 700;
+	font-size: 14px;
+	font-weight: 500;
 	color: #2563eb;
-	letter-spacing: -0.02em;
+	letter-spacing: -0.01em;
 }
 
 .admin-role-verified {
@@ -1574,7 +1549,7 @@ body.dark-theme .js-chip-group--violet .js-chip--active {
 	padding: 2px 8px;
 	border-radius: 999px;
 	font-size: 11px;
-	font-weight: 700;
+	font-weight: 500;
 	background: rgba(16, 185, 129, 0.1);
 	color: #059669;
 	border: 1px solid rgba(16, 185, 129, 0.2);
@@ -1587,7 +1562,7 @@ body.dark-theme .js-chip-group--violet .js-chip--active {
 	padding: 2px 8px;
 	border-radius: 999px;
 	font-size: 11px;
-	font-weight: 700;
+	font-weight: 500;
 	background: rgba(148, 163, 184, 0.1);
 	color: #64748b;
 	border: 1px solid rgba(148, 163, 184, 0.2);
@@ -1599,8 +1574,9 @@ body.dark-theme .js-chip-group--violet .js-chip--active {
 	align-items: center;
 	flex-wrap: wrap;
 	gap: 4px;
-	font-size: 13px;
-	color: #334155;
+	font-size: 12.5px;
+	font-weight: 400;
+	color: #64748b;
 	margin: 0 0 8px;
 }
 
@@ -1615,8 +1591,8 @@ body.dark-theme .js-chip-group--violet .js-chip--active {
 }
 
 .admin-role-salary {
-	font-weight: 700;
-	color: #6366f1;
+	font-weight: 500;
+	color: #475569;
 }
 
 /* Description */
@@ -1645,10 +1621,10 @@ body.dark-theme .js-chip-group--violet .js-chip--active {
 	padding: 3px 10px;
 	border-radius: 999px;
 	font-size: 11.5px;
-	font-weight: 600;
-	background: rgba(99, 102, 241, 0.07);
-	color: #4f46e5;
-	border: 1px solid rgba(99, 102, 241, 0.18);
+	font-weight: 400;
+	background: #f1f5f9;
+	color: #475569;
+	border: 1px solid #e2e8f0;
 }
 
 /* Footer row */
@@ -2523,8 +2499,8 @@ body.dark-theme .afc-skill-tag {
 	align-items: center;
 	gap: 14px;
 	padding: 22px 24px 18px;
-	background: linear-gradient(135deg, rgba(99, 102, 241, 0.06) 0%, rgba(139, 92, 246, 0.04) 100%);
-	border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+	background: #fff;
+	border-bottom: 1px solid #f1f5f9;
 	position: relative;
 }
 
@@ -2532,23 +2508,23 @@ body.dark-theme .afc-skill-tag {
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	width: 42px;
-	height: 42px;
-	border-radius: 12px;
-	background: linear-gradient(135deg, #6366f1, #7c3aed);
+	width: 36px;
+	height: 36px;
+	border-radius: 10px;
+	background: #2563eb;
 	color: #fff;
 	flex-shrink: 0;
-	box-shadow: 0 6px 18px rgba(99, 102, 241, 0.35);
+	box-shadow: none;
 }
 
 .arm-header-text { flex: 1; min-width: 0; }
 
 .arm-header-title {
-	font-size: 16px;
-	font-weight: 700;
+	font-size: 15px;
+	font-weight: 600;
 	color: #0f172a;
 	margin: 0 0 2px;
-	letter-spacing: -0.02em;
+	letter-spacing: -0.01em;
 }
 
 .arm-header-sub {
@@ -2616,8 +2592,8 @@ body.dark-theme .afc-skill-tag {
 .arm-form .ant-input:focus,
 .arm-form .ant-input-affix-wrapper-focused,
 .arm-form .ant-input-affix-wrapper:focus-within {
-	border-color: #6366f1 !important;
-	box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1) !important;
+	border-color: #2563eb !important;
+	box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.08) !important;
 }
 
 .arm-textarea {
@@ -2629,8 +2605,8 @@ body.dark-theme .afc-skill-tag {
 	resize: vertical !important;
 }
 .arm-form textarea:focus {
-	border-color: #6366f1 !important;
-	box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1) !important;
+	border-color: #2563eb !important;
+	box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.08) !important;
 }
 
 .arm-form .ant-select .ant-select-selector {
@@ -2641,8 +2617,8 @@ body.dark-theme .afc-skill-tag {
 	font-family: 'Outfit', sans-serif !important;
 }
 .arm-form .ant-select-focused .ant-select-selector {
-	border-color: #6366f1 !important;
-	box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1) !important;
+	border-color: #2563eb !important;
+	box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.08) !important;
 }
 
 /* ── Footer ── */
@@ -2676,21 +2652,22 @@ body.dark-theme .afc-skill-tag {
 	display: inline-flex;
 	align-items: center;
 	gap: 6px;
-	padding: 9px 22px;
-	border-radius: 10px;
+	padding: 8px 20px;
+	border-radius: 8px;
 	border: none;
-	background: linear-gradient(135deg, #6366f1, #7c3aed);
+	background: #2563eb;
 	color: #fff;
 	font-size: 13px;
-	font-weight: 700;
+	font-weight: 500;
 	cursor: pointer;
 	font-family: 'Outfit', sans-serif;
-	box-shadow: 0 4px 14px rgba(99, 102, 241, 0.35);
-	transition: box-shadow 0.2s, opacity 0.2s;
+	box-shadow: none;
+	transition: background 0.15s;
 }
 .arm-btn-submit:hover {
-	box-shadow: 0 6px 20px rgba(99, 102, 241, 0.45);
-	opacity: 0.93;
+	background: #1d4ed8;
+	box-shadow: none;
+	opacity: 1;
 }
 
 /* ── Dark mode ── */

@@ -440,17 +440,19 @@ const Dashboard = () => {
 						<DashboardPageHeadArt />
 					</div>
 					<div className="dash-next-page-head-copy">
-						<div className="gx-mb-2" style={{ display: 'flex', gap: 8 }}>
-							<div className="genz-pill vibrant">
+						<div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+							<h1 className="dash-next-page-title" style={{ margin: 0 }}>
+								Intelligence Dashboard
+							</h1>
+							<div className="genz-pill vibrant genz-pill--sm">
 								<MdAutoAwesome className="genz-icon" />
 								AI Systems Live
 							</div>
-							<div className="genz-pill glow">
+							<div className="genz-pill glow genz-pill--sm">
 								<div className="dot" />
 								Uden Tech Core
 							</div>
 						</div>
-						<h1 className="dash-next-page-title">Intelligence Dashboard</h1>
 						<p className="dash-next-page-lead">
 							Real-time monitoring of your career trajectory and learning velocity.
 						</p>
@@ -1030,56 +1032,27 @@ const Dashboard = () => {
 			{/* </div> */}
 
 			<div className="learning-path-section dash-next-paths">
-				<header className="dash-next-toolbar dash-next-paths-header dash-next-paths-header--with-hero gx-d-flex gx-align-items-center gx-justify-content-between gx-flex-wrap">
-					<div className="dash-next-paths-header-lead gx-d-flex gx-flex-wrap gx-align-items-center">
-						<div className="dash-next-paths-header-block">
-							<p className="dash-next-paths-header-eyebrow gx-m-0 gx-p-0">Path library</p>
-							<div className="dash-next-paths-header-title-row gx-d-flex gx-align-items-center gx-flex-wrap">
-								<span className="dash-next-paths-header-icon" aria-hidden>
-									<MdComputer className="dash-next-paths-header-svg" />
-								</span>
-								<div className="dash-next-paths-header-heading-group">
-									<div className="dash-next-paths-header-label-row gx-d-flex gx-align-items-center gx-flex-wrap">
-										<span className="dash-next-paths-header-label">My Learning Paths</span>
-										{DUMMY_LEARNING_PATHS && (
-											<Tag color="purple" className="gx-mb-0 dash-next-paths-header-tag" style={{ fontSize: 11 }}>
-												Preview data
-											</Tag>
-										)}
-									</div>
+				<header className="dash-next-toolbar dash-next-paths-header gx-d-flex gx-align-items-center gx-justify-content-between gx-flex-wrap" style={{ gap: 12 }}>
+					<div className="dash-next-paths-header-block">
+						<p className="dash-next-paths-header-eyebrow gx-m-0 gx-p-0">Path library</p>
+						<div className="dash-next-paths-header-title-row gx-d-flex gx-align-items-center gx-flex-wrap">
+							<span className="dash-next-paths-header-icon" aria-hidden>
+								<MdComputer className="dash-next-paths-header-svg" />
+							</span>
+							<div className="dash-next-paths-header-heading-group">
+								<div className="dash-next-paths-header-label-row gx-d-flex gx-align-items-center gx-flex-wrap">
+									<span className="dash-next-paths-header-label">My Learning Paths</span>
+									{DUMMY_LEARNING_PATHS && (
+										<Tag color="purple" className="gx-mb-0 dash-next-paths-header-tag" style={{ fontSize: 11 }}>
+											Preview data
+										</Tag>
+									)}
 								</div>
 							</div>
-							<p className="dash-next-paths-header-sub gx-m-0 gx-p-0">
-								Browse and search every journey you&apos;ve started—your featured path stays on top, then the rest of your list.
-							</p>
 						</div>
-						<div className="dash-next-paths-header-visual" aria-hidden>
-							{/* Raster only appears after a successful load; otherwise the colorful SVG shows (no broken / black img overlay). */}
-							<picture className="dash-next-paths-hero-picture dash-next-paths-hero-picture--missing">
-								<source
-									type="image/avif"
-									srcSet={`${process.env.PUBLIC_URL}/assets/images/ai-learning-path-cluster.avif`}
-								/>
-								<img
-									className="dash-next-paths-hero-img"
-									src={`${process.env.PUBLIC_URL}/assets/images/ai-learning-path-cluster.png`}
-									alt=""
-									width={132}
-									height={132}
-									loading="lazy"
-									decoding="async"
-									onLoad={(e) => {
-										const pic = e.currentTarget.closest('.dash-next-paths-hero-picture');
-										pic?.classList.remove('dash-next-paths-hero-picture--missing');
-									}}
-									onError={(e) => {
-										const pic = e.currentTarget.closest('.dash-next-paths-hero-picture');
-										pic?.classList.add('dash-next-paths-hero-picture--missing');
-									}}
-								/>
-							</picture>
-							<AiLearningPathsHeroArt className="dash-next-paths-hero-svg" />
-						</div>
+						<p className="dash-next-paths-header-sub gx-m-0 gx-p-0">
+							Browse and search every journey you&apos;ve started—your featured path stays on top, then the rest of your list.
+						</p>
 					</div>
 
 					<Search
