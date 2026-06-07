@@ -1,6 +1,6 @@
-﻿import { message, Spin } from 'antd';
+﻿import { message, Pagination, Spin } from 'antd';
 import { easeInOut, motion } from 'framer-motion';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import ReactDOM from 'react-dom';
 import {
 	MdDelete,
@@ -9,6 +9,9 @@ import {
 	MdListAlt,
 	MdPsychology,
 	MdSend,
+	MdSyncAlt,
+	MdViewList,
+	MdViewModule,
 } from 'react-icons/md';
 import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch } from '../../../redux/store';
@@ -24,6 +27,7 @@ import '../../../styles/phase2-theme.css';
 import '../../../styles/dashboard-nextgen.css';
 
 const TRACKER_PAGE_LIMIT = 10;
+const TRACKER_INITIAL_LIMIT = 40;
 const KANBAN_STAGES = ['applied', 'screening', 'interview', 'offer'] as const;
 type KanbanStage = typeof KANBAN_STAGES[number];
 
@@ -102,6 +106,13 @@ const ApplicationTracker = () => {
 
 	// Redux
 	const { trackerData, status: trackerStatus, error: trackerError } = useSelector((s: any) => s.trackerReducer);
+	const { savedJobsData } = useSelector((s: any) => s.getSavedJobsReducer);
+
+	// Derive saved IDs from Redux (populated by JobPreviewModal or JobSearch)
+	const savedIds: Set<string> = useMemo(() => {
+		const raw: any[] = savedJobsData?.data?.saved_jobs ?? [];
+		return new Set(raw.map((e: any) => e.job?.job_id ?? e.job?.id ?? e.job?._id).filter(Boolean));
+	}, [savedJobsData]);
 	const { deleteTrackerData, status: deleteTrackerStatus, error: deleteTrackerError } = useSelector((s: any) => s.deleteTrackerReducer);
 	const { updateTrackerData, status: updateTrackerStatus, error: updateTrackerError } = useSelector((s: any) => s.updateTrackerReducer);
 
@@ -121,10 +132,25 @@ const ApplicationTracker = () => {
 	const [dragPos, setDragPos]       = useState<{ x: number; y: number } | null>(null);
 	const [dragMeta, setDragMeta]     = useState<{ offsetX: number; offsetY: number; w: number; h: number } | null>(null);
 	const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+	const [trackerView, setTrackerView]     = useState<'kanban' | 'progress'>('kanban');
+	const [progressTab, setProgressTab]     = useState<KanbanStage>('applied');
+	const [progressPage, setProgressPage]   = useState<Record<KanbanStage, number>>({ applied: 1, screening: 1, interview: 1, offer: 1 });
+	const PROGRESS_PAGE_SIZE = 10;
+
+	// Auto-fetch more when switching progress tabs if that tab is empty
+	useEffect(() => {
+		if (trackerView !== 'progress') return;
+		const tabCount = trackerJobs.filter(j => (appStages[j.id] ?? 'applied') === progressTab).length;
+		if (tabCount === 0 && trackerJobs.length < trackerTotal && !trackerStatus && !trackerLoadingMore) {
+			setTrackerLoadingMore(true);
+			dispatch(getTrackerApplications({ pageId: trackerPage + 1, pageLimit: TRACKER_PAGE_LIMIT }));
+		}
+	// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [progressTab, trackerView]);
 
 	// Initial fetch
 	useEffect(() => {
-		dispatch(getTrackerApplications({ pageId: 1, pageLimit: TRACKER_PAGE_LIMIT }));
+		dispatch(getTrackerApplications({ pageId: 1, pageLimit: TRACKER_INITIAL_LIMIT }));
 	// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, []);
 
@@ -267,12 +293,12 @@ const ApplicationTracker = () => {
 
 				{/* ── Page Header ── */}
 				<header className="dash-next-page-head">
-					<div className="dash-next-page-head-row">
+					<div className="dash-next-page-head-row" style={{ alignItems: 'center' }}>
 						<div className="dash-next-page-head-art-wrap">
 							<DashboardPageHeadArt />
 						</div>
 						<div className="dash-next-page-head-copy">
-							<div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+							<div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
 								<h1 className="dash-next-page-title" style={{ margin: 0 }}>Application Tracker</h1>
 								<span style={{
 									display: 'inline-flex', alignItems: 'center', gap: 5,
@@ -287,6 +313,22 @@ const ApplicationTracker = () => {
 								Track every application across the full hiring pipeline — drag cards between stages to update your progress in real time.
 							</p>
 						</div>
+						{/* View toggle — pinned to right */}
+						<div style={{ display: 'flex', alignItems: 'center', gap: 10, marginLeft: 'auto', flexShrink: 0 }}>
+							{trackerView === 'kanban' && (
+								<span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#94a3b8' }}>
+									<MdSyncAlt size={13} /> Drag &amp; drop
+								</span>
+							)}
+							<div style={{ display: 'flex', background: '#f1f5f9', borderRadius: 8, padding: 3, gap: 2 }}>
+								<button type="button" onClick={() => setTrackerView('kanban')} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 12px', borderRadius: 6, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600, background: trackerView === 'kanban' ? '#fff' : 'transparent', color: trackerView === 'kanban' ? '#0f172a' : '#64748b', boxShadow: trackerView === 'kanban' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none', transition: 'all 0.15s', fontFamily: 'inherit' }}>
+									<MdViewModule size={14} /> Kanban
+								</button>
+								<button type="button" onClick={() => setTrackerView('progress')} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 12px', borderRadius: 6, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600, background: trackerView === 'progress' ? '#fff' : 'transparent', color: trackerView === 'progress' ? '#0f172a' : '#64748b', boxShadow: trackerView === 'progress' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none', transition: 'all 0.15s', fontFamily: 'inherit' }}>
+									<MdViewList size={14} /> Progress
+								</button>
+							</div>
+						</div>
 					</div>
 				</header>
 
@@ -298,7 +340,7 @@ const ApplicationTracker = () => {
 				>
 					<div className="tracker-kanban application-tracker-page" style={{ padding: '0 4px' }}>
 
-						{/* Columns */}
+						{trackerView === 'kanban' && (
 						<div className="tracker-kanban-columns">
 							{KANBAN_STAGES.map((stage) => {
 								const cfg = STAGE_CFG[stage];
@@ -454,6 +496,118 @@ const ApplicationTracker = () => {
 								);
 							})}
 						</div>
+						)}
+
+						{trackerView === 'progress' && (() => {
+							const allTabJobs = trackerJobs.filter(j => (appStages[j.id] ?? 'applied') === progressTab);
+							const currentPage = progressPage[progressTab];
+							const tabJobs = allTabJobs.slice((currentPage - 1) * PROGRESS_PAGE_SIZE, currentPage * PROGRESS_PAGE_SIZE);
+							const tabCfg = STAGE_CFG[progressTab];
+							return (
+							<div style={{ padding: '12px 0', display: 'flex', flexDirection: 'column', gap: 12 }}>
+								{/* Stage tabs */}
+								<div style={{ display: 'flex', gap: 4, borderBottom: '1px solid #f1f5f9', paddingBottom: 10 }}>
+									{KANBAN_STAGES.map(s => {
+										const sCfg = STAGE_CFG[s];
+										const count = trackerJobs.filter(j => (appStages[j.id] ?? 'applied') === s).length;
+										const isActive = s === progressTab;
+										return (
+											<button key={s} type="button"
+												onClick={() => { setProgressTab(s); setProgressPage(prev => ({ ...prev, [s]: 1 })); }}
+												style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '6px 14px', borderRadius: 8, border: isActive ? `1px solid ${sCfg.border}` : '1px solid transparent', background: isActive ? sCfg.bg : 'transparent', color: isActive ? sCfg.color : '#64748b', fontSize: 12, fontWeight: isActive ? 700 : 500, cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.15s' }}>
+												{sCfg.icon} {sCfg.label}
+												<span style={{ minWidth: 18, height: 18, borderRadius: 999, background: isActive ? sCfg.color : '#e2e8f0', color: isActive ? '#fff' : '#64748b', fontSize: 10, fontWeight: 700, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: '0 4px' }}>{count}</span>
+											</button>
+										);
+									})}
+								</div>
+
+								{/* Job list for selected tab */}
+								{tabJobs.length === 0 ? (
+									<div style={{ textAlign: 'center', padding: '32px 0', color: '#94a3b8', fontSize: 13 }}>
+										<span style={{ fontSize: 28, display: 'block', marginBottom: 8, opacity: 0.4 }}>{tabCfg.icon}</span>
+										No applications in {tabCfg.label}
+									</div>
+								) : tabJobs.map((job) => {
+									const stage = appStages[job.id] ?? 'applied';
+									const cfg = STAGE_CFG[stage];
+									const currentIdx = KANBAN_STAGES.indexOf(stage);
+									const nextStage = currentIdx < KANBAN_STAGES.length - 1 ? KANBAN_STAGES[currentIdx + 1] : null;
+									const nextCfg = nextStage ? STAGE_CFG[nextStage] : null;
+									return (
+										<div key={job.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px', background: '#fff', borderRadius: 10, border: '1px solid #f1f5f9', boxShadow: '0 1px 3px rgba(15,23,42,0.05)' }}>
+											{/* Logo */}
+											<div style={{ width: 38, height: 38, borderRadius: 9, flexShrink: 0, background: `linear-gradient(135deg, hsl(${job.logoHue},70%,52%), hsl(${job.logoHue+40},65%,42%))`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700, fontSize: 15 }}>
+												{job.company.charAt(0)}
+											</div>
+											{/* Info */}
+											<div style={{ flex: 1, minWidth: 0 }}>
+												<p style={{ margin: '0 0 2px', fontSize: 13, fontWeight: 600, color: '#0f172a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{job.title}</p>
+												<p style={{ margin: 0, fontSize: 11.5, color: '#64748b', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{job.company}{job.location ? ` · ${job.location}` : ''}</p>
+											</div>
+											{/* Progress dots */}
+											<div style={{ display: 'flex', alignItems: 'center', gap: 0, flexShrink: 0 }}>
+												{KANBAN_STAGES.map((s, si) => {
+													const isActive = s === stage;
+													const isPast = si < currentIdx;
+													const sCfg = STAGE_CFG[s];
+													return (
+														<div key={s} style={{ display: 'flex', alignItems: 'center' }}>
+															<div style={{ width: 8, height: 8, borderRadius: '50%', background: isActive ? sCfg.color : isPast ? '#10b981' : '#e2e8f0', boxShadow: isActive ? `0 0 0 2px ${sCfg.bg}` : 'none', flexShrink: 0, transition: 'background 0.2s' }} />
+															{si < KANBAN_STAGES.length - 1 && <div style={{ width: 16, height: 2, background: isPast ? '#10b981' : '#e2e8f0', flexShrink: 0 }} />}
+														</div>
+													);
+												})}
+											</div>
+											{/* Stage badge */}
+											<span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '3px 9px', borderRadius: 20, fontSize: 11, fontWeight: 600, background: cfg.bg, color: cfg.color, border: `1px solid ${cfg.border}`, flexShrink: 0 }}>
+												{cfg.icon} {cfg.label}
+											</span>
+											{/* View button */}
+											<button
+												type="button"
+												style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '4px 10px', borderRadius: 6, border: '1px solid #e2e8f0', background: '#fff', color: '#2563eb', fontSize: 11, fontWeight: 500, cursor: 'pointer', flexShrink: 0, fontFamily: 'inherit' }}
+												onClick={() => setPreviewJob(job)}
+											>
+												<MdDescription size={12} /> View
+											</button>
+											{/* Move to next stage */}
+											{nextCfg && nextStage && (
+												<button
+													type="button"
+													style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '4px 10px', borderRadius: 6, border: `1px solid ${nextCfg.border}`, background: nextCfg.bg, color: nextCfg.color, fontSize: 11, fontWeight: 600, cursor: 'pointer', flexShrink: 0, fontFamily: 'inherit' }}
+													onClick={() => {
+														setAppStages(prev => ({ ...prev, [job.id]: nextStage }));
+														const tid = trackerIdMap[job.id];
+														if (tid) dispatch(updateTracker({ trackerId: tid, status: API_STATUS_MAP[nextStage] as any }));
+													}}
+												>
+													{nextCfg.icon} Move to {nextCfg.label}
+												</button>
+											)}
+										</div>
+									);
+								})}
+
+								{trackerLoadingMore ? (
+									<div style={{ textAlign: 'center', paddingTop: 8, color: '#94a3b8', fontSize: 12 }}>
+										<Spin size="small" /> Loading…
+									</div>
+								) : allTabJobs.length > PROGRESS_PAGE_SIZE && (
+									<div style={{ display: 'flex', justifyContent: 'center', paddingTop: 12 }}>
+										<Pagination
+											current={currentPage}
+											pageSize={PROGRESS_PAGE_SIZE}
+											total={allTabJobs.length}
+											size="small"
+											showSizeChanger={false}
+											onChange={(page) => setProgressPage(prev => ({ ...prev, [progressTab]: page }))}
+										/>
+									</div>
+								)}
+							</div>
+							);
+						})()}
 					</div>
 				</motion.div>
 
