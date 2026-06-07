@@ -1,4 +1,9 @@
-import { FETCH_ERROR, FETCH_START, FETCH_SUCCESS, HIDE_MESSAGE, SHOW_MESSAGE } from "../../constants/ActionTypes";
+import { FETCH_ERROR, FETCH_START, FETCH_SUCCESS, HIDE_MESSAGE, SHOW_MESSAGE, SET_SIDEBAR_COLLAPSED } from "../../constants/ActionTypes";
+
+export const setSidebarCollapsed = (sidebarCollapsed: boolean) => ({
+  type: SET_SIDEBAR_COLLAPSED,
+  sidebarCollapsed,
+});
 
 
 

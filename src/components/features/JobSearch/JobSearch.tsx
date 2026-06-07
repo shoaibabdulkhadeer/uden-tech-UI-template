@@ -1,4 +1,4 @@
-import { Alert, Avatar, Button, Checkbox, Drawer, Empty, Input, message, Modal, notification, Radio, Segmented, Select, Skeleton, Spin, Tabs, Tooltip, Upload } from 'antd';
+﻿import { Alert, Avatar, Button, Checkbox, Drawer, Empty, Input, message, Modal, notification, Radio, Segmented, Select, Skeleton, Spin, Tabs, Tooltip, Upload } from 'antd';
 import { CheckCircleFilled, InboxOutlined, InfoCircleTwoTone } from '@ant-design/icons';
 import { FaRegSnowflake, FaFingerprint } from 'react-icons/fa';
 import { easeInOut, motion } from 'framer-motion';
@@ -247,8 +247,9 @@ function JobSearch() {
 	const [activeView, setActiveView] = useState<ActiveView>('matches');
 	const [empFilter, setEmpFilter] = useState<EmploymentKind[]>([]);
 	const [workFilter, setWorkFilter] = useState<WorkMode[]>([]);
-	const [expFilter, setExpFilter] = useState<string | undefined>(undefined);
-	const [sectorFilter, setSectorFilter] = useState<string | undefined>(undefined);
+	const [expFilter, setExpFilter]         = useState<string | undefined>(undefined);
+	const [sectorFilter, setSectorFilter]   = useState<string | undefined>(undefined);
+	const [currencyFilter, setCurrencyFilter] = useState<string | undefined>(undefined);
 	const [skillsFilter, setSkillsFilter] = useState<string[]>([]);
 	const [skillInput, setSkillInput] = useState('');
 	const [locationResetKey, setLocationResetKey] = useState(0);
@@ -271,6 +272,7 @@ function JobSearch() {
 	const [dragOverCol, setDragOverCol] = useState<string | null>(null);
 	const [dragPos, setDragPos] = useState<{x:number;y:number} | null>(null);
 	const [dragMeta, setDragMeta] = useState<{offsetX:number;offsetY:number;w:number;h:number} | null>(null);
+	const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 	const TRACKER_PAGE_LIMIT = 10;
 	const [dismissedIds, setDismissedIds] = useState<Set<string>>(() => new Set());
 	const [previewJob, setPreviewJob] = useState<JobItem | null>(null);
@@ -1125,7 +1127,8 @@ function JobSearch() {
 		sectorFilter != null,
 		skillsFilter.length > 0,
 		locationFilter.city.trim() !== '' || locationFilter.country.trim() !== '',
-	].filter(Boolean).length, [empFilter, workFilter, expFilter, sectorFilter, skillsFilter, locationFilter]);
+		currencyFilter != null,
+	].filter(Boolean).length, [empFilter, workFilter, expFilter, sectorFilter, skillsFilter, locationFilter, currencyFilter]);
 
 	const handleFindJobs = useCallback(() => {
 		// Allow search when: title typed OR (resume/JD + at least one filter)
@@ -1220,6 +1223,7 @@ function JobSearch() {
 				employmentType:   item.job_type || item.employment_type || '',
 				posted:           item.posted_date || item.posted_at || item.postedAt || 'Recently',
 				salary,
+				currency:         item.currency || item.salary_currency || undefined,
 				experience:       item.experience || item.experience_level || undefined,
 				applyUrl:         item.apply_url || item.applyUrl || item.source_url || undefined,
 				description:      item.description_summary || item.description || item.job_description || '',
@@ -1259,6 +1263,7 @@ function JobSearch() {
 			experience_level: mapExpLevel(expFilter),
 			location:         locationStr,
 			skills:           skillsFilter.length ? skillsFilter : undefined,
+			currency:         currencyFilter || undefined,
 		};
 		const filters = Object.fromEntries(
 			Object.entries(rawFilters).filter(([, v]) => v !== undefined && v !== null)
@@ -1303,6 +1308,7 @@ function JobSearch() {
 		setWorkFilter([]);
 		setExpFilter(undefined);
 		setSectorFilter(undefined);
+		setCurrencyFilter(undefined);
 		setSkillsFilter([]);
 		setSkillInput('');
 		setPastedJd('');
@@ -1561,6 +1567,95 @@ function JobSearch() {
 					{ value: 'freelance',  label: 'Freelance / Contract' },
 				]}
 			/>
+			<p className="job-search-filters-label">
+				<span className="filter-label-icon filter-label-icon--indigo"><MdAttachMoney size={12} /></span>
+				Currency
+			</p>
+			<Select
+				size="small"
+				placeholder="Any currency"
+				value={currencyFilter}
+				onChange={(v) => setCurrencyFilter(v)}
+				allowClear
+				showSearch
+				filterOption={(input, option) =>
+					(option?.label as string ?? '').toLowerCase().includes(input.toLowerCase())
+				}
+				onClear={() => setCurrencyFilter(undefined)}
+				style={{ width: '100%' }}
+				className="job-search-exp-select"
+				popupClassName="js-select-dropdown"
+				transitionName=""
+				optionLabelProp="label"
+			>
+				{[
+					{ value: 'USD', label: 'USD · US Dollar',             symbol: '$'   },
+					{ value: 'EUR', label: 'EUR · Euro',                  symbol: '€'   },
+					{ value: 'GBP', label: 'GBP · British Pound',         symbol: '£'   },
+					{ value: 'INR', label: 'INR · Indian Rupee',          symbol: '₹'   },
+					{ value: 'AED', label: 'AED · UAE Dirham',            symbol: 'د.إ' },
+					{ value: 'SGD', label: 'SGD · Singapore Dollar',      symbol: 'S$'  },
+					{ value: 'CAD', label: 'CAD · Canadian Dollar',       symbol: 'C$'  },
+					{ value: 'AUD', label: 'AUD · Australian Dollar',     symbol: 'A$'  },
+					{ value: 'JPY', label: 'JPY · Japanese Yen',          symbol: '¥'   },
+					{ value: 'CNY', label: 'CNY · Chinese Yuan',          symbol: '¥'   },
+					{ value: 'CHF', label: 'CHF · Swiss Franc',           symbol: 'Fr'  },
+					{ value: 'HKD', label: 'HKD · Hong Kong Dollar',      symbol: 'HK$' },
+					{ value: 'KRW', label: 'KRW · South Korean Won',      symbol: '₩'   },
+					{ value: 'MYR', label: 'MYR · Malaysian Ringgit',     symbol: 'RM'  },
+					{ value: 'IDR', label: 'IDR · Indonesian Rupiah',     symbol: 'Rp'  },
+					{ value: 'PHP', label: 'PHP · Philippine Peso',       symbol: '₱'   },
+					{ value: 'THB', label: 'THB · Thai Baht',             symbol: '฿'   },
+					{ value: 'VND', label: 'VND · Vietnamese Dong',       symbol: '₫'   },
+					{ value: 'TWD', label: 'TWD · Taiwan Dollar',         symbol: 'NT$' },
+					{ value: 'PKR', label: 'PKR · Pakistani Rupee',       symbol: '₨'   },
+					{ value: 'BDT', label: 'BDT · Bangladeshi Taka',      symbol: '৳'   },
+					{ value: 'LKR', label: 'LKR · Sri Lankan Rupee',      symbol: '₨'   },
+					{ value: 'NPR', label: 'NPR · Nepalese Rupee',        symbol: '₨'   },
+					{ value: 'SAR', label: 'SAR · Saudi Riyal',           symbol: '﷼'   },
+					{ value: 'QAR', label: 'QAR · Qatari Riyal',          symbol: '﷼'   },
+					{ value: 'KWD', label: 'KWD · Kuwaiti Dinar',         symbol: 'KD'  },
+					{ value: 'BHD', label: 'BHD · Bahraini Dinar',        symbol: 'BD'  },
+					{ value: 'OMR', label: 'OMR · Omani Rial',            symbol: '﷼'   },
+					{ value: 'EGP', label: 'EGP · Egyptian Pound',        symbol: '£'   },
+					{ value: 'NGN', label: 'NGN · Nigerian Naira',        symbol: '₦'   },
+					{ value: 'KES', label: 'KES · Kenyan Shilling',       symbol: 'KSh' },
+					{ value: 'GHS', label: 'GHS · Ghanaian Cedi',         symbol: '₵'   },
+					{ value: 'ZAR', label: 'ZAR · South African Rand',    symbol: 'R'   },
+					{ value: 'TZS', label: 'TZS · Tanzanian Shilling',    symbol: 'TSh' },
+					{ value: 'TRY', label: 'TRY · Turkish Lira',          symbol: '₺'   },
+					{ value: 'SEK', label: 'SEK · Swedish Krona',         symbol: 'kr'  },
+					{ value: 'NOK', label: 'NOK · Norwegian Krone',       symbol: 'kr'  },
+					{ value: 'DKK', label: 'DKK · Danish Krone',          symbol: 'kr'  },
+					{ value: 'NZD', label: 'NZD · New Zealand Dollar',    symbol: 'NZ$' },
+					{ value: 'PLN', label: 'PLN · Polish Zloty',          symbol: 'zł'  },
+					{ value: 'CZK', label: 'CZK · Czech Koruna',          symbol: 'Kč'  },
+					{ value: 'HUF', label: 'HUF · Hungarian Forint',      symbol: 'Ft'  },
+					{ value: 'RON', label: 'RON · Romanian Leu',          symbol: 'lei' },
+					{ value: 'RUB', label: 'RUB · Russian Ruble',         symbol: '₽'   },
+					{ value: 'UAH', label: 'UAH · Ukrainian Hryvnia',     symbol: '₴'   },
+					{ value: 'ILS', label: 'ILS · Israeli Shekel',        symbol: '₪'   },
+					{ value: 'BRL', label: 'BRL · Brazilian Real',        symbol: 'R$'  },
+					{ value: 'MXN', label: 'MXN · Mexican Peso',          symbol: '$'   },
+					{ value: 'ARS', label: 'ARS · Argentine Peso',        symbol: '$'   },
+					{ value: 'CLP', label: 'CLP · Chilean Peso',          symbol: '$'   },
+					{ value: 'COP', label: 'COP · Colombian Peso',        symbol: '$'   },
+					{ value: 'PEN', label: 'PEN · Peruvian Sol',          symbol: 'S/'  },
+				].map(c => (
+					<Select.Option key={c.value} value={c.value} label={c.label}>
+						<div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+							<span style={{
+								display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+								minWidth: 28, height: 20, borderRadius: 4, padding: '0 4px',
+								background: '#f1f5f9', border: '1px solid #e2e8f0',
+								color: '#475569', fontSize: 10.5, fontWeight: 700, flexShrink: 0,
+								fontFamily: 'monospace',
+							}}>{c.symbol}</span>
+							<span style={{ fontSize: 12, color: '#374151' }}>{c.label}</span>
+						</div>
+					</Select.Option>
+				))}
+			</Select>
 			</div>{/* end js-filter-top-group */}
 			<div className="job-search-filters-divider" />
 			<div className="skill-filter">
@@ -1636,7 +1731,7 @@ function JobSearch() {
 			</Button>
 		</div>
 		</div>
-	), [empFilter, workFilter, expFilter, sectorFilter, skillInput, skillsFilter, locationResetKey, activeFilterCount, filtersJustApplied, showFindTour, resetFilters, handleFindJobs, hasResumeOrJd, titleInput]);
+	), [empFilter, workFilter, expFilter, sectorFilter, currencyFilter, skillInput, skillsFilter, locationResetKey, activeFilterCount, filtersJustApplied, showFindTour, resetFilters, handleFindJobs, hasResumeOrJd, titleInput]);
 
 	return (
 		<>
@@ -1649,17 +1744,17 @@ function JobSearch() {
 							<DashboardPageHeadArt />
 						</div>
 						<div className="dash-next-page-head-copy">
-							<div className="gx-mb-2" style={{ display: 'flex', gap: 8 }}>
-								<div className="genz-pill vibrant">
+							<div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+								<h1 className="dash-next-page-title" style={{ margin: 0 }}>Career Acceleration</h1>
+								<div className="genz-pill vibrant genz-pill--sm">
 									<MdAutoAwesome className="genz-icon" />
 									Active Match Engine
 								</div>
-								<div className="genz-pill glow">
+								<div className="genz-pill glow genz-pill--sm">
 									<div className="dot" />
 									Role Discovery
 								</div>
 							</div>
-							<h1 className="dash-next-page-title">Career Acceleration</h1>
 							<p className="dash-next-page-lead">
 								Your AI-powered career hub — discover roles aligned with your learning path, analyse your resume or paste a job description to surface the best-fit opportunities, and manage your entire job search from one place.
 							</p>
@@ -1787,45 +1882,6 @@ function JobSearch() {
 								<div className="job-search-filters-card-body">{filtersBlock}</div>
 							</section>
 
-							<div className="learn-path-ad-card" role="complementary" aria-label="Upgrade your skills">
-								<div className="learn-path-ad-orb learn-path-ad-orb--1" aria-hidden />
-								<div className="learn-path-ad-orb learn-path-ad-orb--2" aria-hidden />
-								<div className="learn-path-ad-orb learn-path-ad-orb--3" aria-hidden />
-								<div className="learn-path-ad-grid" aria-hidden />
-								<div className="learn-path-ad-body">
-									<div className="learn-path-ad-badge">
-										<MdRocketLaunch size={11} aria-hidden />
-										AI-Powered
-									</div>
-									<h3 className="learn-path-ad-title">
-										Upgrade your<br />
-										<span className="learn-path-ad-title-highlight">skills today</span>
-									</h3>
-									<p className="learn-path-ad-sub">
-										Let AI build a personalised learning path in seconds — tailored to your goals and career.
-									</p>
-									<button
-										type="button"
-										className="learn-path-ad-cta"
-										onClick={() => navigate('/learn')}
-									>
-										<MdAutoAwesome size={14} aria-hidden />
-										<span>Generate Learn Path</span>
-										<span className="learn-path-ad-cta-arrow" aria-hidden>→</span>
-									</button>
-								</div>
-								<div className="learn-path-ad-metrics" aria-hidden>
-									<div className="learn-path-ad-metric">
-										<span className="learn-path-ad-metric-num">2.4k+</span>
-										<span className="learn-path-ad-metric-label">Paths built</span>
-									</div>
-									<div className="learn-path-ad-metric-divider" />
-									<div className="learn-path-ad-metric">
-										<span className="learn-path-ad-metric-num">94%</span>
-										<span className="learn-path-ad-metric-label">Success rate</span>
-									</div>
-								</div>
-							</div>
 
 							<button
 								type="button"
@@ -1871,7 +1927,7 @@ function JobSearch() {
 											className="view-tab view-tab--emerald"
 											onClick={() => { dispatch(getTrackerApplications({ pageId: 1, pageLimit: TRACKER_PAGE_LIMIT })); setShowTrackerKanban(true); }}>
 											<span className="view-tab-icon"><MdSend size={13} /></span>
-											<span className="view-tab-label">Application Tracker</span>
+											<span className="view-tab-label">Quick Application Tracker</span>
 											{appliedIds.size > 0 && <span className="view-tab-count">{appliedIds.size}</span>}
 										</button>
 									</div>
@@ -2529,7 +2585,7 @@ function JobSearch() {
 													{(job.detail.salary || job.detail.posted !== 'Recently') && (
 														<p className="job-search-job-meta-line job-search-job-meta-line--info">
 															{job.detail.salary && (
-																<span className="job-card-salary"><MdAttachMoney size={12} aria-hidden />{job.detail.salary}</span>
+																<span className="job-card-salary"><MdAttachMoney size={12} aria-hidden />{job.detail.currency && !job.detail.salary?.startsWith(job.detail.currency) && <span style={{ fontSize: 10, fontWeight: 600, marginRight: 2, opacity: 0.8 }}>{job.detail.currency}</span>}{job.detail.salary}</span>
 															)}
 															{job.detail.salary && job.detail.posted !== 'Recently' && <span className="job-search-job-dot"> · </span>}
 															{job.detail.posted !== 'Recently' && (
@@ -3390,22 +3446,40 @@ function JobSearch() {
 				open={!!pendingApplyJob}
 				onCancel={() => setPendingApplyJob(null)}
 				footer={null}
-				width={400}
+				width={520}
 				centered
 				closable
+				closeIcon={<IoClose size={18} />}
 				className="apply-confirm-modal"
+				zIndex={1100}
 			>
 				{pendingApplyJob && (
 					<div className="acm-wrap">
-						<div className="acm-icon-ring">
-							<MdRocketLaunch size={24} />
+						{/* Job identity row */}
+						<div className="acm-job-row">
+							<div className="acm-logo" style={{ background: `linear-gradient(135deg, hsl(${pendingApplyJob.logoHue},70%,52%), hsl(${pendingApplyJob.logoHue+40},65%,42%))` }}>
+								{pendingApplyJob.company.charAt(0)}
+							</div>
+							<div className="acm-job-info">
+								<span className="acm-job-title">{pendingApplyJob.title}</span>
+								<span className="acm-job-company">{pendingApplyJob.company}{pendingApplyJob.location ? ` · ${pendingApplyJob.location}` : ''}</span>
+							</div>
 						</div>
-						<h3 className="acm-title">Did you apply?</h3>
-						<p className="acm-sub">Confirm your application and we'll track it in your pipeline.</p>
-						<div className="acm-job-pill">
-							<span className="acm-job-title">{pendingApplyJob.title}</span>
-							<span className="acm-job-company">{pendingApplyJob.company}</span>
+
+						<div className="acm-divider" />
+
+						{/* Question */}
+						<div className="acm-question-row">
+							<div className="acm-icon-ring">
+								<MdRocketLaunch size={20} />
+							</div>
+							<div>
+								<h3 className="acm-title">Did you apply?</h3>
+								<p className="acm-sub">Confirm and we'll track it in your application pipeline.</p>
+							</div>
 						</div>
+
+						{/* Actions */}
 						<div className="acm-actions">
 							<button
 								type="button"
@@ -3877,6 +3951,7 @@ function JobSearch() {
 														className={`tracker-kanban-card${dragJobId === job.id ? ' tracker-kanban-card--dragging' : ''}`}
 														style={dragJobId === job.id ? { opacity: 0, pointerEvents: 'none' } : undefined}
 														onMouseDown={(e) => {
+															if (confirmDeleteId) return;
 															e.preventDefault();
 															const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
 															setDragMeta({ offsetX: e.clientX - rect.left, offsetY: e.clientY - rect.top, w: rect.width, h: rect.height });
@@ -3893,7 +3968,8 @@ function JobSearch() {
 															<button
 																type="button"
 																className="tracker-kanban-card-remove"
-																onClick={(e) => { e.stopPropagation(); const tid = trackerIdMap[job.id]; if (tid) dispatch(deleteTracker(tid)); }}
+																onMouseDown={(e) => e.stopPropagation()}
+																onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(job.id); }}
 																title="Remove"
 															>
 																<MdDelete size={13} />
@@ -3938,7 +4014,6 @@ function JobSearch() {
 																			</div>
 																		);
 																	})}
-																	<span className="tracker-kanban-progress-label" style={{ color: cfg.color }}>{cfg.label}</span>
 																</div>
 																<button
 																	type="button"
@@ -3946,10 +4021,34 @@ function JobSearch() {
 																	onMouseDown={(e) => e.stopPropagation()}
 																	onClick={(e) => { e.stopPropagation(); openJobPreview(job); }}
 																>
-																	<MdDescription size={11} /> View details
+																	<MdDescription size={11} /> View
 																</button>
 															</div>
 														</div>
+														{confirmDeleteId === job.id && (
+															<div style={{
+																display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+																marginTop: 6, padding: '6px 8px',
+																background: '#fff5f5', border: '1px solid #fecaca', borderRadius: 7,
+																gap: 8,
+															}} onMouseDown={(e) => e.stopPropagation()}>
+																<span style={{ fontSize: 11, color: '#dc2626', fontWeight: 500, whiteSpace: 'nowrap' }}>Remove?</span>
+																<div style={{ display: 'flex', gap: 5, flexShrink: 0 }}>
+																	<button
+																		type="button"
+																		onMouseDown={(e) => e.stopPropagation()}
+																		onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(null); }}
+																		style={{ fontSize: 11, padding: '2px 8px', borderRadius: 5, border: '1px solid #e2e8f0', background: '#fff', cursor: 'pointer', color: '#475569', lineHeight: '18px' }}
+																	>Cancel</button>
+																	<button
+																		type="button"
+																		onMouseDown={(e) => e.stopPropagation()}
+																		onClick={(e) => { e.stopPropagation(); const tid = trackerIdMap[job.id]; if (tid) dispatch(deleteTracker(tid)); setConfirmDeleteId(null); }}
+																		style={{ fontSize: 11, padding: '2px 8px', borderRadius: 5, border: 'none', background: '#ef4444', cursor: 'pointer', color: '#fff', fontWeight: 600, lineHeight: '18px' }}
+																	>Remove</button>
+																</div>
+															</div>
+														)}
 													</div>
 												);
 											})}

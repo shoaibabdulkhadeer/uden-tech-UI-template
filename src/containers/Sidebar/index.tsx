@@ -4,6 +4,7 @@ import {Drawer, Layout} from "antd";
 
 import SidebarContent from "./SidebarContent";
 import {toggleCollapsedSideNav} from "../../appRedux/actions";
+import {setSidebarCollapsed as reduxSetSidebarCollapsed} from "../../appRedux/actions/Common";
 import {
   NAV_STYLE_DRAWER,
   NAV_STYLE_FIXED,
@@ -17,11 +18,15 @@ import {
 const {Sider} = Layout;
 
 const Sidebar = () => {
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
+  const dispatch = useDispatch();
   const {themeType, navStyle} = useSelector(({settings}:any) => settings);
   const navCollapsed = useSelector(({common}:any) => common.navCollapsed);
   const width = useSelector(({common}:any) => common.width);
-  const dispatch = useDispatch();
+  const [sidebarCollapsed, _setSidebarCollapsed] = useState(true);
+  const setSidebarCollapsed = useCallback((v: boolean) => {
+    _setSidebarCollapsed(v);
+    dispatch(reduxSetSidebarCollapsed(v));
+  }, [dispatch]);
 
   const onToggleCollapsedNav = useCallback(() => {
     dispatch(toggleCollapsedSideNav(!navCollapsed));

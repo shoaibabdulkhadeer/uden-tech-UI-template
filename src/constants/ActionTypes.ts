@@ -12,3 +12,4 @@ export const HIDE_MESSAGE = 'HIDE_MESSAGE';
 export const ON_SHOW_LOADER = 'ON_SHOW_LOADER';
 export const ON_HIDE_LOADER = 'ON_HIDE_LOADER';
 export const INIT_URL = 'INIT_URL';
+export const SET_SIDEBAR_COLLAPSED = 'SET_SIDEBAR_COLLAPSED';

@@ -6,6 +6,7 @@ import {
 	MdRocketLaunch,
 	MdAdminPanelSettings,
 	MdManageAccounts,
+	MdOutlineTrackChanges,
 } from 'react-icons/md';
 import { Link, useLocation } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
@@ -25,6 +26,7 @@ const NAV_ITEMS = [
 	{ id: 'dashboard',       url: '/dashboard',       Icon: MdSpaceDashboard,    color: 'indigo',  label: 'Dashboard',            tag: 'Live',  tagColor: 'live',  sub: 'Analytics, activity & live stats'  },
 	{ id: 'generate',        url: '/learn',           Icon: MdAutoGraph,         color: 'cyan',    label: 'Learning Path',        tag: 'AI',    tagColor: 'ai',    sub: 'AI-generated skill roadmaps'       },
 	{ id: 'job-search',      url: '/job-search',      Icon: MdRocketLaunch,      color: 'violet',  label: 'Career Acceleration',  tag: 'AI',    tagColor: 'ai',    sub: 'AI-matched jobs & applications'    },
+	{ id: 'application-tracker', url: '/application-tracker', Icon: MdOutlineTrackChanges, color: 'cyan', label: 'Application Tracker', tag: 'New', tagColor: 'live', sub: 'Track jobs across hiring stages' },
 	{ id: 'job-management',  url: '/job-management',  Icon: MdAdminPanelSettings,color: 'amber',   label: 'Admin Nexus',          tag: 'Admin', tagColor: 'admin', sub: 'Post, review & manage roles'       },
 	{ id: 'user-management', url: '/user-management', Icon: MdManageAccounts,    color: 'emerald', label: 'User Management',      tag: 'Team',  tagColor: 'team',  sub: 'Roles, access & team accounts'     },
 ] as const;
@@ -55,8 +57,9 @@ const SidebarContent = ({
 		else if (p === '/learn')           return 'generate';
 		else if (p === '/job-search')      return 'job-search';
 		else if (p === '/job-management')  return 'job-management';
-		else if (p === '/user-management') return 'user-management';
-		else                               return '';
+		else if (p === '/user-management')    return 'user-management';
+		else if (p === '/application-tracker') return 'application-tracker';
+		else                                   return '';
 	}, [location.pathname]);
 
 	// Only recomputes when theme changes

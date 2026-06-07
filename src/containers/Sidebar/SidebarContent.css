@@ -335,6 +335,16 @@
 	color: #1d4ed8 !important;
 }
 
+/* Collapsed: drop the row background — icon highlight is enough */
+.ant-layout-sider-collapsed .sidebar-nav-item--active {
+	background: transparent;
+}
+
+.ant-layout-sider-collapsed .sidebar-nav-item {
+	justify-content: center;
+	padding: 7px 8px;
+}
+
 /* Text */
 .sidebar-nav-text {
 	display: flex;

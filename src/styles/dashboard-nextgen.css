@@ -127,9 +127,9 @@ body.dark-theme .dash-next-shell-network {
 
 .dash-next-page-head-row {
 	display: flex;
-	align-items: center;
-	flex-wrap: wrap;
-	gap: 8px 10px;
+	align-items: flex-start;
+	flex-wrap: nowrap;
+	gap: 8px 14px;
 }
 
 .dash-next-page-head-art {
@@ -212,6 +212,16 @@ body.dark-theme .dash-next-page-title {
 	cursor: default;
 	z-index: 1;
 }
+
+.genz-pill--sm {
+	padding: 4px 13px;
+	font-size: 10.5px;
+	gap: 6px;
+	letter-spacing: 0.05em;
+}
+
+.genz-pill--sm .genz-icon { font-size: 13px; }
+.genz-pill--sm .dot { width: 7px; height: 7px; }
 
 .genz-pill::before {
 	content: '';
@@ -316,7 +326,7 @@ body.dark-theme .dash-next-page-title {
 
 .dash-next-page-lead {
 	margin: 8px 0 0 !important;
-	max-width: 42rem;
+	max-width: 62rem;
 	font-size: 13px;
 	line-height: 1.5;
 	color: var(--dn-ink-muted);

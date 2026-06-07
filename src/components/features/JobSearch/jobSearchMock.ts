@@ -18,6 +18,7 @@ export type JobDetail = {
 	employmentType: string;
 	posted: string;
 	salary?: string;
+	currency?: string;
 	experience?: string;
 	applyUrl?: string;
 	description: string;

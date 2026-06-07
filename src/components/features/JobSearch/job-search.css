@@ -1,74 +1,108 @@
 /* ── Did-you-apply confirmation modal ── */
 .apply-confirm-modal .ant-modal-content {
-	border-radius: 20px;
+	border-radius: 16px;
 	overflow: hidden;
 	padding: 0;
-	box-shadow: 0 0 0 1px rgba(99,102,241,0.08), 0 24px 64px -12px rgba(15,23,42,0.22);
+	box-shadow: 0 0 0 1px rgba(15,23,42,0.06), 0 20px 60px -10px rgba(15,23,42,0.18);
 }
 
 .acm-wrap {
 	display: flex;
 	flex-direction: column;
-	align-items: center;
-	text-align: center;
-	padding: 32px 28px 28px;
+	padding: 0;
 	gap: 0;
 }
 
-.acm-icon-ring {
-	width: 56px;
-	height: 56px;
-	border-radius: 50%;
-	background: linear-gradient(135deg, #6366f1, #8b5cf6);
+/* Job identity row at top */
+.acm-job-row {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	padding: 20px 24px;
+	background: #f8fafc;
+	border-bottom: 1px solid #f1f5f9;
+}
+
+.acm-logo {
+	width: 44px;
+	height: 44px;
+	border-radius: 10px;
+	flex-shrink: 0;
 	display: flex;
 	align-items: center;
 	justify-content: center;
 	color: #fff;
-	margin-bottom: 16px;
-	box-shadow: 0 6px 20px rgba(99,102,241,0.35);
-}
-
-.acm-title {
-	margin: 0 0 8px;
 	font-size: 18px;
 	font-weight: 700;
-	color: #1e293b;
+	box-shadow: 0 2px 8px rgba(15,23,42,0.15);
 }
 
-.acm-sub {
-	margin: 0 0 18px;
-	font-size: 13.5px;
-	color: #64748b;
-	line-height: 1.55;
-}
-
-.acm-job-pill {
+.acm-job-info {
 	display: flex;
 	flex-direction: column;
 	gap: 2px;
-	padding: 10px 18px;
-	border-radius: 12px;
-	background: rgba(99,102,241,0.07);
-	border: 1px solid rgba(99,102,241,0.15);
-	margin-bottom: 22px;
-	width: 100%;
+	min-width: 0;
 }
 
 .acm-job-title {
 	font-size: 14px;
-	font-weight: 700;
-	color: #1e293b;
+	font-weight: 600;
+	color: #0f172a;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
 }
 
 .acm-job-company {
 	font-size: 12px;
 	color: #64748b;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
 }
 
+.acm-divider { display: none; }
+
+/* Question section */
+.acm-question-row {
+	display: flex;
+	align-items: flex-start;
+	gap: 14px;
+	padding: 22px 24px 0;
+}
+
+.acm-icon-ring {
+	width: 40px;
+	height: 40px;
+	min-width: 40px;
+	border-radius: 10px;
+	background: #f1f5f9;
+	border: 1px solid #e2e8f0;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	color: #475569;
+}
+
+.acm-title {
+	margin: 0 0 4px;
+	font-size: 16px;
+	font-weight: 700;
+	color: #0f172a;
+}
+
+.acm-sub {
+	margin: 0;
+	font-size: 13px;
+	color: #64748b;
+	line-height: 1.5;
+}
+
+/* Actions */
 .acm-actions {
 	display: flex;
 	gap: 10px;
-	width: 100%;
+	padding: 20px 24px 24px;
 }
 
 .acm-btn {
@@ -77,27 +111,67 @@
 	align-items: center;
 	justify-content: center;
 	gap: 6px;
-	padding: 11px 18px;
-	border-radius: 12px;
-	font-size: 14px;
+	padding: 10px 18px;
+	border-radius: 10px;
+	font-size: 13.5px;
 	font-weight: 600;
 	cursor: pointer;
 	border: none;
-	transition: opacity 0.15s, transform 0.1s;
+	transition: opacity 0.15s, transform 0.1s, box-shadow 0.15s;
+	font-family: inherit;
 }
 
-.acm-btn:hover { opacity: 0.88; transform: translateY(-1px); }
+.acm-btn:hover { opacity: 0.9; transform: translateY(-1px); }
 .acm-btn:active { transform: translateY(0); }
 
 .acm-btn--yes {
-	background: linear-gradient(135deg, #6366f1, #8b5cf6);
+	background: #0a66c2;
 	color: #fff;
-	box-shadow: 0 4px 14px rgba(99,102,241,0.35);
+	box-shadow: 0 2px 8px rgba(10,102,194,0.25);
 }
 
 .acm-btn--no {
 	background: #f1f5f9;
-	color: #64748b;
+	color: #475569;
+	border: 1px solid #e2e8f0;
+}
+
+/* ── Tracker delete popconfirm ── */
+.tracker-delete-popconfirm .ant-popover-inner {
+	border-radius: 10px !important;
+	padding: 14px 16px 12px !important;
+	box-shadow: 0 4px 20px rgba(15, 23, 42, 0.12), 0 0 0 1px rgba(15, 23, 42, 0.06) !important;
+}
+
+.tracker-delete-popconfirm .ant-popconfirm-message {
+	align-items: center;
+	gap: 8px;
+	margin-bottom: 12px;
+}
+
+.tracker-delete-popconfirm .ant-popconfirm-message-title {
+	font-size: 13px;
+	font-weight: 600;
+	color: #0f172a;
+}
+
+.tracker-delete-popconfirm .ant-popconfirm-message-icon .anticon {
+	color: #ef4444 !important;
+	font-size: 14px;
+}
+
+.tracker-delete-popconfirm .ant-popconfirm-buttons {
+	display: flex;
+	gap: 6px;
+	justify-content: flex-end;
+}
+
+.tracker-delete-popconfirm .ant-btn-sm {
+	border-radius: 6px !important;
+	font-size: 12px !important;
+	font-weight: 500 !important;
+	height: 28px !important;
+	padding: 0 12px !important;
 }
 
 /* Job search page — layout + cards (shell uses dash-next / arena globals) */
@@ -413,7 +487,7 @@
 
 .job-search-profile-body {
 	position: relative;
-	padding: 0 18px 18px;
+	padding: 0 18px 22px;
 	margin-top: -36px;
 }
 
@@ -422,7 +496,7 @@
 	box-shadow: 0 8px 32px rgba(99, 102, 241, 0.3), 0 0 0 1px rgba(99, 102, 241, 0.2);
 	background: linear-gradient(135deg, #6366f1, #22d3ee) !important;
 	color: #fff !important;
-	font-weight: 700 !important;
+	font-weight: 600 !important;
 	position: relative;
 	z-index: 10;
 }
@@ -540,7 +614,7 @@ body.dark-theme .boost-skill-chip--more {
 	display: flex;
 	align-items: stretch;
 	gap: 0;
-	margin-top: 14px;
+	margin-top: 18px;
 	border-radius: 10px;
 	overflow: hidden;
 	border: 1px solid rgba(148, 163, 184, 0.14);
@@ -684,7 +758,7 @@ body.dark-theme .boost-skill-chip--more {
 }
 
 .job-search-feed-head {
-	padding: 15px 20px 16px;
+	padding: 20px 20px 18px;
 	border-bottom: 1px solid rgba(148, 163, 184, 0.14);
 }
 
@@ -1386,7 +1460,7 @@ body.dark-theme .jd-reset-btn {
 .match-engine-container {
 	margin-bottom: 5px;
 	border: 1px solid rgba(99, 102, 241, 0.12) !important;
-	padding: 14px 14px 10px !important;
+	padding: 20px 18px 16px !important;
 	display: flex;
 	flex-direction: column;
 	gap: 0;
@@ -2505,7 +2579,7 @@ body.dark-theme .jd-reset-btn {
 
 .job-search-job-title {
 	font-size: 15px;
-	font-weight: 700;
+	font-weight: 500;
 	color: #2563eb;
 	text-decoration: none;
 	letter-spacing: -0.02em;
@@ -5737,8 +5811,12 @@ body.dark-theme .job-meta-icon               { opacity: 0.4; }
 	box-shadow: 0 3px 10px rgba(37,99,235,0.35);
 }
 .jd-action-btn--apply:disabled {
-	background: #bfdbfe;
+	background: #dcfce7;
+	color: #15803d !important;
+	border-color: #86efac;
 	box-shadow: none;
+	opacity: 1;
+	cursor: default;
 }
 
 /* Saved state */
@@ -10128,6 +10206,62 @@ body.tracker-dragging * { cursor: grabbing !important; }
 	text-transform: uppercase;
 }
 
+.tracker-kanban-advance-btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 3px;
+	padding: 3px 8px;
+	border-radius: 5px;
+	font-size: 10px;
+	font-weight: 500;
+	border: 1px solid;
+	cursor: pointer;
+	font-family: inherit;
+	white-space: nowrap;
+	flex-shrink: 0;
+	transition: opacity 0.15s, transform 0.15s;
+	line-height: 1.4;
+}
+
+.tracker-kanban-advance-btn:hover {
+	opacity: 0.85;
+	transform: translateY(-1px);
+}
+
 @media (max-width: 900px) {
 	.tracker-kanban-columns { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* ── Application Tracker page (not modal) — no horizontal overflow ── */
+.application-tracker-page .tracker-kanban-columns {
+	overflow-x: hidden;
+	padding: 0;
+}
+
+.application-tracker-page .tracker-kanban-col {
+	min-width: 0;
+}
+
+.application-tracker-page .tracker-kanban-cards {
+	min-height: 420px;
+}
+
+/* Muted stage pills, card shadow, meta chips — page + modal */
+.application-tracker-page .tracker-kanban-card-stage-pill,
+.tracker-kanban-modal-wrap .tracker-kanban-card-stage-pill {
+	background: #f1f5f9 !important;
+	color: #64748b !important;
+	border-color: #e2e8f0 !important;
+}
+
+.application-tracker-page .tracker-kanban-card,
+.tracker-kanban-modal-wrap .tracker-kanban-card {
+	box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06) !important;
+}
+
+.application-tracker-page .tracker-kanban-meta-chip,
+.tracker-kanban-modal-wrap .tracker-kanban-meta-chip {
+	background: #f8fafc !important;
+	color: #64748b !important;
+	border-color: #e9eef5 !important;
 }

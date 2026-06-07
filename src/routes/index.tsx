@@ -12,7 +12,8 @@ const Learn         = lazy(() => import('../components/features/LearningPath/Lea
 const Dashboard     = lazy(() => import('../components/features/Dashboard/Dashboard'));
 const JobSearch     = lazy(() => import('../components/features/JobSearch/JobSearch'));
 const JobManagement = lazy(() => import('../components/features/JobManagement/JobManagement'));
-const UserManagement= lazy(() => import('../components/features/UserManagement/UserManagement'));
+const UserManagement       = lazy(() => import('../components/features/UserManagement/UserManagement'));
+const ApplicationTracker   = lazy(() => import('../components/features/ApplicationTracker/ApplicationTracker'));
 
 /* Fallback only for shell-less pages (login, error pages).
    Pages inside MainApp use the Suspense in MainApp.tsx so sidebar+topbar stay visible. */
@@ -54,6 +55,10 @@ const AppRoutes = () => {
 			{
 				path: '/user-management',
 				element: <PrivateRoutes><UserManagement /></PrivateRoutes>
+			},
+			{
+				path: '/application-tracker',
+				element: <PrivateRoutes><ApplicationTracker /></PrivateRoutes>
 			}
 		]
 	};
