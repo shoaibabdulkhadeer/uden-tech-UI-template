@@ -2,6 +2,10 @@
 .user-mgmt-page {
 	min-height: 100vh;
 	padding: 24px;
+	background: #ffffff !important;
+}
+.user-mgmt-page.dash-next.dash-next-shell::after {
+	display: none !important;
 }
 
 .user-mgmt-page-inner {

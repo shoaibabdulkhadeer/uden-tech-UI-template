@@ -65,6 +65,9 @@ import {
 	MdLinkOff,
 	MdEditNote,
 	MdOpenInNew as MdOpenInNewIcon,
+	MdInsights,
+	MdWorkspacePremium,
+	MdEmojiEvents,
 } from 'react-icons/md';
 import { motion, easeInOut } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
@@ -1789,9 +1792,11 @@ const JobManagement = () => {
 					centered
 					className="job-search-job-preview-modal admin-preview-modal"
 					wrapClassName="job-search-job-preview-modal-wrap"
-					width={760}
+					width="96vw"
+					style={{ top: 2, paddingBottom: 0 }}
 					title={null}
 					closable
+					destroyOnClose
 					bodyStyle={{ padding: 0 }}
 				>
 					{previewJob && (
@@ -1868,81 +1873,53 @@ const JobManagement = () => {
 										</div>
 									</div>
 
-									{/* About + What you'll do — 2-col inside header */}
-									<div className="jd-head-desc">
-										<div className="jd-head-desc-col">
-											<p className="jd-head-desc-label"><MdListAlt size={12} /> About the role</p>
-											<p className="jd-head-desc-text">{previewJob.description}</p>
-										</div>
-										{previewJob.responsibilities && previewJob.responsibilities.length > 0 && (
-											<div className="jd-head-desc-col">
-												<p className="jd-head-desc-label"><MdWork size={12} /> What you'll do</p>
-												<ul className="jd-head-resp-list">
-													{previewJob.responsibilities.map((r, i) => <li key={i}>{r}</li>)}
-												</ul>
-											</div>
-										)}
-									</div>
 								</header>
-
-								{/* ── Skills ── */}
-								{previewJob.skills.length > 0 && (
-									<div className="jd-skills-section">
-										<h4 className="jd-section-label">
-											<span className="jd-section-icon jd-section-icon--violet"><MdSchool size={12} /></span>
-											Skills required
-										</h4>
-										<div className="jd-skills-row">
-											{previewJob.skills.map((s) => (
-												<Tooltip
-													key={s}
-													title={previewJob.skillsExplanations?.[s] || null}
-													overlayStyle={{ maxWidth: 260 }}
-												>
-													<span className="job-search-preview-skill">{s}</span>
-												</Tooltip>
-											))}
-										</div>
-									</div>
-								)}
 
 								{/* ── Body panels ── */}
 								<div className="jd-body">
+
+									{/* Left: blurred fit card */}
 									<div className="jd-panels-stack">
-
-										{/* Requirements */}
-										{previewJob.requirements && previewJob.requirements.length > 0 && (
-											<div className="jd-panel jd-panel--full jd-panel--fit">
+										<div className="admin-fit-blur-wrap">
+											{/* Fake fit card — blurred */}
+											<div className="jd-panel jd-panel--fit jd-panel--full admin-fit-blurred">
 												<h3 className="jd-panel-title">
-													<MdCheckCircle size={15} className="jd-panel-title-icon jd-panel-title-icon--gold" />
-													Requirements
+													<MdWorkspacePremium size={16} className="jd-panel-title-icon jd-panel-title-icon--gold" />
+													Your fit
 												</h3>
-												<ul className="preview-resp-list">
-													{previewJob.requirements.map((r, i) => (
-														<li key={i} className="preview-resp-item">
-															<MdCheckCircle size={13} className="resp-check" />{r}
-														</li>
-													))}
-												</ul>
+												<div className="jd-fit-score-row">
+													<div className="jd-fit-score-ring" style={{ '--score': 85 } as React.CSSProperties}>
+														<span className="jd-fit-score-num">85%</span>
+													</div>
+													<div className="jd-fit-score-copy">
+														<p className="jd-fit-score-title">AI Fit Score</p>
+														<span className="jd-fit-bucket jd-fit-bucket--strong">Strong Fit</span>
+													</div>
+												</div>
+												<div className="jd-fit-group">
+													<p className="jd-fit-label jd-fit-label--match"><MdCheckCircle size={12} /> Skills matched</p>
+													<div className="jd-fit-pills">
+														{['React', 'TypeScript', 'Node.js', 'Python'].map(s => (
+															<span key={s} className="jd-fit-pill jd-fit-pill--match"><MdCheckCircle size={11} />{s}</span>
+														))}
+													</div>
+												</div>
+												<div className="jd-fit-group">
+													<p className="jd-fit-label jd-fit-label--gap"><MdSchool size={12} /> Skill gaps</p>
+													<div className="jd-fit-pills">
+														{['AWS', 'GraphQL'].map(s => (
+															<span key={s} className="jd-fit-pill jd-fit-pill--gap"><MdSchool size={11} />{s}</span>
+														))}
+													</div>
+												</div>
 											</div>
-										)}
-
-										{/* Nice to have */}
-										{previewJob.niceToHave && previewJob.niceToHave.length > 0 && (
-											<div className="jd-panel jd-panel--full" style={{ background: 'linear-gradient(160deg,#fffbeb,#fef3c7,#fffde7)' }}>
-												<h3 className="jd-panel-title">
-													<MdStar size={15} className="jd-panel-title-icon" style={{ color: '#f59e0b' }} />
-													Nice to have
-												</h3>
-												<ul className="preview-resp-list">
-													{previewJob.niceToHave.map((n, i) => (
-														<li key={i} className="preview-resp-item" style={{ color: '#92400e' }}>
-															<MdStar size={13} style={{ color: '#f59e0b', flexShrink: 0 }} />{n}
-														</li>
-													))}
-												</ul>
+											{/* Overlay */}
+											<div className="admin-fit-overlay">
+												<MdInsights size={24} style={{ color: '#2563eb', marginBottom: 8 }} />
+												<p className="admin-fit-overlay-title">AI Fit Score</p>
+												<p className="admin-fit-overlay-sub">Candidates see their AI-matched fit % and skill gap analysis for this role here.</p>
 											</div>
-										)}
+										</div>
 
 										{/* Source info */}
 										{(previewJob.urlNote || previewJob.cachedAt || previewJob.source) && (
@@ -1973,6 +1950,111 @@ const JobManagement = () => {
 												</div>
 											</div>
 										)}
+									</div>
+
+									{/* Right: main content */}
+									<div className="jd-body-left">
+
+										{/* About the role */}
+										{previewJob.description && (
+											<div className="jd-section-block">
+												<h4 className="jd-section-label">
+													<span className="jd-section-icon jd-section-icon--violet"><MdListAlt size={12} /></span>
+													About the role
+												</h4>
+												<p className="jd-head-desc-text">{previewJob.description}</p>
+											</div>
+										)}
+
+										{/* Requirements + What you'll do — 2-col */}
+										{((previewJob.requirements && previewJob.requirements.length > 0) || (previewJob.responsibilities && previewJob.responsibilities.length > 0)) && (
+											<div className="jd-two-col-block">
+												{previewJob.requirements && previewJob.requirements.length > 0 && (
+													<div className="jd-two-col-section">
+														<h4 className="jd-section-label">
+															<span className="jd-section-icon jd-section-icon--violet"><MdCheckCircle size={12} /></span>
+															Requirements
+														</h4>
+														<ul className="jd-req-list">
+															{previewJob.requirements.map((r, i) => (
+																<li key={i} className="jd-req-item"><MdCheckCircle size={12} className="jd-req-check" />{r}</li>
+															))}
+														</ul>
+													</div>
+												)}
+												{previewJob.responsibilities && previewJob.responsibilities.length > 0 && (
+													<div className="jd-two-col-section">
+														<h4 className="jd-section-label">
+															<span className="jd-section-icon jd-section-icon--violet"><MdWork size={12} /></span>
+															What you'll do
+														</h4>
+														<ul className="jd-req-list">
+															{previewJob.responsibilities.map((r, i) => (
+																<li key={i} className="jd-req-item"><span className="jd-req-dot" />{r}</li>
+															))}
+														</ul>
+													</div>
+												)}
+											</div>
+										)}
+
+										{/* Skills */}
+										{previewJob.skills.length > 0 && (
+											<div className="jd-section-block">
+												<h4 className="jd-section-label">
+													<span className="jd-section-icon jd-section-icon--violet"><MdSchool size={12} /></span>
+													Skills required
+												</h4>
+												<div className="jd-skills-row">
+													{previewJob.skills.map((s) => (
+														<Tooltip key={s} title={previewJob.skillsExplanations?.[s] || null} overlayStyle={{ maxWidth: 260 }}>
+															<span className="job-search-preview-skill">{s}</span>
+														</Tooltip>
+													))}
+												</div>
+											</div>
+										)}
+
+										{/* Interview rounds — blurred placeholder */}
+										<div className="jd-section-block jd-section-block--rounds admin-rounds-blur-wrap">
+											{/* Blurred mock content */}
+											<div className="admin-rounds-blurred">
+												<h4 className="jd-section-label">
+													<span className="jd-section-icon jd-section-icon--violet"><MdEmojiEvents size={12} /></span>
+													Interview rounds
+												</h4>
+												<div className="jd-ivc-list">
+													{[
+														{ round: 1, name: 'HR Screening', type: 'Screening', duration: '30 min', description: 'Initial call to discuss background and role fit.', accent: '#06b6d4' },
+														{ round: 2, name: 'Technical Interview', type: 'Technical', duration: '60 min', description: 'Deep dive into your technical skills and problem solving.', accent: '#6366f1' },
+														{ round: 3, name: 'System Design', type: 'Technical', duration: '60 min', description: 'Design a scalable system from scratch.', accent: '#8b5cf6' },
+														{ round: 4, name: 'Final Round', type: 'Behavioral', duration: '45 min', description: 'Culture fit and leadership principles discussion.', accent: '#10b981' },
+													].map((rd) => (
+														<div key={rd.round} className="jd-ivc-card" style={{ '--ivc-accent': rd.accent } as React.CSSProperties}>
+															<div className="jd-ivc-card-left">
+																<span className="jd-ivc-badge" style={{ background: rd.accent }}>{rd.round}</span>
+																<div className="jd-ivc-connector" aria-hidden />
+															</div>
+															<div className="jd-ivc-card-body">
+																<div className="jd-ivc-header">
+																	<span className="jd-ivc-name">{rd.name}</span>
+																	<span className="jd-ivc-type-chip" style={{ color: rd.accent, borderColor: rd.accent, background: `${rd.accent}18` }}>{rd.type}</span>
+																</div>
+																<span className="jd-ivc-duration"><MdAccessTime size={11} style={{ marginRight: 4, verticalAlign: 'middle' }} />{rd.duration}</span>
+																<p className="jd-ivc-desc">{rd.description}</p>
+															</div>
+														</div>
+													))}
+												</div>
+											</div>
+											{/* Overlay */}
+											<div className="admin-rounds-overlay">
+												<MdEmojiEvents size={24} style={{ color: '#2563eb', marginBottom: 8 }} />
+												<p className="admin-fit-overlay-title">Interview Rounds</p>
+												<p className="admin-fit-overlay-sub">Candidates see AI-generated interview rounds and prep tips for this role here.</p>
+											</div>
+										</div>
+
 									</div>
 								</div>
 

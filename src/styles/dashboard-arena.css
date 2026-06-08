@@ -47,10 +47,7 @@ body.dark-theme .learn-page.dash-next.dash-next-shell.dash-next--arena,
 .learn-page.dash-next.dash-next-shell.dash-next--arena,
 body.dark-theme .job-search-page.dash-next.dash-next-shell.dash-next--arena,
 .job-search-page.dash-next.dash-next-shell.dash-next--arena {
-	background:
-		radial-gradient(ellipse 90% 60% at 10% -10%, rgba(99, 102, 241, 0.12), transparent 52%),
-		radial-gradient(ellipse 70% 50% at 100% 0%, rgba(236, 72, 153, 0.06), transparent 48%),
-		linear-gradient(168deg, #ffffff 0%, #f8fafc 42%, #f1f5f9 100%) !important;
+	background: #ffffff !important;
 	border: 1px solid rgba(148, 163, 184, 0.28) !important;
 	box-shadow:
 		0 0 0 1px rgba(255, 255, 255, 0.95) inset,
@@ -75,10 +72,7 @@ body.dark-theme .learn-page.dash-next.dash-next-shell.dash-next--arena::after,
 .learn-page.dash-next.dash-next-shell.dash-next--arena::after,
 body.dark-theme .job-search-page.dash-next.dash-next-shell.dash-next--arena::after,
 .job-search-page.dash-next.dash-next-shell.dash-next--arena::after {
-	background:
-		radial-gradient(ellipse 60% 45% at 100% 0%, rgba(6, 182, 212, 0.1), transparent 55%),
-		radial-gradient(ellipse 50% 40% at 0% 100%, rgba(139, 92, 246, 0.08), transparent 50%),
-		radial-gradient(ellipse 80% 50% at 50% 120%, rgba(99, 102, 241, 0.06), transparent 55%);
+	display: none !important;
 }
 
 /* HUD accent bar */

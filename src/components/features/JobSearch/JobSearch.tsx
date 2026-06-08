@@ -43,6 +43,7 @@ import {
 	MdQuiz,
 	MdFactCheck,
 	MdRocketLaunch,
+	MdLinkOff,
 	MdMenuBook,
 	MdOutlineAssignment,
 	MdWorkspacePremium,
@@ -349,6 +350,9 @@ function JobSearch() {
 	const [apiMatchedJobs, setApiMatchedJobs] = useState<JobItem[]>([]);
 	const [locationFilter, setLocationFilter] = useState<{ city: string; country: string }>({ city: '', country: '' });
 	const [pendingApplyJob, setPendingApplyJob] = useState<JobItem | null>(null);
+	const [showBrokenLinkReport, setShowBrokenLinkReport] = useState(false);
+	const [brokenLinkNote, setBrokenLinkNote] = useState('');
+	const [brokenLinkSubmitted, setBrokenLinkSubmitted] = useState(false);
 	const [submittedFilters, setSubmittedFilters] = useState<{
 		empFilter: EmploymentKind[]; workFilter: WorkMode[];
 		expFilter: string | undefined; sectorFilter: string | undefined; skillsFilter: string[];
@@ -3442,7 +3446,7 @@ function JobSearch() {
 			{/* ── "Did you apply?" confirmation modal ── */}
 			<Modal
 				open={!!pendingApplyJob}
-				onCancel={() => setPendingApplyJob(null)}
+				onCancel={() => { setPendingApplyJob(null); setShowBrokenLinkReport(false); setBrokenLinkNote(''); setBrokenLinkSubmitted(false); }}
 				footer={null}
 				width={520}
 				centered
@@ -3495,10 +3499,67 @@ function JobSearch() {
 							<button
 								type="button"
 								className="acm-btn acm-btn--no"
-								onClick={() => setPendingApplyJob(null)}
+								onClick={() => { setPendingApplyJob(null); setShowBrokenLinkReport(false); setBrokenLinkNote(''); setBrokenLinkSubmitted(false); }}
 							>
 								Not yet
 							</button>
+						</div>
+
+						{/* Report broken link */}
+						<div className="acm-report-wrap">
+							{!showBrokenLinkReport ? (
+								<button
+									type="button"
+									className="acm-report-trigger"
+									onClick={() => setShowBrokenLinkReport(true)}
+								>
+									<MdLinkOff size={13} />
+									Report broken link
+								</button>
+							) : brokenLinkSubmitted ? (
+								<div className="acm-report-success">
+									<MdCheckCircle size={14} style={{ color: '#16a34a' }} />
+									<span>Thanks! We'll review this link.</span>
+								</div>
+							) : (
+								<div className="acm-report-form">
+									<div className="acm-report-form-header">
+										<MdLinkOff size={13} style={{ color: '#ef4444' }} />
+										<span className="acm-report-form-title">Report broken link</span>
+										<button type="button" className="acm-report-close" onClick={() => { setShowBrokenLinkReport(false); setBrokenLinkNote(''); }}>
+											<IoClose size={14} />
+										</button>
+									</div>
+									<textarea
+										className="acm-report-textarea"
+										placeholder="Describe the issue (e.g. link redirects to homepage, 404 error…)"
+										value={brokenLinkNote}
+										onChange={(e) => setBrokenLinkNote(e.target.value)}
+										rows={3}
+									/>
+									<div className="acm-report-form-actions">
+										<button
+											type="button"
+											className="acm-report-cancel"
+											onClick={() => { setShowBrokenLinkReport(false); setBrokenLinkNote(''); }}
+										>
+											Cancel
+										</button>
+										<button
+											type="button"
+											className="acm-report-submit"
+											disabled={!brokenLinkNote.trim()}
+											onClick={() => {
+												// TODO: wire up API
+												setBrokenLinkSubmitted(true);
+											}}
+										>
+											<MdSend size={12} />
+											Submit
+										</button>
+									</div>
+								</div>
+							)}
 						</div>
 					</div>
 				)}

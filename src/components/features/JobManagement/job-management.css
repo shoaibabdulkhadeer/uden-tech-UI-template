@@ -2,9 +2,12 @@
 
 .job-mgmt-page {
 	display: block !important; /* Kill any flex centering from parent shells */
-	background: #f8fafc;
+	background: #ffffff !important;
 	overflow-x: clip; /* clip instead of hidden — hidden creates a scroll container that breaks position:sticky */
 	position: relative;
+}
+.job-mgmt-page.dash-next.dash-next-shell::after {
+	display: none !important;
 }
 
 .job-mgmt-page-inner {
@@ -182,7 +185,7 @@
 
 .pill-text {
 	font-size: 9px;
-	font-weight: 800;
+	font-weight: 500;
 	letter-spacing: 0.04em;
 	color: #475569;
 	text-transform: uppercase;
@@ -223,7 +226,7 @@
 
 .stat-number {
 	font-size: 26px;
-	font-weight: 900;
+	font-weight: 500;
 	font-family: 'Outfit', sans-serif;
 	color: #0f172a;
 	letter-spacing: -0.02em;
@@ -244,7 +247,7 @@
 .stat-trend {
 	color: #16a34a;
 	font-size: 9px;
-	font-weight: 900;
+	font-weight: 500;
 }
 
 .stat-trend-box.neutral .stat-trend {
@@ -253,7 +256,7 @@
 
 .stat-desc {
 	font-size: 11px;
-	font-weight: 800;
+	font-weight: 500;
 	color: #334155;
 }
 
@@ -278,87 +281,7 @@
 	position: relative;
 }
 
-/* ── view-tab base (mirrors Career Acceleration) ───────────── */
-
-.view-tabs {
-	display: inline-flex;
-	align-items: center;
-	gap: 3px;
-	background: rgba(15, 23, 42, 0.05);
-	border: 1px solid rgba(148, 163, 184, 0.16);
-	border-radius: 12px;
-	padding: 4px;
-}
-
-.view-tab {
-	display: inline-flex;
-	align-items: center;
-	gap: 6px;
-	padding: 6px 13px;
-	border: none;
-	border-radius: 8px;
-	background: transparent;
-	cursor: pointer;
-	font-size: 12px;
-	font-weight: 600;
-	color: #64748b;
-	transition: background 0.18s ease, color 0.18s ease, box-shadow 0.18s ease;
-	white-space: nowrap;
-	font-family: 'Outfit', sans-serif;
-	line-height: 1;
-	position: relative;
-	overflow: hidden;
-}
-
-.view-tab:hover:not(.view-tab--active) {
-	background: rgba(15, 23, 42, 0.06);
-	color: #334155;
-}
-
-.view-tab-icon { display: flex; align-items: center; transition: transform 0.18s ease; }
-.view-tab--active .view-tab-icon { transform: scale(1.1); }
-.view-tab-label { letter-spacing: -0.01em; }
-
-.view-tab-count {
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	min-width: 17px;
-	height: 17px;
-	padding: 0 4px;
-	border-radius: 6px;
-	font-size: 9px;
-	font-weight: 700;
-	background: rgba(148, 163, 184, 0.18);
-	color: #94a3b8;
-	transition: background 0.18s, color 0.18s;
-}
-.view-tab--active .view-tab-count {
-	background: rgba(255,255,255,0.25);
-	color: #fff;
-}
-
-.view-tab--indigo.view-tab--active {
-	background: #2563eb;
-	color: #fff;
-	box-shadow: none;
-}
-
-.view-tab--active::after {
-	display: none;
-}
-
-body.dark-theme .view-tabs {
-	background: rgba(15, 23, 42, 0.4);
-	border-color: rgba(51, 65, 85, 0.5);
-}
-body.dark-theme .view-tab { color: #475569; }
-body.dark-theme .view-tab:hover:not(.view-tab--active) {
-	background: rgba(30, 41, 59, 0.6);
-	color: #94a3b8;
-}
-
-/* ── Custom pill tab bar ───────────────────────────────────── */
+/* ── Admin tab bar — underline style (matches Career Acceleration) ─── */
 
 .admin-nexus-tab-bar {
 	display: flex;
@@ -369,10 +292,6 @@ body.dark-theme .view-tab:hover:not(.view-tab--active) {
 	flex-wrap: wrap;
 }
 
-.admin-view-tabs {
-	margin-bottom: 0 !important;
-}
-
 .admin-nexus-tab-actions {
 	display: flex;
 	align-items: center;
@@ -380,22 +299,80 @@ body.dark-theme .view-tab:hover:not(.view-tab--active) {
 	flex-shrink: 0;
 }
 
-/* Bring in the Career Acceleration view-tab styles */
-.admin-view-tabs .view-tab,
-.admin-main-card .view-tab {
+/* Container: underline baseline, no pill background */
+.admin-view-tabs {
+	display: inline-flex !important;
+	align-items: stretch !important;
+	gap: 0 !important;
+	background: transparent !important;
+	border: none !important;
+	border-bottom: 2px solid #e5e7eb !important;
+	border-radius: 0 !important;
+	padding: 0 !important;
+	margin-bottom: 0 !important;
+}
+
+/* Tab base */
+.admin-view-tabs .view-tab {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 9px 16px;
+	border: none;
+	border-bottom: 2px solid transparent;
+	margin-bottom: -2px;
+	border-radius: 0;
+	background: transparent;
+	cursor: pointer;
+	font-size: 13px;
+	font-weight: 500;
+	color: #6b7280;
+	transition: color 0.15s ease, border-color 0.15s ease;
+	white-space: nowrap;
 	font-family: 'Outfit', sans-serif;
+	line-height: 1;
+	box-shadow: none !important;
 }
 
-/* Violet active variant (Activity Monitor) */
-.view-tab--violet.view-tab--active {
-	background: #2563eb;
-	color: #fff;
-	box-shadow: none;
+.admin-view-tabs .view-tab:hover:not(.view-tab--active) {
+	color: #111827;
+	background: transparent;
+	border-bottom-color: #d1d5db;
 }
 
-.view-tab--violet:hover:not(.view-tab--active) {
-	background: rgba(37, 99, 235, 0.07);
-	color: #334155;
+/* Active tab — underline only, no filled background */
+.admin-view-tabs .view-tab--indigo.view-tab--active,
+.admin-view-tabs .view-tab--violet.view-tab--active,
+.admin-view-tabs .view-tab--rose.view-tab--active,
+.admin-view-tabs .view-tab--active {
+	color: #1d4ed8 !important;
+	font-weight: 600 !important;
+	background: transparent !important;
+	border-bottom-color: #1d4ed8 !important;
+	box-shadow: none !important;
+}
+
+/* Count badge */
+.admin-view-tabs .view-tab-count {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 18px;
+	height: 18px;
+	padding: 0 5px;
+	border-radius: 20px;
+	font-size: 10px;
+	font-weight: 600;
+	background: #e5e7eb;
+	color: #374151;
+}
+.admin-view-tabs .view-tab--active .view-tab-count {
+	background: #dbeafe !important;
+	color: #1d4ed8 !important;
+}
+.admin-view-tabs .view-tab-count--red {
+	background: rgba(239,68,68,0.12) !important;
+	color: #ef4444 !important;
 }
 
 /* ── Enhanced toolbar ──────────────────────────────────────── */
@@ -521,7 +498,7 @@ body.dark-theme .admin-nexus-toolbar-top {
 }
 body.dark-theme .admin-nexus-title { color: #e2e8f0; }
 body.dark-theme .admin-nexus-subtitle { color: #475569; }
-body.dark-theme .view-tab--violet.view-tab--active { color: #fff; }
+body.dark-theme .admin-view-tabs .view-tab--active { color: #93c5fd !important; border-bottom-color: #93c5fd !important; }
 
 .admin-search {
 	max-width: 320px;
@@ -2975,4 +2952,79 @@ body.dark-theme .arm-form .ant-select .ant-select-selector {
 	background: linear-gradient(135deg, #ef4444, #dc2626);
 	color: #fff;
 	box-shadow: 0 2px 10px rgba(239,68,68,0.3);
+}
+
+/* ── Admin "Interview Rounds" blur placeholder ── */
+.admin-rounds-blur-wrap {
+	position: relative;
+	overflow: hidden;
+}
+.admin-rounds-blurred {
+	filter: blur(0.3px);
+	opacity: 0.92;
+	user-select: none;
+	pointer-events: none;
+}
+.admin-rounds-overlay {
+	position: absolute;
+	inset: 0;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	text-align: center;
+	padding: 20px 18px;
+	background: rgba(255, 255, 255, 0.55);
+	backdrop-filter: blur(3px);
+	-webkit-backdrop-filter: blur(3px);
+	border-radius: 0;
+	border: 1.5px dashed rgba(37, 99, 235, 0.25);
+}
+
+/* ── Admin "Your Fit" blur placeholder ── */
+.admin-fit-blur-wrap {
+	position: relative;
+	border-radius: 14px;
+	overflow: hidden;
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+}
+.admin-fit-blur-wrap .admin-fit-blurred {
+	flex: 1;
+}
+.admin-fit-blurred {
+	filter: blur(0.3px);
+	opacity: 0.92;
+	user-select: none;
+	pointer-events: none;
+}
+.admin-fit-overlay {
+	position: absolute;
+	inset: 0;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	text-align: center;
+	padding: 20px 18px;
+	background: rgba(255, 255, 255, 0.55);
+	backdrop-filter: blur(3px);
+	-webkit-backdrop-filter: blur(3px);
+	border-radius: 14px;
+	border: 1.5px dashed rgba(37, 99, 235, 0.25);
+}
+.admin-fit-overlay-title {
+	font-size: 14px;
+	font-weight: 600;
+	color: #0f172a;
+	margin: 0 0 6px;
+	letter-spacing: -0.01em;
+}
+.admin-fit-overlay-sub {
+	font-size: 12px;
+	color: #64748b;
+	margin: 0;
+	line-height: 1.6;
+	max-width: 180px;
 }
