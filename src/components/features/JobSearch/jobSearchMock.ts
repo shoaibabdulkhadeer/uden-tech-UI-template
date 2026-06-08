@@ -22,6 +22,7 @@ export type JobDetail = {
 	experience?: string;
 	applyUrl?: string;
 	description: string;
+	fullDescription?: string;
 	responsibilities: string[];
 	requirements?: string[];
 	niceToHave?: string[];

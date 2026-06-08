@@ -92,6 +92,9 @@ function mapApiJobToJobItem(item: any, idx: number): JobItem {
 			experience:       item.experience || item.experience_level || undefined,
 			applyUrl:         item.apply_url || item.applyUrl || item.source_url || undefined,
 			description:      item.description_summary || item.description || item.job_description || '',
+			fullDescription:  item.description_summary
+				? (item.description || item.job_description || '')
+				: '',
 			responsibilities: item.what_youll_do || item.responsibilities || [],
 			requirements:     item.requirements || [],
 			niceToHave:       item.nice_to_have || [],
@@ -142,6 +145,7 @@ const JobPreviewModal = ({ previewJob, onClose }: JobPreviewModalProps) => {
 	const [interviewNotFoundMsg, setInterviewNotFoundMsg] = useState<string | null>(null);
 	const [interviewDisclaimer, setInterviewDisclaimer] = useState<string | null>(null);
 	const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
+	const [showFullAbout, setShowFullAbout] = useState(false);
 
 	// The job data to display — live (API-enriched) if available, else the prop
 	const job = livePreviewJob ?? previewJob;
@@ -154,6 +158,7 @@ const JobPreviewModal = ({ previewJob, onClose }: JobPreviewModalProps) => {
 			setInterviewDataAvailable(null);
 			setInterviewNotFoundMsg(null);
 			setInterviewDisclaimer(null);
+			setShowFullAbout(false);
 			dispatch(getJobById(previewJob.id));
 			if (previewJob.company && previewJob.title) {
 				dispatch(getInterviewRounds({ company: previewJob.company, role: previewJob.title }));
@@ -375,16 +380,32 @@ const JobPreviewModal = ({ previewJob, onClose }: JobPreviewModalProps) => {
 						{/* Left column */}
 						<div className="jd-body-left">
 
-						{/* About the role */}
-						{!jobByIdStatus && job.detail.description && (
-							<div className="jd-section-block">
-								<h4 className="jd-section-label">
-									<span className="jd-section-icon jd-section-icon--violet"><MdDescription size={12}/></span>
-									About the role
-								</h4>
-								<p style={{margin:0,fontSize:'13px',lineHeight:1.7,color:'#374151'}}>{job.detail.description}</p>
-							</div>
-						)}
+						{/* About the role — summary preview with Show more / Show less */}
+						{!jobByIdStatus && job.detail.description && (() => {
+							const preview     = job.detail.description as string;
+							const fullText    = job.detail.fullDescription ?? '';
+							const isTruncated = !!fullText && fullText.length > preview.length + 10;
+							return (
+								<div className="jd-section-block">
+									<h4 className="jd-section-label">
+										<span className="jd-section-icon jd-section-icon--violet"><MdDescription size={12}/></span>
+										About the role
+									</h4>
+									<p className="jd-head-desc-text jd-about-text">
+										{showFullAbout && isTruncated ? fullText : preview}
+									</p>
+									{isTruncated && (
+										<button
+											type="button"
+											className="jd-about-toggle"
+											onClick={() => setShowFullAbout(v => !v)}
+										>
+											{showFullAbout ? 'Show less ↑' : 'Show more ↓'}
+										</button>
+									)}
+								</div>
+							);
+						})()}
 
 						{/* Requirements + What you'll do — side by side */}
 						<div className="jd-two-col-block">

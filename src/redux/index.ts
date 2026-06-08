@@ -38,6 +38,8 @@ import { deleteAdminJobReducer } from './features/admin/deleteAdminJobSlice';
 import { getBrokenLinksReducer } from './features/admin/getBrokenLinksSlice';
 import { fixBrokenUrlReducer } from './features/admin/fixBrokenUrlSlice';
 import { checkUrlReducer } from './features/admin/checkUrlSlice';
+import { getAdminStatsReducer } from './features/admin/getAdminStatsSlice';
+import { extractJobUrlReducer } from './features/admin/extractJobUrlSlice';
 
 export default combineReducers({
 	settings: Settings,
@@ -82,6 +84,8 @@ export default combineReducers({
 	getBrokenLinksReducer:getBrokenLinksReducer,
 	fixBrokenUrlReducer:fixBrokenUrlReducer,
 	checkUrlReducer:checkUrlReducer,
+	getAdminStatsReducer:getAdminStatsReducer,
+	extractJobUrlReducer:extractJobUrlReducer,
 
 });
 

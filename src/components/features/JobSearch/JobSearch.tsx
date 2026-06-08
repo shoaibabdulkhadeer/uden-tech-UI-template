@@ -296,6 +296,7 @@ function JobSearch() {
 	const TRACKER_INITIAL_LIMIT = 40; // load 40 on first open so all columns are populated
 	const [dismissedIds, setDismissedIds] = useState<Set<string>>(() => new Set());
 	const [previewJob, setPreviewJob] = useState<JobItem | null>(null);
+	const [showFullAbout, setShowFullAbout] = useState(false);
 	const [liveInterviewRounds, setLiveInterviewRounds] = useState<any[]>([]);
 	const [interviewDataAvailable, setInterviewDataAvailable] = useState<boolean | null>(null);
 	const [interviewNotFoundMsg, setInterviewNotFoundMsg] = useState<string | null>(null);
@@ -1250,6 +1251,7 @@ function JobSearch() {
 				experience:       item.experience || item.experience_level || undefined,
 				applyUrl:         item.apply_url || item.applyUrl || item.source_url || undefined,
 				description:      item.description_summary || item.description || item.job_description || '',
+				fullDescription:  item.description || item.job_description || '',
 				responsibilities: item.what_youll_do || item.responsibilities || [],
 				requirements:     item.requirements || [],
 				niceToHave:       item.nice_to_have || [],
@@ -1403,6 +1405,7 @@ function JobSearch() {
 
 	const openJobPreview = useCallback((job: JobItem) => {
 		setPreviewJob(job);
+		setShowFullAbout(false);
 		setLiveInterviewRounds([]);
 		setInterviewDataAvailable(null);
 		setInterviewNotFoundMsg(null);
@@ -2994,16 +2997,33 @@ function JobSearch() {
 							{/* Left column */}
 							<div className="jd-body-left">
 
-							{/* About the role */}
-							{!jobByIdStatus && previewJob.detail.description && (
-								<div className="jd-section-block">
-									<h4 className="jd-section-label">
-										<span className="jd-section-icon jd-section-icon--violet"><MdDescription size={12}/></span>
-										About the role
-									</h4>
-									<p style={{margin:0,fontSize:'13px',lineHeight:1.7,color:'#374151'}}>{previewJob.detail.description}</p>
-								</div>
-							)}
+							{/* About the role — 3-sentence preview with Show more / Show less */}
+							{!jobByIdStatus && previewJob.detail.description && (() => {
+								const fullText = previewJob.detail.fullDescription || previewJob.detail.description;
+								const sents    = fullText.match(/[^.!?]+[.!?]+\s*/g) ?? [];
+								const preview  = sents.length > 3 ? sents.slice(0, 3).join('').trim() + '…' : fullText;
+								const isTruncated = sents.length > 3;
+								return (
+									<div className="jd-section-block">
+										<h4 className="jd-section-label">
+											<span className="jd-section-icon jd-section-icon--violet"><MdDescription size={12}/></span>
+											About the role
+										</h4>
+										<p className="jd-head-desc-text jd-about-text">
+											{showFullAbout ? fullText : preview}
+										</p>
+										{isTruncated && (
+											<button
+												type="button"
+												className="jd-about-toggle"
+												onClick={() => setShowFullAbout(v => !v)}
+											>
+												{showFullAbout ? 'Show less ↑' : 'Show more ↓'}
+											</button>
+										)}
+									</div>
+								);
+							})()}
 
 							{/* Requirements + What you'll do — side by side */}
 							<div className="jd-two-col-block">
@@ -3675,6 +3695,14 @@ function JobSearch() {
 								<span className="js-review-chip js-review-chip--cyan">
 									<MdLocationOn size={10} />
 									{[locationFilter.city, locationFilter.country].filter(Boolean).join(', ')}
+								</span>
+							</div>
+						)}
+						{currencyFilter && (
+							<div className="js-review-row">
+								<span className="js-review-row-label">Currency</span>
+								<span className="js-review-chip js-review-chip--emerald">
+									<MdAttachMoney size={10} />{currencyFilter}
 								</span>
 							</div>
 						)}

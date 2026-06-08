@@ -295,8 +295,9 @@
 .admin-nexus-tab-actions {
 	display: flex;
 	align-items: center;
-	gap: 10px;
+	gap: 8px;
 	flex-shrink: 0;
+	height: 36px;
 }
 
 /* Container: underline baseline, no pill background */
@@ -434,17 +435,17 @@
 }
 
 .admin-nexus-search.admin-search {
-	width: 260px !important;
-	max-width: 260px;
-	height: 38px !important;
+	width: 240px !important;
+	max-width: 240px;
+	height: 36px !important;
 	display: flex !important;
 	align-items: center !important;
 }
 
 .admin-nexus-add-btn {
-	height: 30px !important;
-	padding: 0 14px !important;
-	border-radius: 7px !important;
+	height: 36px !important;
+	padding: 0 16px !important;
+	border-radius: 8px !important;
 	font-weight: 500 !important;
 	font-size: 12px !important;
 	display: inline-flex !important;
@@ -3027,4 +3028,150 @@ body.dark-theme .arm-form .ant-select .ant-select-selector {
 	margin: 0;
 	line-height: 1.6;
 	max-width: 180px;
+}
+
+/* ── Tiny saved-jobs badge — top-right corner of tracker card ── */
+.stat-saved-sub {
+	position: absolute;
+	top: 12px;
+	right: 12px;
+	display: flex;
+	align-items: center;
+	gap: 3px;
+	font-size: 10px;
+	font-weight: 500 !important;
+	opacity: 0.65;
+	z-index: 1;
+	pointer-events: none;
+}
+
+/* ════════════════════════════════════════════════
+   Import from URL — button + modal
+   ════════════════════════════════════════════════ */
+
+/* Button next to Add New Job */
+.admin-import-url-btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	height: 28px;
+	padding: 0 10px;
+	border-radius: 6px;
+	border: 1px solid #c7d7fe;
+	background: #eef2ff;
+	color: #3730a3;
+	font-size: 12px;
+	font-weight: 500;
+	cursor: pointer;
+	transition: background 0.15s, border-color 0.15s;
+}
+.admin-import-url-btn:hover {
+	background: #e0e7ff;
+	border-color: #a5b4fc;
+	color: #1d4ed8;
+}
+
+/* Modal wrapper */
+.import-url-modal .ant-modal-content {
+	border-radius: 16px;
+	padding: 0;
+	overflow: hidden;
+}
+
+/* Modal header */
+.ium-header {
+	display: flex;
+	align-items: flex-start;
+	gap: 12px;
+	padding: 20px 20px 0;
+}
+.ium-header-icon {
+	width: 38px;
+	height: 38px;
+	border-radius: 10px;
+	background: linear-gradient(135deg, #eef2ff, #dbeafe);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	color: #2563eb;
+	flex-shrink: 0;
+}
+.ium-header-text { flex: 1; }
+.ium-title {
+	font-size: 15px;
+	font-weight: 600;
+	color: #0f172a;
+	margin: 0 0 3px;
+}
+.ium-sub {
+	font-size: 12px;
+	color: #64748b;
+	margin: 0;
+	line-height: 1.5;
+}
+
+/* Modal body */
+.ium-body {
+	padding: 18px 20px 0;
+}
+.ium-label {
+	display: block;
+	font-size: 12px;
+	font-weight: 500;
+	color: #374151;
+	margin-bottom: 6px;
+}
+.ium-input {
+	border-radius: 8px !important;
+	height: 40px;
+	font-size: 13px;
+}
+.ium-error {
+	display: flex;
+	align-items: center;
+	gap: 5px;
+	margin-top: 8px;
+	font-size: 12px;
+	color: #dc2626;
+	background: #fef2f2;
+	border: 1px solid #fecaca;
+	border-radius: 6px;
+	padding: 6px 10px;
+}
+.ium-hints {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	margin-top: 14px;
+}
+.ium-hint-item {
+	font-size: 11.5px;
+	color: #64748b;
+}
+
+/* Modal footer */
+.ium-footer {
+	display: flex;
+	justify-content: flex-end;
+	gap: 10px;
+	padding: 16px 20px 20px;
+	margin-top: 6px;
+}
+.ium-extract-btn {
+	min-width: 140px;
+}
+
+/* AI Extracted banner inside existing Add Job modal */
+.arm-ai-extracted-banner {
+	display: flex;
+	align-items: center;
+	gap: 7px;
+	margin: 12px 20px 0;
+	padding: 8px 12px;
+	background: #f0fdf4;
+	border: 1px solid #bbf7d0;
+	border-radius: 8px;
+	font-size: 12px;
+	color: #15803d;
+	font-weight: 500;
 }

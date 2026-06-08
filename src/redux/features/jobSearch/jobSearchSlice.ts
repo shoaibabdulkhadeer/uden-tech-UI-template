@@ -16,6 +16,7 @@ export interface JobSearchPayload {
 		experience_min?: number;
 		experience_max?: number;
 		skills?: string[];
+		currency?: string;
 	};
 }
 

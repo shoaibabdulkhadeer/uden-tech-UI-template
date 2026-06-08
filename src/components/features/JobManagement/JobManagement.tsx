@@ -6,6 +6,8 @@ import { editAdminJob, editAdminJobReset } from '../../../redux/features/admin/e
 import { postAdminJob, postAdminJobReset } from '../../../redux/features/admin/postAdminJobSlice';
 import { deleteAdminJob, deleteAdminJobReset } from '../../../redux/features/admin/deleteAdminJobSlice';
 import { getBrokenLinks, getBrokenLinksReset } from '../../../redux/features/admin/getBrokenLinksSlice';
+import { getAdminStats, getAdminStatsReset } from '../../../redux/features/admin/getAdminStatsSlice';
+import { extractJobUrl, extractJobUrlReset } from '../../../redux/features/admin/extractJobUrlSlice';
 import { fixBrokenUrl, fixBrokenUrlReset } from '../../../redux/features/admin/fixBrokenUrlSlice';
 import { checkUrl, checkUrlReset } from '../../../redux/features/admin/checkUrlSlice';
 import {
@@ -68,6 +70,9 @@ import {
 	MdInsights,
 	MdWorkspacePremium,
 	MdEmojiEvents,
+	MdBookmark,
+	MdCloudDownload,
+	MdCheckCircleOutline,
 } from 'react-icons/md';
 import { motion, easeInOut } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
@@ -256,6 +261,92 @@ function mapApiToJobEntry(job: any, idx: number): JobEntry {
 	};
 }
 
+// ── Parse a raw description blob into structured sections ──────────────────
+function parseJobDescription(raw: string): { about: string; responsibilities: string[]; requirements: string[] } {
+	if (!raw) return { about: '', responsibilities: [], requirements: [] };
+
+	// Normalize: unify line endings + replace all curly/smart apostrophes → straight '
+	const text = raw
+		.replace(/\r\n/g, '\n')
+		.replace(/[‘’‚′″]/g, "'")
+		.trim();
+
+	const ABOUT_SRC = "about (?:the )?(?:role|position|job)|about this (?:role|position)|the role|overview";
+	const RESP_SRC  = "what you'?ll do|what you will do|responsibilities|key responsibilities|your responsibilities|job duties";
+	const REQ_SRC   = "requirements|qualifications|what you have|what you need|what you bring|what we'?re looking for|basic qualifications|preferred qualifications|minimum qualifications|must[- ]have";
+	const SKIP_SRC  = "nice[- ]to[- ]have|benefits|perks|compensation|about (?:the )?(?:company|us)|our story|who we are";
+
+	const IS_ABOUT = new RegExp(ABOUT_SRC, 'i');
+	const IS_RESP  = new RegExp(RESP_SRC,  'i');
+	const IS_REQ   = new RegExp(REQ_SRC,   'i');
+	const IS_SKIP  = new RegExp(SKIP_SRC,  'i');
+
+	// helper: first 3 sentences of a text block
+	const cap3 = (s: string): string => {
+		const sents = s.match(/[^.!?]+[.!?]+\s*/g) ?? [];
+		return sents.length > 3
+			? sents.slice(0, 3).join('').trim() + '…'
+			: s.trim();
+	};
+
+	// ── Strategy 1: multi-line with standalone section headers ──
+	const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+	if (lines.length > 2) {
+		type Sec = 'about' | 'resp' | 'req' | 'skip';
+		let sec: Sec = 'about';
+		let found = false;
+		const about: string[] = [], resp: string[] = [], req: string[] = [];
+
+		for (const line of lines) {
+			const bare = line.replace(/^[-•*·→►▸>]\s*/, '').replace(/:$/, '').trim();
+			if (bare.length < 80 && IS_ABOUT.test(bare)) { sec = 'about'; found = true; continue; }
+			if (bare.length < 80 && IS_RESP.test(bare))  { sec = 'resp';  found = true; continue; }
+			if (bare.length < 80 && IS_REQ.test(bare))   { sec = 'req';   found = true; continue; }
+			if (bare.length < 80 && IS_SKIP.test(bare))  { sec = 'skip';  found = true; continue; }
+			const clean = line.replace(/^[-•*·→►▸>]\s*/, '').trim();
+			if (sec === 'about') about.push(clean);
+			else if (sec === 'resp') resp.push(clean);
+			else if (sec === 'req')  req.push(clean);
+		}
+		if (found) return { about: cap3(about.join(' ')), responsibilities: resp, requirements: req };
+	}
+
+	// ── Strategy 2: one big paragraph — collect ALL section header positions first ──
+	const INLINE_SRC = `(${ABOUT_SRC}|${RESP_SRC}|${REQ_SRC}|${SKIP_SRC})\\s*:`;
+	const INLINE_RE  = new RegExp(INLINE_SRC, 'gi');
+	const allHits: Array<{ index: number; matchLen: number; header: string }> = [];
+	let m: RegExpExecArray | null;
+	while ((m = INLINE_RE.exec(text)) !== null) {
+		allHits.push({ index: m.index, matchLen: m[0].length, header: m[1] });
+	}
+
+	if (allHits.length > 0) {
+		const toItems = (s: string): string[] =>
+			s.split(/\.\s+(?=[A-Z])|\n+/)
+			 .map(l => l.replace(/^[-•*·]\s*/, '').trim())
+			 .filter(l => l.length > 8 && l.length < 400);
+
+		const intro   = text.slice(0, allHits[0].index).trim();
+		const segs    = allHits.map((h, i) => ({
+			header: h.header,
+			body:   text.slice(h.index + h.matchLen, i + 1 < allHits.length ? allHits[i + 1].index : text.length).trim(),
+		}));
+
+		const aboutSeg = segs.find(s => IS_ABOUT.test(s.header));
+		const respSeg  = segs.find(s => IS_RESP.test(s.header));
+		const reqSeg   = segs.find(s => IS_REQ.test(s.header));
+
+		return {
+			about:            cap3(aboutSeg ? aboutSeg.body : intro),
+			responsibilities: respSeg ? toItems(respSeg.body) : [],
+			requirements:     reqSeg  ? toItems(reqSeg.body)  : [],
+		};
+	}
+
+	// ── Fallback: no sections found — show first 3 sentences only ──
+	return { about: cap3(text), responsibilities: [], requirements: [] };
+}
+
 const JobManagement = () => {
 	const navigate = useNavigate();
 	const dispatch = useDispatch<AppDispatch>();
@@ -274,6 +365,22 @@ const JobManagement = () => {
 		(state: any) => state.deleteAdminJobReducer
 	);
 
+
+	const { adminStatsData, status: adminStatsStatus, error: adminStatsError } = useSelector(
+		(state: any) => state.getAdminStatsReducer
+	);
+	const [platformStats, setPlatformStats] = useState<{
+		totalJobs: number; adminPosted: number; aiDiscovered: number; trackerEntries: number; savedJobs: number;
+	} | null>(null);
+
+	// ── Import from URL ──
+	const { extractJobUrlData, status: extractJobUrlStatus, error: extractJobUrlError } = useSelector(
+		(state: any) => state.extractJobUrlReducer
+	);
+	const [importUrlModal, setImportUrlModal] = useState(false);
+	const [importUrl, setImportUrl] = useState('');
+	const [importUrlError, setImportUrlError] = useState('');
+	const [isImported, setIsImported] = useState(false);
 
 	const { brokenLinksData, status: brokenLinksStatus, error: brokenLinksError } = useSelector(
 		(state: any) => state.getBrokenLinksReducer
@@ -315,6 +422,10 @@ const JobManagement = () => {
 	const [skillsFilter, setSkillsFilter] = useState<string[]>([]);
 	const [skillInput, setSkillInput] = useState('');
 	const [previewJob, setPreviewJob] = useState<JobEntry | null>(null);
+	const [showFullAbout, setShowFullAbout] = useState(false);
+	const parsedDesc = useMemo(() => parseJobDescription(previewJob?.description ?? ''), [previewJob?.description]);
+	// reset expansion whenever a different job is opened
+	useEffect(() => { setShowFullAbout(false); }, [previewJob?.id]);
 
 	const [deleteConfirmJob, setDeleteConfirmJob] = useState<JobEntry | null>(null);
 	// Ref holds latest filter values so the debounced fn always reads fresh state
@@ -347,8 +458,107 @@ const JobManagement = () => {
 	// Initial fetch on mount
 	useEffect(() => {
 		dispatch(getAdminJobs(buildParams(1)));
+		dispatch(getAdminStats());
 	// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, []);
+
+	// Handle admin stats API response
+	useEffect(() => {
+		if (adminStatsStatus) return;
+		if (!adminStatsData && !adminStatsError) return;
+
+		if (adminStatsError && !adminStatsData) {
+			dispatch(getAdminStatsReset());
+			return;
+		}
+
+		const code = adminStatsData?.statusCode ?? adminStatsData?.status;
+		if (code === 200) {
+			const d = adminStatsData?.data ?? {};
+			setPlatformStats({
+				totalJobs:       d.jobs?.total          ?? 0,
+				adminPosted:     d.jobs?.admin_posted   ?? 0,
+				aiDiscovered:    d.jobs?.ai_discovered  ?? 0,
+				trackerEntries:  d.tracker_entries      ?? 0,
+				savedJobs:       d.saved_jobs           ?? 0,
+			});
+		}
+		dispatch(getAdminStatsReset());
+	// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [adminStatsData, adminStatsStatus, adminStatsError]);
+
+	// ── Extract Job URL response handler ──
+	// Helper: pull the best human-readable message from any error shape
+	const extractErrMsg = (data: any, fallback: string): string => {
+		if (!data) return fallback;
+		if (typeof data.message === 'string' && data.message) return data.message;
+		if (typeof data.detail === 'string'  && data.detail)  return data.detail;
+		if (Array.isArray(data.detail) && data.detail[0]?.msg) return data.detail[0].msg;
+		const code = data.statusCode ?? data.status;
+		if (code === 400) return 'Invalid request — please check the URL format.';
+		if (code === 401 || code === 403) return 'Access denied — this page requires login or is behind a paywall.';
+		if (code === 404) return 'Job posting not found — the URL may be outdated or removed.';
+		if (code === 422) return 'Could not process the URL — make sure it points to a public job posting.';
+		if (code >= 500) return 'Server error — please try again in a moment.';
+		return fallback;
+	};
+
+	useEffect(() => {
+		if (extractJobUrlStatus) return;
+		if (!extractJobUrlData && !extractJobUrlError) return;
+
+		// Any error (network, 4xx, 5xx) — extractJobUrlError is set; data may also be set to the error body
+		if (extractJobUrlError) {
+			const msg = extractErrMsg(extractJobUrlData, extractJobUrlError || 'Failed to extract job details.');
+			setImportUrlError(msg);
+			dispatch(extractJobUrlReset());
+			return;
+		}
+
+		const code = extractJobUrlData?.statusCode ?? extractJobUrlData?.status;
+		if (code === 200) {
+			if (!extractJobUrlData?.data?.extracted) {
+				setImportUrlError(extractJobUrlData?.message || 'Could not extract job details from this URL. The page may require login or be behind a paywall.');
+				dispatch(extractJobUrlReset());
+				return;
+			}
+			const ext = extractJobUrlData?.data?.extracted ?? {};
+
+			// Normalize enum fields — AI may return combined strings like "contract | full-time"
+			const validJobTypes   = ['full-time', 'part-time', 'contract', 'internship'];
+			const validWorkModes  = ['remote', 'hybrid', 'onsite'];
+			const validExpLevels  = ['junior', 'mid', 'senior', 'lead', 'executive'];
+
+			const pickFirst = (raw: string | undefined, allowed: string[]): string | undefined => {
+				if (!raw) return undefined;
+				const lower = raw.toLowerCase().trim();
+				if (allowed.includes(lower)) return lower;
+				return raw.toLowerCase().split(/[\|,\/&\+\s]+/).map(s => s.trim()).find(p => allowed.includes(p)) ?? undefined;
+			};
+
+			// Pre-fill the existing Add Job form with extracted data
+			form.setFieldsValue({
+				title:            ext.title            ?? '',
+				company:          ext.company          ?? '',
+				location:         ext.location         ?? '',
+				work_mode:        pickFirst(ext.work_mode,        validWorkModes),
+				job_type:         pickFirst(ext.job_type,         validJobTypes),
+				experience_level: pickFirst(ext.experience_level, validExpLevels),
+				salary_range:     ext.salary_range     ?? undefined,
+				apply_url:        ext.apply_url        ?? ext.source_url ?? '',
+				skills_required:  ext.skills_required  ?? [],
+				description:      ext.description      ?? '',
+			});
+			setIsImported(true);
+			setEditingJob(null);
+			setImportUrlModal(false);
+			setIsModalVisible(true);
+		} else {
+			setImportUrlError(extractJobUrlData?.message || 'Could not extract job details from this URL');
+		}
+		dispatch(extractJobUrlReset());
+	// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [extractJobUrlData, extractJobUrlStatus, extractJobUrlError]);
 
 	// Fetch whenever page number changes (page button click)
 	useEffect(() => {
@@ -717,10 +927,12 @@ const JobManagement = () => {
 								</div>
 								<div className="card-content">
 									<div className="stat-main">
-										<span className="stat-number">{jobs.filter((j) => j.status === 'active').length}</span>
-										<div className="stat-trend-box"><MdTrendingUp size={10} /><span className="stat-trend">98.9%</span></div>
+										<span className="stat-number">
+											{adminStatsStatus ? <Spin size="small" /> : (platformStats?.totalJobs ?? 0)}
+										</span>
+										<div className="stat-trend-box"><MdTrendingUp size={10} /><span className="stat-trend">Live</span></div>
 									</div>
-									<div className="stat-desc">Active Roles</div>
+									<div className="stat-desc">Total Jobs</div>
 									<div className="sparkline-container">
 										{[40,70,50,90,60].map((h,i) => <div key={i} className="spark-bar" style={{ height: `${h}%` }} />)}
 									</div>
@@ -736,15 +948,17 @@ const JobManagement = () => {
 									<div className="dot-wrapper"><span className="pulse-dot" /></div>
 									<div className="glass-pill">
 										<MdBarChart className="pill-icon" />
-										<span className="pill-text">REACH FLOW</span>
+										<span className="pill-text">ADMIN POSTED</span>
 									</div>
 								</div>
 								<div className="card-content">
 									<div className="stat-main">
-										<span className="stat-number">{jobs.reduce((a, j) => a + j.applicants, 0)}</span>
-										<div className="stat-trend-box"><MdTrendingUp size={10} /><span className="stat-trend">+14.2%</span></div>
+										<span className="stat-number">
+											{adminStatsStatus ? <Spin size="small" /> : (platformStats?.adminPosted ?? 0)}
+										</span>
+										<div className="stat-trend-box"><MdTrendingUp size={10} /><span className="stat-trend">Live</span></div>
 									</div>
-									<div className="stat-desc">Total Applicants</div>
+									<div className="stat-desc">Admin Posted</div>
 									<div className="sparkline-container">
 										{[30,55,45,80,70].map((h,i) => <div key={i} className="spark-bar" style={{ height: `${h}%` }} />)}
 									</div>
@@ -760,15 +974,17 @@ const JobManagement = () => {
 									<div className="dot-wrapper"><span className="pulse-dot" /></div>
 									<div className="glass-pill">
 										<MdMonitorHeart className="pill-icon" />
-										<span className="pill-text">SYSTEM MODE</span>
+										<span className="pill-text">AI DISCOVERED</span>
 									</div>
 								</div>
 								<div className="card-content">
 									<div className="stat-main">
-										<span className="stat-number">{jobs.filter(j => j.visibility === 'hidden').length}</span>
-										<div className="stat-trend-box neutral"><span className="stat-trend">STABLE</span></div>
+										<span className="stat-number">
+											{adminStatsStatus ? <Spin size="small" /> : (platformStats?.aiDiscovered ?? 0)}
+										</span>
+										<div className="stat-trend-box"><MdTrendingUp size={10} /><span className="stat-trend">Live</span></div>
 									</div>
-									<div className="stat-desc">Stealth Mode</div>
+									<div className="stat-desc">AI Discovered</div>
 									<div className="sparkline-container">
 										{[20,25,22,28,24].map((h,i) => <div key={i} className="spark-bar" style={{ height: `${h}%` }} />)}
 									</div>
@@ -780,21 +996,25 @@ const JobManagement = () => {
 						<motion.div whileHover={{ y: -5 }} transition={{ type: 'spring', stiffness: 300 }}>
 							<div className="admin-stat-card nexus-premium-card card-conversion">
 								<div className="card-glow-accent" />
+								<div className="stat-saved-sub">
+									<MdBookmark size={10} />
+									<span>Saved Jobs: {adminStatsStatus ? '…' : (platformStats?.savedJobs ?? 0)}</span>
+								</div>
 								<div className="card-header-row">
 									<div className="dot-wrapper"><span className="pulse-dot" /></div>
 									<div className="glass-pill">
 										<MdPeople className="pill-icon" />
-										<span className="pill-text">PIPELINE</span>
+										<span className="pill-text">TRACKER</span>
 									</div>
 								</div>
 								<div className="card-content">
 									<div className="stat-main">
 										<span className="stat-number">
-											{jobs.length > 0 ? (jobs.reduce((a, j) => a + j.applicants, 0) / jobs.length).toFixed(1) : '0'}
+											{adminStatsStatus ? <Spin size="small" /> : (platformStats?.trackerEntries ?? 0)}
 										</span>
-										<div className="stat-trend-box"><MdTrendingUp size={10} /><span className="stat-trend">+8.3%</span></div>
+										<div className="stat-trend-box"><MdTrendingUp size={10} /><span className="stat-trend">Live</span></div>
 									</div>
-									<div className="stat-desc">Avg. Applicants / Role</div>
+									<div className="stat-desc">Application Tracker</div>
 									<div className="sparkline-container">
 										{[30,42,38,55,48].map((h,i) => <div key={i} className="spark-bar" style={{ height: `${h}%` }} />)}
 									</div>
@@ -804,7 +1024,7 @@ const JobManagement = () => {
 					</Col>
 				</Row>
 
-				<motion.div
+<motion.div
 					initial={{ y: 20, opacity: 0 }}
 					animate={{ y: 0, opacity: 1 }}
 					transition={{ duration: 0.6, ease: easeInOut, delay: 0.2 }}
@@ -860,10 +1080,17 @@ const JobManagement = () => {
 										allowClear
 									/>
 									<Button
+										className="admin-import-url-btn"
+										icon={<MdCloudDownload size={16} />}
+										onClick={() => { setImportUrl(''); setImportUrlError(''); setImportUrlModal(true); }}
+									>
+										Import from URL
+									</Button>
+									<Button
 										type="primary"
 										className="stalker-btn-primary admin-nexus-add-btn"
 										icon={<MdAdd size={16} />}
-										onClick={() => { setEditingJob(null); form.resetFields(); setIsModalVisible(true); }}
+										onClick={() => { setEditingJob(null); setIsImported(false); form.resetFields(); setIsModalVisible(true); }}
 									>
 										Add New Job
 									</Button>
@@ -1428,7 +1655,7 @@ const JobManagement = () => {
 				{/* Add / Edit Modal */}
 				<Modal
 					open={isModalVisible}
-					onCancel={() => { setIsModalVisible(false); setEditingJob(null); }}
+					onCancel={() => { setIsModalVisible(false); setEditingJob(null); setIsImported(false); }}
 					footer={null}
 					centered
 					className="arm-modal"
@@ -1439,14 +1666,24 @@ const JobManagement = () => {
 					{/* Custom header */}
 					<div className="arm-header">
 						<div className="arm-header-icon">
-							{editingJob ? <MdEdit size={18} /> : <MdAdd size={18} />}
+							{isImported ? <MdCheckCircleOutline size={18} /> : editingJob ? <MdEdit size={18} /> : <MdAdd size={18} />}
 						</div>
 						<div className="arm-header-text">
-							<h3 className="arm-header-title">{editingJob ? 'Edit Job' : 'Add New Job'}</h3>
-							<p className="arm-header-sub">{editingJob ? 'Update the role details below' : 'Fill in the details to publish a new role'}</p>
+							<h3 className="arm-header-title">
+								{isImported ? 'Review Extracted Job' : editingJob ? 'Edit Job' : 'Add New Job'}
+							</h3>
+							<p className="arm-header-sub">
+								{isImported ? 'AI-extracted details — review and edit before saving' : editingJob ? 'Update the role details below' : 'Fill in the details to publish a new role'}
+							</p>
 						</div>
-						<button type="button" className="arm-close-btn" onClick={() => { setIsModalVisible(false); setEditingJob(null); }}>×</button>
+						<button type="button" className="arm-close-btn" onClick={() => { setIsModalVisible(false); setEditingJob(null); setIsImported(false); }}>×</button>
 					</div>
+					{isImported && (
+						<div className="arm-ai-extracted-banner">
+							<MdCheckCircleOutline size={14} />
+							<span>Fields auto-filled by AI — verify for accuracy before saving</span>
+						</div>
+					)}
 
 					<Form form={form} layout="vertical" onFinish={handleAddOrEdit} className="arm-form">
 
@@ -1607,7 +1844,7 @@ const JobManagement = () => {
 
 						{/* Footer */}
 						<div className="arm-footer">
-							<button type="button" className="arm-btn-cancel" onClick={() => { setIsModalVisible(false); setEditingJob(null); form.resetFields(); }}>
+							<button type="button" className="arm-btn-cancel" onClick={() => { setIsModalVisible(false); setEditingJob(null); setIsImported(false); setImportUrl(''); setImportUrlError(''); form.resetFields(); }}>
 								Cancel
 							</button>
 							<button
@@ -1625,6 +1862,80 @@ const JobManagement = () => {
 						</div>
 					</Form>
 				</Modal>
+
+					{/* ── Import from URL Modal ── */}
+					<Modal
+						open={importUrlModal}
+						onCancel={() => { setImportUrlModal(false); setImportUrl(''); setImportUrlError(''); dispatch(extractJobUrlReset()); }}
+						footer={null}
+						centered
+						width={480}
+						title={null}
+						closable={false}
+						className="import-url-modal"
+					>
+						<div className="ium-header">
+							<div className="ium-header-icon">
+								<MdCloudDownload size={20} />
+							</div>
+							<div className="ium-header-text">
+								<h3 className="ium-title">Import Job from URL</h3>
+								<p className="ium-sub">Paste a public job posting — AI extracts all details for you to review</p>
+							</div>
+							<button type="button" className="arm-close-btn" onClick={() => { setImportUrlModal(false); setImportUrl(''); setImportUrlError(''); dispatch(extractJobUrlReset()); }}>×</button>
+						</div>
+
+						<div className="ium-body">
+							<label className="ium-label">Job posting URL</label>
+							<Input
+								className="ium-input"
+								placeholder="https://careers.company.com/job/123"
+								prefix={<MdLink size={15} style={{ color: '#94a3b8' }} />}
+								value={importUrl}
+								onChange={e => { setImportUrl(e.target.value); setImportUrlError(''); }}
+								onPressEnter={() => {
+									if (importUrl.trim()) {
+										setImportUrlError('');
+										dispatch(extractJobUrl({ url: importUrl.trim() }));
+									}
+								}}
+								disabled={extractJobUrlStatus}
+							/>
+
+							{importUrlError && (
+								<div className="ium-error">
+									<MdLinkOff size={13} /> {importUrlError}
+								</div>
+							)}
+
+							<div className="ium-hints">
+								<span className="ium-hint-item">✓ Auto-fills title, company, skills &amp; more</span>
+								<span className="ium-hint-item">✓ Checks robots.txt — only scrapes allowed sites</span>
+							</div>
+						</div>
+
+						<div className="ium-footer">
+							<button type="button" className="arm-btn-cancel" onClick={() => { setImportUrlModal(false); setImportUrl(''); setImportUrlError(''); dispatch(extractJobUrlReset()); }}>
+								Cancel
+							</button>
+							<button
+								type="button"
+								className="arm-btn-submit ium-extract-btn"
+								disabled={!importUrl.trim() || extractJobUrlStatus}
+								onClick={() => {
+									if (importUrl.trim()) {
+										setImportUrlError('');
+										dispatch(extractJobUrl({ url: importUrl.trim() }));
+									}
+								}}
+							>
+								{extractJobUrlStatus
+									? <><Spin size="small" style={{ marginRight: 6 }} />Extracting…</>
+									: <><MdCloudDownload size={14} style={{ marginRight: 4 }} />Extract Details</>
+								}
+							</button>
+						</div>
+					</Modal>
 
 					{/* ── Fix URL Modal ── */}
 					<Modal
@@ -1955,48 +2266,69 @@ const JobManagement = () => {
 									{/* Right: main content */}
 									<div className="jd-body-left">
 
-										{/* About the role */}
-										{previewJob.description && (
-											<div className="jd-section-block">
-												<h4 className="jd-section-label">
-													<span className="jd-section-icon jd-section-icon--violet"><MdListAlt size={12} /></span>
-													About the role
-												</h4>
-												<p className="jd-head-desc-text">{previewJob.description}</p>
-											</div>
-										)}
+										{/* About the role — 3-sentence preview with Show more / Show less */}
+										{(() => {
+											const aboutText = parsedDesc.about;
+											const fullText  = previewJob.description ?? '';
+											const isTruncated = fullText.length > aboutText.length + 10;
+											return aboutText ? (
+												<div className="jd-section-block">
+													<h4 className="jd-section-label">
+														<span className="jd-section-icon jd-section-icon--violet"><MdListAlt size={12} /></span>
+														About the role
+													</h4>
+													<p className="jd-head-desc-text jd-about-text">
+														{showFullAbout ? fullText : aboutText}
+													</p>
+													{isTruncated && (
+														<button
+															type="button"
+															className="jd-about-toggle"
+															onClick={() => setShowFullAbout(v => !v)}
+														>
+															{showFullAbout ? 'Show less ↑' : 'Show more ↓'}
+														</button>
+													)}
+												</div>
+											) : null;
+										})()}
 
-										{/* Requirements + What you'll do — 2-col */}
-										{((previewJob.requirements && previewJob.requirements.length > 0) || (previewJob.responsibilities && previewJob.responsibilities.length > 0)) && (
-											<div className="jd-two-col-block">
-												{previewJob.requirements && previewJob.requirements.length > 0 && (
-													<div className="jd-two-col-section">
-														<h4 className="jd-section-label">
-															<span className="jd-section-icon jd-section-icon--violet"><MdCheckCircle size={12} /></span>
-															Requirements
-														</h4>
-														<ul className="jd-req-list">
-															{previewJob.requirements.map((r, i) => (
-																<li key={i} className="jd-req-item"><MdCheckCircle size={12} className="jd-req-check" />{r}</li>
-															))}
-														</ul>
-													</div>
-												)}
-												{previewJob.responsibilities && previewJob.responsibilities.length > 0 && (
-													<div className="jd-two-col-section">
-														<h4 className="jd-section-label">
-															<span className="jd-section-icon jd-section-icon--violet"><MdWork size={12} /></span>
-															What you'll do
-														</h4>
-														<ul className="jd-req-list">
-															{previewJob.responsibilities.map((r, i) => (
-																<li key={i} className="jd-req-item"><span className="jd-req-dot" />{r}</li>
-															))}
-														</ul>
-													</div>
-												)}
-											</div>
-										)}
+										{/* Requirements + What you'll do — prefer API arrays, fallback to parsed */}
+										{(() => {
+											const resp = previewJob.responsibilities?.length > 0 ? previewJob.responsibilities : parsedDesc.responsibilities;
+											const reqs = (previewJob.requirements && previewJob.requirements.length > 0) ? previewJob.requirements : parsedDesc.requirements;
+											if (!resp.length && !reqs.length) return null;
+											return (
+												<div className="jd-two-col-block">
+													{reqs.length > 0 && (
+														<div className="jd-two-col-section">
+															<h4 className="jd-section-label">
+																<span className="jd-section-icon jd-section-icon--violet"><MdCheckCircle size={12} /></span>
+																Requirements
+															</h4>
+															<ul className="jd-req-list">
+																{reqs.map((r, i) => (
+																	<li key={i} className="jd-req-item"><MdCheckCircle size={12} className="jd-req-check" />{r}</li>
+																))}
+															</ul>
+														</div>
+													)}
+													{resp.length > 0 && (
+														<div className="jd-two-col-section">
+															<h4 className="jd-section-label">
+																<span className="jd-section-icon jd-section-icon--violet"><MdWork size={12} /></span>
+																What you'll do
+															</h4>
+															<ul className="jd-req-list">
+																{resp.map((r, i) => (
+																	<li key={i} className="jd-req-item"><span className="jd-req-dot" />{r}</li>
+																))}
+															</ul>
+														</div>
+													)}
+												</div>
+											);
+										})()}
 
 										{/* Skills */}
 										{previewJob.skills.length > 0 && (

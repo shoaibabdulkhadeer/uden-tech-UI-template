@@ -51,6 +51,8 @@ export const API_ENDPOINTS = {
 
 	//#region Admin
 	GET_ADMIN_JOBS:    '/v2/admin/jobs',
+	GET_ADMIN_STATS:   '/v2/admin/stats',
+	EXTRACT_JOB_URL:   '/v2/admin/jobs/extract-url',
 	GET_BROKEN_LINKS:  '/v2/admin/urls/broken',
 	FIX_BROKEN_URL:    '/v2/admin/urls/{job_id}',
 	CHECK_URL:         '/v2/admin/urls/check',
