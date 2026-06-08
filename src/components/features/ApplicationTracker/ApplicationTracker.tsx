@@ -1,6 +1,6 @@
 ﻿import { message, Pagination, Spin } from 'antd';
 import { easeInOut, motion } from 'framer-motion';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Fragment, useCallback, useEffect, useMemo, useState } from 'react';
 import ReactDOM from 'react-dom';
 import {
 	MdDelete,
@@ -486,19 +486,33 @@ const ApplicationTracker = () => {
 							const tabCfg = STAGE_CFG[progressTab];
 							return (
 							<div style={{ padding: '12px 0', display: 'flex', flexDirection: 'column', gap: 12 }}>
-								{/* Stage tabs */}
-								<div style={{ display: 'flex', gap: 4, borderBottom: '1px solid #f1f5f9', paddingBottom: 10 }}>
-									{KANBAN_STAGES.map(s => {
+								{/* Stage tabs — progress bar stepper */}
+								<div className="pipeline-stage-strip" style={{ borderBottom: '1px solid #f1f5f9', paddingBottom: 12 }}>
+									{KANBAN_STAGES.map((s, idx, arr) => {
 										const sCfg = STAGE_CFG[s];
 										const count = trackerJobs.filter(j => (appStages[j.id] ?? 'applied') === s).length;
+										const activeIdx = KANBAN_STAGES.indexOf(progressTab);
 										const isActive = s === progressTab;
+										const isPast   = activeIdx > idx;
+										const ICONS = [MdSend, MdListAlt, MdPsychology, MdEmojiEvents];
+										const Icon  = ICONS[idx];
 										return (
-											<button key={s} type="button"
-												onClick={() => { setProgressTab(s); setProgressPage(prev => ({ ...prev, [s]: 1 })); }}
-												style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '6px 14px', borderRadius: 8, border: isActive ? `1px solid ${sCfg.border}` : '1px solid transparent', background: isActive ? sCfg.bg : 'transparent', color: isActive ? sCfg.color : '#64748b', fontSize: 12, fontWeight: isActive ? 700 : 500, cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.15s' }}>
-												{sCfg.icon} {sCfg.label}
-												<span style={{ minWidth: 18, height: 18, borderRadius: 999, background: isActive ? sCfg.color : '#e2e8f0', color: isActive ? '#fff' : '#64748b', fontSize: 10, fontWeight: 700, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: '0 4px' }}>{count}</span>
-											</button>
+											<Fragment key={s}>
+												<button
+													type="button"
+													className={`pipeline-stage-pill${isActive ? ' pipeline-stage-pill--active' : ''}${isPast ? ' pipeline-stage-pill--past' : ''}`}
+													onClick={() => { setProgressTab(s); setProgressPage(prev => ({ ...prev, [s]: 1 })); }}
+												>
+													<span className="pipeline-stage-pill-icon"><Icon size={11} /></span>
+													<span className="pipeline-stage-pill-text">
+														<span className="pipeline-stage-pill-label">{sCfg.label}</span>
+														{count > 0 && <span className="pipeline-stage-pill-count">{count}</span>}
+													</span>
+												</button>
+												{idx < arr.length - 1 && (
+													<span className={`pipeline-stage-connector${isPast ? ' pipeline-stage-connector--filled' : ''}`} />
+												)}
+											</Fragment>
 										);
 									})}
 								</div>

@@ -5790,7 +5790,7 @@ body.dark-theme .job-meta-icon               { opacity: 0.4; }
 }
 
 .jd-round-arrow {
-	font-size: 14px; color: #6366f1; opacity: 0; font-weight: 700;
+	font-size: 14px; color: #94a3b8; opacity: 0; font-weight: 700;
 	transition: opacity 0.15s, transform 0.18s cubic-bezier(0.34,1.56,0.64,1);
 }
 .jd-round-item:hover .jd-round-arrow { opacity: 1; transform: translateX(4px); }
@@ -5820,8 +5820,8 @@ body.dark-theme .job-meta-icon               { opacity: 0.4; }
 }
 .jd-ivc-connector {
 	width: 2px; flex: 1; min-height: 12px;
-	background: linear-gradient(to bottom, var(--ivc-accent, #6366f1), transparent);
-	opacity: 0.25; margin-top: 3px;
+	background: linear-gradient(to bottom, #cbd5e1, transparent);
+	opacity: 0.6; margin-top: 3px;
 }
 .jd-ivc-card:last-child .jd-ivc-connector { display: none; }
 
@@ -5831,7 +5831,6 @@ body.dark-theme .job-meta-icon               { opacity: 0.4; }
 	background: #f8fafc; border: 1px solid #e2e8f0;
 	border-radius: 10px; padding: 10px 12px 10px;
 	margin: 0 0 8px 6px;
-	border-left: 3px solid var(--ivc-accent, #6366f1);
 	transition: box-shadow 0.18s;
 }
 .jd-ivc-card-body:hover {
@@ -5870,13 +5869,13 @@ body.dark-theme .job-meta-icon               { opacity: 0.4; }
 /* "Learn this round now" button */
 .jd-ivc-learn-btn {
 	display: inline-flex; align-items: center;
-	padding: 5px 11px; border-radius: 7px; border: none; cursor: pointer;
-	font-size: 11.5px; font-weight: 600;
-	background: linear-gradient(135deg, var(--ivc-accent, #6366f1), color-mix(in srgb, var(--ivc-accent, #6366f1) 70%, #818cf8));
-	color: #fff; transition: opacity 0.15s, transform 0.12s;
-	box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+	padding: 5px 11px; border-radius: 7px; cursor: pointer;
+	font-size: 11.5px; font-weight: 500;
+	background: #fff; border: 1px solid #e2e8f0;
+	color: #475569; transition: background 0.15s, border-color 0.15s, transform 0.12s;
+	box-shadow: 0 1px 3px rgba(0,0,0,0.06);
 }
-.jd-ivc-learn-btn:hover { opacity: 0.88; transform: translateY(-1px); }
+.jd-ivc-learn-btn:hover { background: #f1f5f9; border-color: #cbd5e1; transform: translateY(-1px); }
 .jd-ivc-learn-btn:active { transform: translateY(0); }
 
 /* —— Interview rounds: loading hint —— */
@@ -5889,7 +5888,7 @@ body.dark-theme .job-meta-icon               { opacity: 0.4; }
 /* —— Interview rounds: source badge (live data) —— */
 .jd-rounds-source-badge {
 	display: flex; align-items: center; gap: 4px;
-	margin: 0 0 10px; font-size: 11px; color: #6366f1;
+	margin: 0 0 10px; font-size: 11px; color: #64748b;
 	font-weight: 500; letter-spacing: 0.01em;
 }
 
@@ -5910,12 +5909,12 @@ body.dark-theme .job-meta-icon               { opacity: 0.4; }
 .jd-rounds-nf-disclaimer {
 	display: flex; align-items: flex-start; gap: 6px;
 	margin: 6px 0 0; padding: 8px 10px;
-	background: rgba(99,102,241,0.06); border-radius: 8px;
-	border: 1px solid rgba(99,102,241,0.12);
+	background: #f8fafc; border-radius: 8px;
+	border: 1px solid #e2e8f0;
 	font-size: 11px; color: #94a3b8; line-height: 1.55;
 	text-align: left; width: 100%;
 }
-.jd-rounds-nf-disclaimer svg { flex-shrink: 0; margin-top: 2px; color: #818cf8; }
+.jd-rounds-nf-disclaimer svg { flex-shrink: 0; margin-top: 2px; color: #94a3b8; }
 
 /* —— Footer action bar —— */
 .jd-footer {
@@ -7381,137 +7380,143 @@ body.dark-theme .view-tab-pipeline-arrow {
 /* ══════════════════════════════════════════════════
    Pipeline stage stepper strip (below main tabs)
 ══════════════════════════════════════════════════ */
+/* ── Progress-bar stepper for pipeline stages ── */
 .pipeline-stage-strip {
 	display: flex;
-	align-items: center;
+	align-items: flex-start;
 	gap: 0;
-	padding: 10px 2px 6px;
+	padding: 8px 4px 8px;
 	margin-top: 2px;
-	margin-bottom: 3px;
+	margin-bottom: 2px;
+	width: 100%;
 }
 
+/* Each step takes equal space, stacked vertically */
 .pipeline-stage-pill {
-	display: inline-flex;
+	flex: 1;
+	display: flex;
+	flex-direction: column;
 	align-items: center;
 	gap: 5px;
-	padding: 5px 13px;
-	border: 1.5px solid rgba(148, 163, 184, 0.22);
-	border-radius: 20px;
-	background: rgba(15, 23, 42, 0.03);
+	background: none;
+	border: none;
 	cursor: pointer;
-	font-size: 11.5px;
-	font-weight: 600;
-	color: #94a3b8;
-	transition: color 0.2s ease, background 0.2s ease;
-	white-space: nowrap;
+	padding: 0 2px;
 	font-family: inherit;
-	line-height: 1;
 	position: relative;
-	flex-shrink: 0;
 }
+.pipeline-stage-pill:focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; border-radius: 4px; }
 
-.pipeline-stage-pill:hover:not(.pipeline-stage-pill--active) {
-	border-color: rgba(99, 102, 241, 0.35);
-	color: #6366f1;
-	background: rgba(99, 102, 241, 0.05);
-}
-
-/* Past stage — completed look */
-.pipeline-stage-pill--past {
-	border-color: rgba(99, 102, 241, 0.3);
-	color: #6366f1;
-	background: rgba(99, 102, 241, 0.06);
-}
-
-/* Active stage — filled pill */
-.pipeline-stage-pill--active {
-	background: linear-gradient(135deg, #6366f1 0%, #7c3aed 100%);
-	border-color: transparent;
-	color: #fff;
-	box-shadow: 0 3px 14px rgba(99, 102, 241, 0.38), inset 0 1px 0 rgba(255,255,255,0.18);
-}
-
+/* ── Circle node ── */
 .pipeline-stage-pill-icon {
+	width: 26px; height: 26px;
+	border-radius: 50%;
+	display: flex; align-items: center; justify-content: center;
+	flex-shrink: 0;
+	background: #f1f5f9;
+	border: 2px solid #e2e8f0;
+	color: #94a3b8;
+	transition: background 0.2s, border-color 0.2s, box-shadow 0.2s, color 0.2s;
+	position: relative; z-index: 1;
+}
+
+/* Completed (past) — green */
+.pipeline-stage-pill--past .pipeline-stage-pill-icon {
+	background: #ecfdf5;
+	border-color: #34d399;
+	color: #059669;
+}
+
+/* Active — blue filled */
+.pipeline-stage-pill--active .pipeline-stage-pill-icon {
+	background: #2563eb;
+	border-color: #2563eb;
+	color: #fff;
+	box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.14);
+}
+
+/* Future hover */
+.pipeline-stage-pill:hover:not(.pipeline-stage-pill--active):not(.pipeline-stage-pill--past) .pipeline-stage-pill-icon {
+	background: #f8fafc;
+	border-color: #94a3b8;
+	color: #64748b;
+}
+
+/* ── Text row (label + count inline) ── */
+.pipeline-stage-pill-text {
 	display: flex;
 	align-items: center;
-	opacity: 0.85;
-}
-
-.pipeline-stage-pill--active .pipeline-stage-pill-icon {
-	opacity: 1;
+	gap: 5px;
+	white-space: nowrap;
 }
 
 .pipeline-stage-pill-label {
-	letter-spacing: -0.01em;
+	font-size: 10.5px;
+	font-weight: 600;
+	color: #94a3b8;
+	letter-spacing: 0;
+	transition: color 0.2s;
+}
+.pipeline-stage-pill--past  .pipeline-stage-pill-label { color: #059669; }
+.pipeline-stage-pill--active .pipeline-stage-pill-label { color: #1d4ed8; font-weight: 700; }
+.pipeline-stage-pill:hover:not(.pipeline-stage-pill--active):not(.pipeline-stage-pill--past) .pipeline-stage-pill-label {
+	color: #475569;
 }
 
+/* ── Count badge ── */
 .pipeline-stage-pill-count {
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	min-width: 16px;
-	height: 16px;
-	padding: 0 4px;
-	border-radius: 10px;
-	font-size: 9px;
-	font-weight: 700;
-	background: rgba(148, 163, 184, 0.2);
-	color: #64748b;
-	flex-shrink: 0;
+	display: inline-flex; align-items: center; justify-content: center;
+	min-width: 15px; height: 15px; padding: 0 4px;
+	border-radius: 10px; font-size: 9px; font-weight: 700;
+	background: #f1f5f9; color: #64748b; border: 1px solid #e2e8f0;
+	flex-shrink: 0; transition: background 0.2s, color 0.2s, border-color 0.2s;
 }
-
 .pipeline-stage-pill--active .pipeline-stage-pill-count {
-	background: rgba(255, 255, 255, 0.25);
-	color: #fff;
+	background: #dbeafe; color: #1d4ed8; border-color: #93c5fd;
 }
-
 .pipeline-stage-pill--past .pipeline-stage-pill-count {
-	background: rgba(99, 102, 241, 0.15);
-	color: #6366f1;
+	background: #ecfdf5; color: #059669; border-color: #a7f3d0;
 }
 
-/* Connector line between pills */
+/* ── Connector track between nodes ── */
 .pipeline-stage-connector {
-	flex-shrink: 0;
-	width: 28px;
+	flex: 1;
 	height: 2px;
-	background: rgba(148, 163, 184, 0.25);
+	background: #e2e8f0;
 	border-radius: 2px;
-	margin: 0 2px;
+	margin-top: 13px; /* vertically centers with 26px circle */
+	flex-shrink: 1;
+	min-width: 12px;
 	transition: background 0.25s ease;
+	position: relative; z-index: 0;
 }
 
 .pipeline-stage-connector--filled {
-	background: linear-gradient(90deg, #6366f1, #7c3aed);
-	opacity: 0.6;
+	background: #34d399;
 }
 
 /* Dark theme */
-body.dark-theme .pipeline-stage-strip {
-	border-color: rgba(99, 102, 241, 0.12);
-}
+body.dark-theme .pipeline-stage-strip { border-color: rgba(99,102,241,0.12); }
 
-body.dark-theme .pipeline-stage-pill {
-	background: rgba(255, 255, 255, 0.03);
-	border-color: rgba(148, 163, 184, 0.15);
+body.dark-theme .pipeline-stage-pill-icon {
+	background: rgba(255,255,255,0.05);
+	border-color: rgba(148,163,184,0.2);
 	color: #64748b;
 }
-
-body.dark-theme .pipeline-stage-pill:hover:not(.pipeline-stage-pill--active) {
-	border-color: rgba(99, 102, 241, 0.4);
-	color: #818cf8;
-	background: rgba(99, 102, 241, 0.08);
+body.dark-theme .pipeline-stage-pill--past .pipeline-stage-pill-icon {
+	background: rgba(52,211,153,0.12);
+	border-color: #34d399;
+	color: #34d399;
 }
-
-body.dark-theme .pipeline-stage-pill--past {
-	border-color: rgba(99, 102, 241, 0.25);
-	color: #818cf8;
-	background: rgba(99, 102, 241, 0.1);
+body.dark-theme .pipeline-stage-pill--active .pipeline-stage-pill-icon {
+	background: #2563eb;
+	border-color: #2563eb;
 }
-
-body.dark-theme .pipeline-stage-connector {
-	background: rgba(148, 163, 184, 0.15);
-}
+body.dark-theme .pipeline-stage-pill-label { color: #64748b; }
+body.dark-theme .pipeline-stage-pill--past  .pipeline-stage-pill-label { color: #34d399; }
+body.dark-theme .pipeline-stage-pill--active .pipeline-stage-pill-label { color: #60a5fa; }
+body.dark-theme .pipeline-stage-connector { background: rgba(148,163,184,0.15); }
+body.dark-theme .pipeline-stage-connector--filled { background: #34d399; }
 
 /* ══════════════════════════════════════════════════
    Reveal gate — LinkedIn-style blur until filters are submitted
